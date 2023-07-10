@@ -1,3 +1,13 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+apply from: 'dependencies.gradle'
+
 rootProject.name = artifactRootId
 
 include "postgres"
+include 'sql'
+

@@ -1,0 +1,25 @@
+import org.gradle.api.initialization.resolve.DependencyResolutionManagement
+
+dependencyResolutionManagement { DependencyResolutionManagement it ->
+    it.versionCatalogs {
+        libs {
+            version("slf4j", "1.7.36")
+            version("testcontainers", "1.18.3")
+            version("junit-api", "5.9.3")
+            version("junit-platform", "1.9.3")
+            version("driver-postgres", "42.6.0")
+
+            library("junit-engine", "org.junit.jupiter", "junit-jupiter-engine").versionRef("junit-api")
+            library("junit-api", "org.junit.jupiter", "junit-jupiter-api").versionRef("junit-api")
+            library("junit-params", "org.junit.jupiter", "junit-jupiter-params").versionRef("junit-api")
+            library("junit-launcher", "org.junit.platform", "junit-platform-launcher").versionRef("junit-platform")
+
+            library("testcontainers-core", "org.testcontainers", "testcontainers").versionRef("testcontainers")
+            library("testcontainers-junit", "org.testcontainers", "junit-jupiter").versionRef("testcontainers")
+            library("testcontainers-postgresql", "org.testcontainers", "postgresql").versionRef("testcontainers")
+            library("testcontainers-jdbc", "org.testcontainers", "jdbc").versionRef("testcontainers")
+
+            library("driver-postgres", "org.postgresql", "postgresql").versionRef("driver-postgres")
+        }
+    }
+}

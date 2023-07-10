@@ -1,19 +1,28 @@
+buildscript {
+    dependencies {
+        classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.2.1.3168")
+    }
+}
+
 plugins {
     id "jacoco"
     id "java-library"
-    id "maven-publish"
-
-    id "org.sonarqube" version "4.2.1.3168"
     id "com.diffplug.spotless" version "6.19.0"
 }
 
 group = groupId
 version = artifactVersion
 
+def isPublishable = { Project p ->
+    if (p.name == "sql") {
+        return false
+    }
+    return true
+}
+
 subprojects {
     apply plugin: "jacoco"
     apply plugin: "java-library"
-    apply plugin: "maven-publish"
     apply plugin: "com.diffplug.spotless"
 
     repositories {
@@ -22,15 +31,20 @@ subprojects {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
     }
 
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    group = groupId
+    version = artifactVersion
+
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     dependencies {
         compileOnly "org.jetbrains:annotations:24.0.1"
 
-        testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.9.3"
-        testImplementation "org.junit.jupiter:junit-jupiter-api:5.9.3"
-        testImplementation "org.junit.jupiter:junit-jupiter-params:5.9.3"
+        testRuntimeOnly "ch.qos.logback:logback-classic:1.2.3"
+        testRuntimeOnly libs.junit.engine
+        testRuntimeOnly libs.testcontainers.junit
+        testImplementation libs.junit.api
+        testImplementation libs.junit.params
     }
 
     test {
@@ -56,6 +70,36 @@ subprojects {
         }
     }
 
+    tasks.withType(JavaCompile) {
+        options.encoding("UTF-8")
+        options.incremental(true)
+        options.fork = true
+    }
+
+    check.dependsOn jacocoTestReport
+    jacocoTestReport {
+        reports {
+            xml.required = true
+            html.destination file("${buildDir}/jacocoHtml")
+        }
+    }
+
+    javadoc {
+        options.encoding = "UTF-8"
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption("html5", true)
+        }
+    }
+}
+
+subprojects {
+    if (!isPublishable(it)) {
+        return
+    }
+
+    apply plugin: "maven-publish"
+    apply plugin: "org.sonarqube"
+
     sonarqube {
         properties {
             property "sonar.host.url", "https://sonarcloud.io"
@@ -68,18 +112,12 @@ subprojects {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
+                artifactId = "testcontainers-extensions-$artifactId"
 
-//                afterEvaluate {
-//                    artifactId = "testcontainers-extensions-$artifactId"
-//                }
-
+                var nameFromArtifact = artifactId
                 pom {
                     url = "https://github.com/GoodforGod/$artifactRootId"
-
-                    afterEvaluate {
-                        name = "testcontainers-extensions-$artifactId"
-                        description = description
-                    }
+                    name = nameFromArtifact
 
                     license {
                         name = "Apache License 2.0"
@@ -118,34 +156,6 @@ subprojects {
     java {
         withJavadocJar()
         withSourcesJar()
-    }
-
-    if (project.hasProperty("signing.keyId")) {
-        apply plugin: "signing"
-        signing {
-            sign publishing.publications.mavenJava
-        }
-    }
-
-    tasks.withType(JavaCompile) {
-        options.encoding("UTF-8")
-        options.incremental(true)
-        options.fork = true
-    }
-
-    check.dependsOn jacocoTestReport
-    jacocoTestReport {
-        reports {
-            xml.required = true
-            html.destination file("${buildDir}/jacocoHtml")
-        }
-    }
-
-    javadoc {
-        options.encoding = "UTF-8"
-        if (JavaVersion.current().isJava9Compatible()) {
-            options.addBooleanOption("html5", true)
-        }
     }
 
     if (project.hasProperty("signing.keyId")) {
