@@ -3,7 +3,10 @@ dependencies {
 
     implementation "org.flywaydb:flyway-core:9.20.0"
     implementation "org.liquibase:liquibase-core:4.23.0"
+    implementation "org.slf4j:jul-to-slf4j:1.7.36"
+    implementation libs.slf4j.jul
 
+    implementation libs.slf4j.api
     implementation libs.junit.launcher
     implementation libs.junit.api
 

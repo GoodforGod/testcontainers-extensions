@@ -26,6 +26,7 @@ import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 abstract class AbstractTestcontainersSQLExtension implements
@@ -36,12 +37,19 @@ abstract class AbstractTestcontainersSQLExtension implements
         TestExecutionListener,
         ParameterResolver {
 
+    private static final String EXTERNAL_SQL_HOST = "TEST_CONTAINER_EXTERNAL_SQL_HOST";
+    private static final String EXTERNAL_SQL_PORT = "TEST_CONTAINER_EXTERNAL_SQL_PORT";
+    private static final String EXTERNAL_SQL_DATABASE = "TEST_CONTAINER_EXTERNAL_SQL_DATABASE";
+    private static final String EXTERNAL_SQL_USERNAME = "TEST_CONTAINER_EXTERNAL_SQL_USERNAME";
+    private static final String EXTERNAL_SQL_PASSWORD = "TEST_CONTAINER_EXTERNAL_SQL_PASSWORD";
+
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(AbstractTestcontainersSQLExtension.class);
 
     private static final Map<String, ExtensionContainer> IMAGE_TO_SHARED_CONTAINER = new ConcurrentHashMap<>();
     private static volatile SqlConnection externalConnection = null;
-    private static volatile ContainerMetadata externalDropAnnotation = null;
+    private static volatile ContainerMetadata externalMetadata = null;
+    private static volatile boolean isLiquibaseActivated = false;
 
     private record ExtensionContainer(JdbcDatabaseContainer<?> container, SqlConnection connection) {}
 
@@ -101,6 +109,7 @@ abstract class AbstractTestcontainersSQLExtension implements
                 : locations;
 
         return Flyway.configure()
+                .loggers("slf4j")
                 .dataSource(connection.jdbcUrl(), connection.username(), connection.password())
                 .locations(migrationLocations.toArray(String[]::new))
                 .cleanDisabled(false)
@@ -126,6 +135,18 @@ abstract class AbstractTestcontainersSQLExtension implements
             final List<String> changeLogLocations = (locations.isEmpty())
                     ? List.of("db/changelog.sql")
                     : locations;
+
+            if (!isLiquibaseActivated) {
+                final boolean julEnabled = Optional.ofNullable(System.getenv("TEST_CONTAINERS_EXTENSION_SQL_JUL_ENABLED"))
+                        .map(Boolean::parseBoolean)
+                        .orElse(true);
+
+                if (julEnabled) {
+                    SLF4JBridgeHandler.removeHandlersForRootLogger();
+                    SLF4JBridgeHandler.install();
+                    isLiquibaseActivated = true;
+                }
+            }
 
             try (var con = connection.open()) {
                 var liquibaseConnection = new liquibase.database.jvm.JdbcConnection(con);
@@ -341,8 +362,8 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        if (externalConnection != null && externalDropAnnotation != null) {
-            tryDropIfRequired(externalDropAnnotation, externalConnection);
+        if (externalConnection != null && externalMetadata != null) {
+            tryDropIfRequired(externalMetadata, externalConnection);
             return;
         }
 
@@ -353,19 +374,19 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @Nullable
     private static SqlConnection getSqlConnection() {
-        var host = System.getenv("TEST_EXTERNAL_SQL_HOST");
+        var host = System.getenv(EXTERNAL_SQL_HOST);
         if (host == null) {
             return null;
         }
 
-        var port = System.getenv("TEST_EXTERNAL_SQL_PORT");
+        var port = System.getenv(EXTERNAL_SQL_PORT);
         if (port == null) {
             return null;
         }
 
-        var db = Optional.ofNullable(System.getenv("TEST_EXTERNAL_SQL_DATABASE")).orElse("postgres");
-        var user = System.getenv("TEST_EXTERNAL_SQL_USERNAME");
-        var password = System.getenv("TEST_EXTERNAL_SQL_PASSWORD");
+        var db = Optional.ofNullable(System.getenv(EXTERNAL_SQL_DATABASE)).orElse("postgres");
+        var user = System.getenv(EXTERNAL_SQL_USERNAME);
+        var password = System.getenv(EXTERNAL_SQL_PASSWORD);
         return new SqlConnectionImpl(host, Integer.parseInt(port), db, user, password);
     }
 

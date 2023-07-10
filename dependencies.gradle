@@ -19,6 +19,10 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-postgresql", "org.testcontainers", "postgresql").versionRef("testcontainers")
             library("testcontainers-jdbc", "org.testcontainers", "jdbc").versionRef("testcontainers")
 
+            library("slf4j-api", "org.slf4j", "slf4j-api").versionRef("slf4j")
+            library("slf4j-jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
+
+
             library("driver-postgres", "org.postgresql", "postgresql").versionRef("driver-postgres")
         }
     }
