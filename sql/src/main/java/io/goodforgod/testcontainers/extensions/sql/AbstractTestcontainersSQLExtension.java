@@ -1,5 +1,17 @@
 package io.goodforgod.testcontainers.extensions.sql;
 
+import java.io.FileWriter;
+import java.io.Writer;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -16,22 +28,16 @@ import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
-import java.io.FileWriter;
-import java.io.Writer;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+abstract class AbstractTestcontainersSQLExtension implements
+        BeforeAllCallback,
+        BeforeEachCallback,
+        AfterAllCallback,
+        AfterEachCallback,
+        TestExecutionListener,
+        ParameterResolver {
 
-abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback, TestExecutionListener, ParameterResolver {
-
-    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(AbstractTestcontainersSQLExtension.class);
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(AbstractTestcontainersSQLExtension.class);
 
     private static final Map<String, ExtensionContainer> IMAGE_TO_SHARED_CONTAINER = new ConcurrentHashMap<>();
     private static volatile SqlConnection externalConnection = null;
@@ -44,25 +50,26 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
         return ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic() && f.getAnnotation(ContainerSQL.class) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
-            .stream()
-            .findFirst()
-            .flatMap(field -> context.getTestInstance()
-                .map(instance -> {
-                    try {
-                        Object possibleContainer = field.get(instance);
-                        if (possibleContainer instanceof JdbcDatabaseContainer<?> pc) {
-                            return pc;
-                        } else {
-                            throw new IllegalArgumentException("Field '%s' annotated with @%s value must be instance of %s".formatted(
-                                field.getName(), ContainerSQL.class.getSimpleName(), JdbcDatabaseContainer.class
-                            ));
-                        }
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalStateException("Failed retrieving value from field '%s' annotated with @%s"
-                            .formatted(field.getName(), ContainerSQL.class.getSimpleName()), e);
-                    }
-                }))
-            .orElseGet(() -> ((JdbcDatabaseContainer) getDefaultContainer(image)));
+                .stream()
+                .findFirst()
+                .flatMap(field -> context.getTestInstance()
+                        .map(instance -> {
+                            try {
+                                Object possibleContainer = field.get(instance);
+                                if (possibleContainer instanceof JdbcDatabaseContainer<?> pc) {
+                                    return pc;
+                                } else {
+                                    throw new IllegalArgumentException(
+                                            "Field '%s' annotated with @%s value must be instance of %s".formatted(
+                                                    field.getName(), ContainerSQL.class.getSimpleName(),
+                                                    JdbcDatabaseContainer.class));
+                                }
+                            } catch (IllegalAccessException e) {
+                                throw new IllegalStateException("Failed retrieving value from field '%s' annotated with @%s"
+                                        .formatted(field.getName(), ContainerSQL.class.getSimpleName()), e);
+                            }
+                        }))
+                .orElseGet(() -> ((JdbcDatabaseContainer) getDefaultContainer(image)));
     }
 
     protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
@@ -90,14 +97,14 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
 
     private static Flyway getFlyway(SqlConnection connection, List<String> locations) {
         final List<String> migrationLocations = (locations.isEmpty())
-            ? List.of("classpath:db/migration")
-            : locations;
+                ? List.of("classpath:db/migration")
+                : locations;
 
         return Flyway.configure()
-            .dataSource(connection.jdbcUrl(), connection.username(), connection.password())
-            .locations(migrationLocations.toArray(String[]::new))
-            .cleanDisabled(false)
-            .load();
+                .dataSource(connection.jdbcUrl(), connection.username(), connection.password())
+                .locations(migrationLocations.toArray(String[]::new))
+                .cleanDisabled(false)
+                .load();
     }
 
     private static void migrateFlyway(SqlConnection connection, List<String> locations) {
@@ -110,14 +117,15 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
 
     @FunctionalInterface
     interface LiquibaseRunner {
+
         void apply(Liquibase liquibase, Writer writer) throws LiquibaseException;
     }
 
     private static void prepareLiquibase(SqlConnection connection, List<String> locations, LiquibaseRunner liquibaseConsumer) {
         try {
             final List<String> changeLogLocations = (locations.isEmpty())
-                ? List.of("db/changelog.sql")
-                : locations;
+                    ? List.of("db/changelog.sql")
+                    : locations;
 
             try (var con = connection.open()) {
                 var liquibaseConnection = new liquibase.database.jvm.JdbcConnection(con);
@@ -171,11 +179,11 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
 
     private static void injectSqlConnection(SqlConnection connection, ExtensionContext context) {
         var connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
-            f -> !f.isSynthetic()
-                 && !Modifier.isFinal(f.getModifiers())
-                 && !Modifier.isStatic(f.getModifiers())
-                 && f.getAnnotation(ContainerSQLConnection.class) != null,
-            ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
+                f -> !f.isSynthetic()
+                        && !Modifier.isFinal(f.getModifiers())
+                        && !Modifier.isStatic(f.getModifiers())
+                        && f.getAnnotation(ContainerSQLConnection.class) != null,
+                ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
         context.getTestInstance().ifPresent(instance -> {
             for (Field field : connectionFields) {
@@ -184,8 +192,7 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
                     field.set(instance, connection);
                 } catch (IllegalAccessException e) {
                     throw new IllegalStateException("Field '%s' annotated with @%s can't set connection".formatted(
-                        field.getName(), ContainerSQLConnection.class.getSimpleName()
-                    ), e);
+                            field.getName(), ContainerSQLConnection.class.getSimpleName()), e);
                 }
             }
         });
@@ -199,7 +206,7 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
         var metadata = findMetadata(context)
-            .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
 
         if (externalConnection != null) {
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
@@ -241,7 +248,7 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
         var metadata = findMetadata(context)
-            .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
 
         if (externalConnection != null) {
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
@@ -278,7 +285,7 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
         var metadata = findMetadata(context)
-            .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
 
         if (externalConnection != null) {
             if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
@@ -309,7 +316,7 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
         var metadata = findMetadata(context)
-            .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
 
         if (externalConnection != null) {
             if (metadata.migration().drop() == Migration.Mode.PER_CLASS) {
@@ -363,9 +370,10 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
     }
 
     @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
         final boolean foundSuitable = parameterContext.getDeclaringExecutable() instanceof Method
-                                      && parameterContext.getParameter().getAnnotation(ContainerSQLConnection.class) != null;
+                && parameterContext.getParameter().getAnnotation(ContainerSQLConnection.class) != null;
 
         if (!foundSuitable) {
             return false;
@@ -373,15 +381,16 @@ abstract class AbstractTestcontainersSQLExtension implements BeforeAllCallback, 
 
         if (!parameterContext.getParameter().getType().equals(SqlConnection.class)) {
             throw new ExtensionConfigurationException("Parameter '%s' annotated @%s is not of type %s".formatted(
-                parameterContext.getParameter().getName(), ContainerSQLConnection.class.getSimpleName(), SqlConnection.class
-            ));
+                    parameterContext.getParameter().getName(), ContainerSQLConnection.class.getSimpleName(),
+                    SqlConnection.class));
         }
 
         return true;
     }
 
     @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
         if (externalConnection != null) {
             return externalConnection;
         }

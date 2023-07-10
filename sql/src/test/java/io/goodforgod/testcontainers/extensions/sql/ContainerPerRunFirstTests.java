@@ -1,9 +1,9 @@
 package io.goodforgod.testcontainers.extensions.sql;
 
-import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import org.junit.jupiter.api.*;
 
 @TestcontainersSQL(mode = ContainerMode.PER_RUN, image = "postgres:15.3-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -22,11 +22,11 @@ class ContainerPerRunFirstTests {
         assertNotNull(connection.jdbcUrl());
         assertNotNull(sameConnection);
         assertEquals(sameConnection, connection);
-        if(perRunConnection == null) {
+        if (perRunConnection == null) {
             perRunConnection = connection;
         }
 
-        if(ContainerPerRunSecondTests.perRunConnection != null) {
+        if (ContainerPerRunSecondTests.perRunConnection != null) {
             assertEquals(perRunConnection, ContainerPerRunSecondTests.perRunConnection);
         }
     }

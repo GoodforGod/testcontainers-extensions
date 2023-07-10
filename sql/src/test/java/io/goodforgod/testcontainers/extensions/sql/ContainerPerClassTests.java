@@ -1,8 +1,8 @@
 package io.goodforgod.testcontainers.extensions.sql;
 
-import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.*;
 
 @TestcontainersSQL(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

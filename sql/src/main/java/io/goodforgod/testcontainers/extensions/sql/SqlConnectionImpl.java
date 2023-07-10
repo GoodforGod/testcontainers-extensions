@@ -1,22 +1,21 @@
 package io.goodforgod.testcontainers.extensions.sql;
 
-import org.intellij.lang.annotations.Language;
-import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.JdbcDatabaseContainer;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Optional;
+import org.intellij.lang.annotations.Language;
+import org.jetbrains.annotations.NotNull;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
 record SqlConnectionImpl(String host, int port, String database, String username, String password) implements SqlConnection {
 
     SqlConnectionImpl(JdbcDatabaseContainer<?> container, int mappedPort) {
         this(container.getHost(),
-            container.getMappedPort(mappedPort),
-            container.getDatabaseName(),
-            container.getUsername(),
-            container.getPassword());
+                container.getMappedPort(mappedPort),
+                container.getDatabaseName(),
+                container.getUsername(),
+                container.getPassword());
     }
 
     @NotNull
@@ -44,7 +43,7 @@ record SqlConnectionImpl(String host, int port, String database, String username
     @Override
     public void execute(@Language("SQL") String sql) {
         try (var connection = open();
-             var stmt = connection.createStatement()) {
+                var stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
             throw new IllegalStateException(e);
@@ -52,10 +51,12 @@ record SqlConnectionImpl(String host, int port, String database, String username
     }
 
     @Override
-    public <T, E extends Throwable> Optional<T> executeForOne(@Language("SQL") String sql, @NotNull ResultSetMapper<T, E> extractor) throws E {
+    public <T, E extends Throwable> Optional<T> executeForOne(@Language("SQL") String sql,
+                                                              @NotNull ResultSetMapper<T, E> extractor)
+            throws E {
         try (var connection = open();
-             var stmt = connection.prepareStatement(sql);
-             var rs = stmt.executeQuery()) {
+                var stmt = connection.prepareStatement(sql);
+                var rs = stmt.executeQuery()) {
             return (rs.next())
                     ? Optional.ofNullable(extractor.apply(rs))
                     : Optional.empty();

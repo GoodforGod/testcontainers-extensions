@@ -1,16 +1,15 @@
 package io.goodforgod.testcontainers.extensions.sql;
 
-import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.*;
+
 @TestcontainersSQL(mode = ContainerMode.PER_CLASS,
-    image = "postgres:15.2-alpine",
-    migration = @Migration(
-        engine = Migration.Engines.LIQUIBASE,
-        apply = Migration.Mode.PER_CLASS,
-        drop = Migration.Mode.PER_CLASS
-    ))
+        image = "postgres:15.2-alpine",
+        migration = @Migration(
+                engine = Migration.Engines.LIQUIBASE,
+                apply = Migration.Mode.PER_CLASS,
+                drop = Migration.Mode.PER_CLASS))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LiquibaseMigrationPerClassTests {

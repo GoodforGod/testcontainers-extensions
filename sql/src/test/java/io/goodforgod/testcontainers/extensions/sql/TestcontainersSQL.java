@@ -1,14 +1,13 @@
 package io.goodforgod.testcontainers.extensions.sql;
 
+import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.lang.annotation.*;
 
 @Order(Order.DEFAULT - 100) // Run before other extensions
 @ExtendWith(TestcontainersSQLExtension.class)
 @Documented
-@Target({ElementType.TYPE})
+@Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @interface TestcontainersSQL {
 
@@ -22,5 +21,7 @@ import java.lang.annotation.*;
      */
     ContainerMode mode() default ContainerMode.PER_METHOD;
 
-    Migration migration() default @Migration(engine = Migration.Engines.FLYWAY, apply = Migration.Mode.NONE, drop = Migration.Mode.NONE);
+    Migration migration() default @Migration(engine = Migration.Engines.FLYWAY,
+            apply = Migration.Mode.NONE,
+            drop = Migration.Mode.NONE);
 }
