@@ -1,4 +1,24 @@
 dependencies {
+    implementation "org.testcontainers:mariadb:1.18.3"
+    implementation "org.testcontainers:mysql:1.18.3"
+    implementation "org.testcontainers:oracle-xe:1.18.3"
+    implementation "org.testcontainers:cockroachdb:1.18.3"
 
+    api project(":sql")
+    api libs.testcontainers.postgresql
+    api libs.driver.postgres
+
+    implementation libs.junit.launcher
+    implementation libs.junit.engine
+    implementation libs.junit.api
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                description = "Extends Testcontainers Postgres with great features for testing"
+            }
+        }
+    }
+}
