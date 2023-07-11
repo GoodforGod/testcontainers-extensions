@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
-abstract class AbstractTestcontainersSQLExtension implements
+abstract class AbstractTestcontainersSqlExtension implements
         BeforeAllCallback,
         BeforeEachCallback,
         AfterAllCallback,
@@ -46,7 +46,7 @@ abstract class AbstractTestcontainersSQLExtension implements
     private static final String EXTERNAL_SQL_PASSWORD = "TEST_CONTAINER_EXTERNAL_SQL_PASSWORD";
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
-            .create(AbstractTestcontainersSQLExtension.class);
+            .create(AbstractTestcontainersSqlExtension.class);
 
     private static final Map<String, ExtensionContainer> IMAGE_TO_SHARED_CONTAINER = new ConcurrentHashMap<>();
     private static volatile SqlConnection externalConnection = null;
@@ -60,7 +60,7 @@ abstract class AbstractTestcontainersSQLExtension implements
     private JdbcDatabaseContainer<?> getJdbcContainer(ContainerMetadata metadata, ExtensionContext context) {
         logger.debug("Looking for JDBC Container...");
         var container = ReflectionUtils.findFields(context.getRequiredTestClass(),
-                f -> !f.isSynthetic() && f.getAnnotation(ContainerSQL.class) != null,
+                f -> !f.isSynthetic() && f.getAnnotation(ContainerSql.class) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
                 .findFirst()
@@ -74,12 +74,12 @@ abstract class AbstractTestcontainersSQLExtension implements
                                 } else {
                                     throw new IllegalArgumentException(
                                             "Field '%s' annotated with @%s value must be instance of %s".formatted(
-                                                    field.getName(), ContainerSQL.class.getSimpleName(),
+                                                    field.getName(), ContainerSql.class.getSimpleName(),
                                                     JdbcDatabaseContainer.class));
                                 }
                             } catch (IllegalAccessException e) {
                                 throw new IllegalStateException("Failed retrieving value from field '%s' annotated with @%s"
-                                        .formatted(field.getName(), ContainerSQL.class.getSimpleName()), e);
+                                        .formatted(field.getName(), ContainerSql.class.getSimpleName()), e);
                             }
                         }))
                 .orElseGet(() -> {
@@ -227,7 +227,7 @@ abstract class AbstractTestcontainersSQLExtension implements
                 f -> !f.isSynthetic()
                         && !Modifier.isFinal(f.getModifiers())
                         && !Modifier.isStatic(f.getModifiers())
-                        && f.getAnnotation(ContainerSQLConnection.class) != null,
+                        && f.getAnnotation(ContainerSqlConnection.class) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
         logger.debug("Starting field injection for connection: {}", connection);
@@ -238,7 +238,7 @@ abstract class AbstractTestcontainersSQLExtension implements
                     field.set(instance, connection);
                 } catch (IllegalAccessException e) {
                     throw new IllegalStateException("Field '%s' annotated with @%s can't set connection".formatted(
-                            field.getName(), ContainerSQLConnection.class.getSimpleName()), e);
+                            field.getName(), ContainerSqlConnection.class.getSimpleName()), e);
                 }
             }
         });
@@ -410,14 +410,14 @@ abstract class AbstractTestcontainersSQLExtension implements
         var db = Optional.ofNullable(System.getenv(EXTERNAL_SQL_DATABASE)).orElse("postgres");
         var user = System.getenv(EXTERNAL_SQL_USERNAME);
         var password = System.getenv(EXTERNAL_SQL_PASSWORD);
-        return new SqlConnectionImpl(host, Integer.parseInt(port), db, user, password);
+        return SqlConnection.create(host, Integer.parseInt(port), db, user, password);
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         final boolean foundSuitable = parameterContext.getDeclaringExecutable() instanceof Method
-                && parameterContext.getParameter().getAnnotation(ContainerSQLConnection.class) != null;
+                && parameterContext.getParameter().getAnnotation(ContainerSqlConnection.class) != null;
 
         if (!foundSuitable) {
             return false;
@@ -425,7 +425,7 @@ abstract class AbstractTestcontainersSQLExtension implements
 
         if (!parameterContext.getParameter().getType().equals(SqlConnection.class)) {
             throw new ExtensionConfigurationException("Parameter '%s' annotated @%s is not of type %s".formatted(
-                    parameterContext.getParameter().getName(), ContainerSQLConnection.class.getSimpleName(),
+                    parameterContext.getParameter().getName(), ContainerSqlConnection.class.getSimpleName(),
                     SqlConnection.class));
         }
 

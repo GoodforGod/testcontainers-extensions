@@ -9,14 +9,14 @@ import org.junit.jupiter.api.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ContainerPerClassTests {
 
-    @ContainerSQLConnection
+    @ContainerSqlConnection
     private SqlConnection sameConnection;
 
     private static SqlConnection firstConnection;
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerSQLConnection SqlConnection connection) {
+    void firstConnection(@ContainerSqlConnection SqlConnection connection) {
         assertNull(firstConnection);
         assertNotNull(connection);
         assertNotNull(connection.jdbcUrl());
@@ -27,7 +27,7 @@ class ContainerPerClassTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerSQLConnection SqlConnection connection) {
+    void secondConnection(@ContainerSqlConnection SqlConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.jdbcUrl());
         assertNotNull(firstConnection);

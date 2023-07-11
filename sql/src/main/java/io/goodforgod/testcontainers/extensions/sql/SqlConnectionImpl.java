@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 
 record SqlConnectionImpl(String host,
                          int port,
@@ -22,14 +21,6 @@ record SqlConnectionImpl(String host,
         implements SqlConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(SqlConnection.class);
-
-    SqlConnectionImpl(JdbcDatabaseContainer<?> container, int mappedPort) {
-        this(container.getHost(),
-                container.getMappedPort(mappedPort),
-                container.getDatabaseName(),
-                container.getUsername(),
-                container.getPassword());
-    }
 
     @NotNull
     @Override

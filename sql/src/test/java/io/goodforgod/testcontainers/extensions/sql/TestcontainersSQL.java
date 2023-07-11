@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Order(Order.DEFAULT - 100) // Run before other extensions
-@ExtendWith(TestcontainersSQLExtension.class)
+@ExtendWith(TestcontainersSqlExtension.class)
 @Documented
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)

@@ -10,6 +10,16 @@ import org.jetbrains.annotations.NotNull;
 
 public interface SqlConnection {
 
+    @NotNull
+    static SqlConnection create(@NotNull String host, int port, @NotNull String database) {
+        return create(host, port, database, null, null);
+    }
+
+    @NotNull
+    static SqlConnection create(@NotNull String host, int port, @NotNull String database, String username, String password) {
+        return new SqlConnectionImpl(host, port, database, username, password);
+    }
+
     interface ResultSetMapper<R, E extends Throwable> {
 
         R apply(@NotNull ResultSet currentRow) throws SQLException, E;

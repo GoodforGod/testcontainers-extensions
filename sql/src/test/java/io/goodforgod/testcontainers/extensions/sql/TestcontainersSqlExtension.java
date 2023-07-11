@@ -10,7 +10,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersSQLExtension extends AbstractTestcontainersSQLExtension {
+final class TestcontainersSqlExtension extends AbstractTestcontainersSqlExtension {
 
     @NotNull
     JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
@@ -32,6 +32,11 @@ final class TestcontainersSQLExtension extends AbstractTestcontainersSQLExtensio
 
     @NotNull
     SqlConnection getConnection(@NotNull JdbcDatabaseContainer<?> container) {
-        return new SqlConnectionImpl(container, PostgreSQLContainer.POSTGRESQL_PORT);
+        return SqlConnection.create(
+                container.getHost(),
+                container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
+                container.getDatabaseName(),
+                container.getUsername(),
+                container.getPassword());
     }
 }

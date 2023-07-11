@@ -12,12 +12,12 @@ class ContainerPerRunSecondTests {
 
     static volatile SqlConnection perRunConnection;
 
-    @ContainerSQLConnection
+    @ContainerSqlConnection
     private SqlConnection sameConnection;
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerSQLConnection SqlConnection connection) {
+    void firstConnection(@ContainerSqlConnection SqlConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.jdbcUrl());
         assertNotNull(sameConnection);
@@ -34,7 +34,7 @@ class ContainerPerRunSecondTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerSQLConnection SqlConnection connection) {
+    void secondConnection(@ContainerSqlConnection SqlConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.jdbcUrl());
         assertNotNull(sameConnection);

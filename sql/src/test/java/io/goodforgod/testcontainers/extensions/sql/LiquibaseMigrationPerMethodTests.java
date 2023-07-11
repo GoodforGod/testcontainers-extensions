@@ -16,13 +16,13 @@ class LiquibaseMigrationPerMethodTests {
 
     @Order(1)
     @Test
-    void firstRun(@ContainerSQLConnection SqlConnection connection) {
+    void firstRun(@ContainerSqlConnection SqlConnection connection) {
         connection.execute("INSERT INTO users VALUES(1);");
     }
 
     @Order(2)
     @Test
-    void secondRun(@ContainerSQLConnection SqlConnection connection) {
+    void secondRun(@ContainerSqlConnection SqlConnection connection) {
         var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
         assertTrue(usersFound.isEmpty());
     }

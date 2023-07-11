@@ -11,7 +11,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.Optional;
 
-final class TestcontainersPostgresExtension extends AbstractTestcontainersSQLExtension {
+final class TestcontainersPostgresExtension extends AbstractTestcontainersSqlExtension {
 
     @NotNull JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image).asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
@@ -29,6 +29,11 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersSQLExt
     }
 
     @NotNull SqlConnection getConnection(@NotNull JdbcDatabaseContainer<?> container) {
-        return new SqlConnectionImpl(container, PostgreSQLContainer.POSTGRESQL_PORT);
+        return SqlConnection.create(
+                container.getHost(),
+                container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
+                container.getDatabaseName(),
+                container.getUsername(),
+                container.getPassword());
     }
 }
