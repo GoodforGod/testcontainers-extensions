@@ -26,6 +26,8 @@ import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
@@ -48,14 +50,16 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     private static final Map<String, ExtensionContainer> IMAGE_TO_SHARED_CONTAINER = new ConcurrentHashMap<>();
     private static volatile SqlConnection externalConnection = null;
-    private static volatile ContainerMetadata externalMetadata = null;
     private static volatile boolean isLiquibaseActivated = false;
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private record ExtensionContainer(JdbcDatabaseContainer<?> container, SqlConnection connection) {}
 
     @SuppressWarnings("unchecked")
-    private JdbcDatabaseContainer<?> getJdbcContainer(String image, ExtensionContext context) {
-        return ReflectionUtils.findFields(context.getRequiredTestClass(),
+    private JdbcDatabaseContainer<?> getJdbcContainer(ContainerMetadata metadata, ExtensionContext context) {
+        logger.debug("Looking for JDBC Container...");
+        var container = ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic() && f.getAnnotation(ContainerSQL.class) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
@@ -65,6 +69,7 @@ abstract class AbstractTestcontainersSQLExtension implements
                             try {
                                 Object possibleContainer = field.get(instance);
                                 if (possibleContainer instanceof JdbcDatabaseContainer<?> pc) {
+                                    logger.debug("Found SQL Container in field: {}", field.getName());
                                     return pc;
                                 } else {
                                     throw new IllegalArgumentException(
@@ -77,7 +82,13 @@ abstract class AbstractTestcontainersSQLExtension implements
                                         .formatted(field.getName(), ContainerSQL.class.getSimpleName()), e);
                             }
                         }))
-                .orElseGet(() -> ((JdbcDatabaseContainer) getDefaultContainer(image)));
+                .orElseGet(() -> {
+                    logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                    return ((JdbcDatabaseContainer) getDefaultContainer(metadata.image()));
+                });
+
+        logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
+        return container;
     }
 
     protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
@@ -102,6 +113,11 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @NotNull
     abstract SqlConnection getConnection(@NotNull JdbcDatabaseContainer<?> container);
+
+    private ContainerMetadata getMetadata(@NotNull ExtensionContext context) {
+        return findMetadata(context)
+                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+    }
 
     private static Flyway getFlyway(SqlConnection connection, List<String> locations) {
         final List<String> migrationLocations = (locations.isEmpty())
@@ -182,23 +198,31 @@ abstract class AbstractTestcontainersSQLExtension implements
         prepareLiquibase(connection, locations, (liquibase, writer) -> liquibase.dropAll());
     }
 
-    private static void tryMigrateIfRequired(ContainerMetadata annotation, SqlConnection sqlConnection) {
+    private void tryMigrateIfRequired(ContainerMetadata annotation, SqlConnection sqlConnection) {
         if (annotation.migration().engine() == Migration.Engines.FLYWAY) {
+            logger.debug("Starting schema migration for engine '{}' for connection: {}", annotation.migration().engine(),
+                    sqlConnection);
             migrateFlyway(sqlConnection, Arrays.asList(annotation.migration().migrations()));
         } else if (annotation.migration().engine() == Migration.Engines.LIQUIBASE) {
+            logger.debug("Starting schema migration for engine '{}' for connection: {}", annotation.migration().engine(),
+                    sqlConnection);
             migrateLiquibase(sqlConnection, Arrays.asList(annotation.migration().migrations()));
         }
     }
 
-    private static void tryDropIfRequired(ContainerMetadata annotation, SqlConnection sqlConnection) {
+    private void tryDropIfRequired(ContainerMetadata annotation, SqlConnection sqlConnection) {
         if (annotation.migration().engine() == Migration.Engines.FLYWAY) {
+            logger.debug("Starting schema dropping for engine '{}' for connection: {}", annotation.migration().engine(),
+                    sqlConnection);
             dropFlyway(sqlConnection, Arrays.asList(annotation.migration().migrations()));
         } else if (annotation.migration().engine() == Migration.Engines.LIQUIBASE) {
+            logger.debug("Starting schema dropping for engine '{}' for connection: {}", annotation.migration().engine(),
+                    sqlConnection);
             dropLiquibase(sqlConnection, Arrays.asList(annotation.migration().migrations()));
         }
     }
 
-    private static void injectSqlConnection(SqlConnection connection, ExtensionContext context) {
+    private void injectSqlConnection(SqlConnection connection, ExtensionContext context) {
         var connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic()
                         && !Modifier.isFinal(f.getModifiers())
@@ -206,6 +230,7 @@ abstract class AbstractTestcontainersSQLExtension implements
                         && f.getAnnotation(ContainerSQLConnection.class) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
+        logger.debug("Starting field injection for connection: {}", connection);
         context.getTestInstance().ifPresent(instance -> {
             for (Field field : connectionFields) {
                 try {
@@ -222,12 +247,15 @@ abstract class AbstractTestcontainersSQLExtension implements
     @Override
     public void testPlanExecutionStarted(TestPlan testPlan) {
         externalConnection = getSqlConnection();
+        if (externalConnection != null) {
+            logger.debug("Found external connection to database, no containers will be created during tests: {}",
+                    externalConnection);
+        }
     }
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        var metadata = findMetadata(context)
-                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+        var metadata = getMetadata(context);
 
         if (externalConnection != null) {
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
@@ -240,7 +268,7 @@ abstract class AbstractTestcontainersSQLExtension implements
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_RUN) {
             var extensionContainer = IMAGE_TO_SHARED_CONTAINER.computeIfAbsent(metadata.image(), k -> {
-                var container = getJdbcContainer(metadata.image(), context);
+                var container = getJdbcContainer(metadata, context);
                 container.start();
                 container.withReuse(true);
                 var sqlConnection = getConnection(container);
@@ -253,7 +281,7 @@ abstract class AbstractTestcontainersSQLExtension implements
                 tryMigrateIfRequired(metadata, extensionContainer.connection());
             }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
-            var container = getJdbcContainer(metadata.image(), context);
+            var container = getJdbcContainer(metadata, context);
             container.start();
             var sqlConnection = getConnection(container);
             var extensionContainer = new ExtensionContainer(container, sqlConnection);
@@ -268,8 +296,7 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-        var metadata = findMetadata(context)
-                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+        var metadata = getMetadata(context);
 
         if (externalConnection != null) {
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
@@ -282,7 +309,7 @@ abstract class AbstractTestcontainersSQLExtension implements
 
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            var container = getJdbcContainer(metadata.image(), context);
+            var container = getJdbcContainer(metadata, context);
             container.start();
             var sqlConnection = getConnection(container);
 
@@ -305,8 +332,7 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        var metadata = findMetadata(context)
-                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+        var metadata = getMetadata(context);
 
         if (externalConnection != null) {
             if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
@@ -319,6 +345,7 @@ abstract class AbstractTestcontainersSQLExtension implements
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainer.class);
+            logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
             extensionContainer.container().stop();
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
@@ -336,8 +363,7 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        var metadata = findMetadata(context)
-                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+        var metadata = getMetadata(context);
 
         if (externalConnection != null) {
             if (metadata.migration().drop() == Migration.Mode.PER_CLASS) {
@@ -350,6 +376,7 @@ abstract class AbstractTestcontainersSQLExtension implements
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
+            logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
             extensionContainer.container().stop();
         } else if (metadata.runMode() == ContainerMode.PER_RUN) {
             Optional.ofNullable(IMAGE_TO_SHARED_CONTAINER.get(metadata.image())).ifPresent(extensionContainer -> {
@@ -362,12 +389,8 @@ abstract class AbstractTestcontainersSQLExtension implements
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        if (externalConnection != null && externalMetadata != null) {
-            tryDropIfRequired(externalMetadata, externalConnection);
-            return;
-        }
-
         for (ExtensionContainer container : IMAGE_TO_SHARED_CONTAINER.values()) {
+            logger.debug("Stopping in mode '{}' SQL Container: {}", ContainerMode.PER_RUN, container);
             container.container().stop();
         }
     }

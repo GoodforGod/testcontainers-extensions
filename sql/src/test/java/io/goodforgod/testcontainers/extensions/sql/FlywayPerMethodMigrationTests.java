@@ -23,7 +23,7 @@ class FlywayPerMethodMigrationTests {
     @Order(2)
     @Test
     void secondRun(@ContainerSQLConnection SqlConnection connection) {
-        var usersFound = connection.executeForOne("SELECT * FROM users;", r -> r.getInt(1));
+        var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
         assertTrue(usersFound.isEmpty());
     }
 }

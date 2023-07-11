@@ -23,7 +23,7 @@ class LiquibaseMigrationPerClassTests {
     @Order(2)
     @Test
     void secondRun(@ContainerSQLConnection SqlConnection connection) {
-        var usersFound = connection.executeForOne("SELECT * FROM users;", r -> r.getInt(1)).orElse(null);
+        var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(1)).orElse(null);
         assertEquals(1, usersFound);
     }
 }
