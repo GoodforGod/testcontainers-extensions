@@ -9,5 +9,5 @@ apply from: 'dependencies.gradle'
 rootProject.name = artifactRootId
 
 include "postgres"
-include 'sql'
+include "jdbc"
 

@@ -13,13 +13,6 @@ plugins {
 group = groupId
 version = artifactVersion
 
-def isPublishable = { Project p ->
-    if (p.name == "sql") {
-        return false
-    }
-    return true
-}
-
 subprojects {
     apply plugin: "jacoco"
     apply plugin: "java-library"
@@ -93,10 +86,6 @@ subprojects {
 }
 
 subprojects {
-    if (!isPublishable(it)) {
-        return
-    }
-
     apply plugin: "maven-publish"
     apply plugin: "org.sonarqube"
 
