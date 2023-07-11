@@ -1,11 +1,10 @@
 dependencies {
-    api libs.testcontainers.jdbc
-
     implementation "org.flywaydb:flyway-core:9.20.0"
     implementation "org.liquibase:liquibase-core:4.23.0"
     implementation libs.slf4j.jul
     implementation libs.slf4j.api
 
+    implementation libs.testcontainers.jdbc
     implementation libs.junit.launcher
     implementation libs.junit.api
 

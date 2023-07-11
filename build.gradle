@@ -17,6 +17,7 @@ subprojects {
     apply plugin: "jacoco"
     apply plugin: "java-library"
     apply plugin: "com.diffplug.spotless"
+    apply plugin: "org.sonarqube"
 
     repositories {
         mavenLocal()
@@ -38,6 +39,14 @@ subprojects {
         testRuntimeOnly libs.testcontainers.junit
         testImplementation libs.junit.api
         testImplementation libs.junit.params
+    }
+
+    sonarqube {
+        properties {
+            property "sonar.host.url", "https://sonarcloud.io"
+            property "sonar.organization", "goodforgod"
+            property "sonar.projectKey", "GoodforGod_testcontainers-extensions-${project.name}"
+        }
     }
 
     test {

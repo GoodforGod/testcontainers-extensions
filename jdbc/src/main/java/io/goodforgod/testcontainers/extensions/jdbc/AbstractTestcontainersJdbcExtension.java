@@ -342,8 +342,10 @@ abstract class AbstractTestcontainersJdbcExtension implements
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainer.class);
-            logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
-            extensionContainer.container().stop();
+            if (extensionContainer != null) {
+                logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
+                extensionContainer.container().stop();
+            }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
             if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
@@ -373,8 +375,10 @@ abstract class AbstractTestcontainersJdbcExtension implements
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
-            logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
-            extensionContainer.container().stop();
+            if (extensionContainer != null) {
+                logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
+                extensionContainer.container().stop();
+            }
         } else if (metadata.runMode() == ContainerMode.PER_RUN) {
             Optional.ofNullable(IMAGE_TO_SHARED_CONTAINER.get(metadata.image())).ifPresent(extensionContainer -> {
                 if (metadata.migration().drop() == Migration.Mode.PER_CLASS) {
