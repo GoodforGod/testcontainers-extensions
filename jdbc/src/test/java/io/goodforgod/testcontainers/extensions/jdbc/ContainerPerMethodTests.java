@@ -19,7 +19,7 @@ class ContainerPerMethodTests {
     void firstConnection(@ContainerJdbcConnection JdbcConnection connection) {
         assertNull(firstConnection);
         assertNotNull(connection);
-        assertNotNull(connection.jdbcUrl());
+        assertNotNull(connection.params().jdbcUrl());
         firstConnection = connection;
         assertNotNull(samePerMethodConnection);
         assertEquals(samePerMethodConnection, connection);
@@ -29,7 +29,7 @@ class ContainerPerMethodTests {
     @Test
     void secondConnection(@ContainerJdbcConnection JdbcConnection connection) {
         assertNotNull(connection);
-        assertNotNull(connection.jdbcUrl());
+        assertNotNull(connection.params().jdbcUrl());
         assertNotNull(samePerMethodConnection);
         assertEquals(samePerMethodConnection, connection);
         assertNotNull(firstConnection);

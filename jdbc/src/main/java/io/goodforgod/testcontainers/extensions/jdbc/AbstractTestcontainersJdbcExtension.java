@@ -28,6 +28,7 @@ import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 abstract class AbstractTestcontainersJdbcExtension implements
@@ -49,9 +50,9 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
     private record ExtensionContainer(JdbcDatabaseContainer<?> container, JdbcConnection connection) {}
 
-    private JdbcDatabaseContainer<?> getJdbcContainer(ContainerMetadata metadata, ExtensionContext context) {
+    private Optional<JdbcDatabaseContainer<?>> getContainerFromField(ExtensionContext context) {
         logger.debug("Looking for JDBC Container...");
-        var container = ReflectionUtils.findFields(context.getRequiredTestClass(),
+        return ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic() && f.getAnnotation(ContainerJdbc.class) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
@@ -59,30 +60,22 @@ abstract class AbstractTestcontainersJdbcExtension implements
                 .flatMap(field -> context.getTestInstance()
                         .map(instance -> {
                             try {
+                                field.setAccessible(true);
                                 Object possibleContainer = field.get(instance);
-                                if (possibleContainer instanceof JdbcDatabaseContainer<?> pc) {
+                                var containerType = getContainerType();
+                                if (containerType.isAssignableFrom(possibleContainer.getClass())) {
                                     logger.debug("Found SQL Container in field: {}", field.getName());
-                                    return (metadata.runMode() == ContainerMode.PER_RUN)
-                                            ? pc.withReuse(true)
-                                            : pc;
+                                    return ((JdbcDatabaseContainer<?>) possibleContainer);
                                 } else {
                                     throw new IllegalArgumentException(
                                             "Field '%s' annotated with @%s value must be instance of %s".formatted(
-                                                    field.getName(), ContainerJdbc.class.getSimpleName(),
-                                                    JdbcDatabaseContainer.class));
+                                                    field.getName(), ContainerJdbc.class.getSimpleName(), containerType));
                                 }
                             } catch (IllegalAccessException e) {
                                 throw new IllegalStateException("Failed retrieving value from field '%s' annotated with @%s"
                                         .formatted(field.getName(), ContainerJdbc.class.getSimpleName()), e);
                             }
-                        }))
-                .orElseGet(() -> {
-                    logger.debug("Getting default SQL Container for image: {}", metadata.image());
-                    return getDefaultContainer(metadata.image());
-                });
-
-        logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
-        return container;
+                        }));
     }
 
     protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
@@ -99,6 +92,8 @@ abstract class AbstractTestcontainersJdbcExtension implements
         return Optional.empty();
     }
 
+    abstract Class<? extends JdbcDatabaseContainer> getContainerType();
+
     @NotNull
     abstract JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image);
 
@@ -112,8 +107,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
     abstract Optional<JdbcConnection> getConnectionExternal();
 
     private ContainerMetadata getMetadata(@NotNull ExtensionContext context) {
-        return findMetadata(context)
-                .orElseThrow(() -> new ExtensionConfigurationException("@TestContainerPostgres not found"));
+        return findMetadata(context).orElseThrow(() -> new ExtensionConfigurationException("Extension annotation not found"));
     }
 
     private static Flyway getFlyway(JdbcConnection connection, List<String> locations) {
@@ -123,7 +117,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
         return Flyway.configure()
                 .loggers("slf4j")
-                .dataSource(connection.jdbcUrl(), connection.username(), connection.password())
+                .dataSource(connection.params().jdbcUrl(), connection.params().username(), connection.params().password())
                 .locations(migrationLocations.toArray(String[]::new))
                 .cleanDisabled(false)
                 .load();
@@ -264,8 +258,16 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_RUN) {
-            var extensionContainer = IMAGE_TO_SHARED_CONTAINER.computeIfAbsent(metadata.image(), k -> {
-                var container = getJdbcContainer(metadata, context);
+            var containerFromField = getContainerFromField(context);
+            var imageToLook = containerFromField.map(GenericContainer::getDockerImageName).orElseGet(metadata::image);
+
+            var extensionContainer = IMAGE_TO_SHARED_CONTAINER.computeIfAbsent(imageToLook, k -> {
+                var container = containerFromField.orElseGet(() -> {
+                    logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                    return getDefaultContainer(metadata.image());
+                });
+
+                logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
                 container.start();
                 container.withReuse(true);
                 var sqlConnection = getConnectionForContainer(container);
@@ -278,7 +280,12 @@ abstract class AbstractTestcontainersJdbcExtension implements
                 tryMigrateIfRequired(metadata, extensionContainer.connection());
             }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
-            var container = getJdbcContainer(metadata, context);
+            var container = getContainerFromField(context).orElseGet(() -> {
+                logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                return getDefaultContainer(metadata.image());
+            });
+
+            logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
             container.start();
             var sqlConnection = getConnectionForContainer(container);
             var extensionContainer = new ExtensionContainer(container, sqlConnection);
@@ -306,7 +313,12 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            var container = getJdbcContainer(metadata, context);
+            var container = getContainerFromField(context).orElseGet(() -> {
+                logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                return getDefaultContainer(metadata.image());
+            });
+
+            logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
             container.start();
             var sqlConnection = getConnectionForContainer(container);
 

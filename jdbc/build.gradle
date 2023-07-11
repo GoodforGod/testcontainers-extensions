@@ -11,3 +11,13 @@ dependencies {
     testImplementation libs.driver.postgres
     testImplementation libs.testcontainers.postgresql
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                description = "Testcontainers JDBC Extension is used to create other extensions"
+            }
+        }
+    }
+}

@@ -21,16 +21,25 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
     private static final String EXTERNAL_JDBC_PORT = "EXTERNAL_POSTGRES_PORT";
     private static final String EXTERNAL_JDBC_DATABASE = "EXTERNAL_POSTGRES_DATABASE";
 
+    @Override
+    Class<? extends JdbcDatabaseContainer> getContainerType() {
+        return PostgreSQLContainer.class;
+    }
+
     @NotNull
     JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image)
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
+
+        var alias = "postgres-" + System.currentTimeMillis();
         return new PostgreSQLContainer<>(dockerImage)
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
-                        .withMdc("image", image))
+                        .withMdc("image", image)
+                        .withMdc("alias", alias))
+                .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED);
     }
 
@@ -42,9 +51,19 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
 
     @NotNull
     JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container) {
+        final String alias = container.getNetworkAliases().stream()
+                .filter(a -> a.startsWith("postgres"))
+                .findFirst()
+                .or(() -> (container.getNetworkAliases().isEmpty())
+                        ? Optional.empty()
+                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+                .orElse(null);
+
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
                 container.getHost(),
                 container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
+                alias,
+                PostgreSQLContainer.POSTGRESQL_PORT,
                 container.getDatabaseName(),
                 container.getUsername(),
                 container.getPassword());
@@ -61,9 +80,9 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
         var db = Optional.ofNullable(System.getenv(EXTERNAL_JDBC_DATABASE)).orElse("postgres");
         if (url != null) {
             if (host != null && port != null) {
-                return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), db, user, password));
+                return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));
             } else {
-                return Optional.of(JdbcConnectionImpl.forJDBC(url, user, password));
+                return Optional.of(JdbcConnectionImpl.forExternal(url, user, password));
             }
         } else if (host != null && port != null) {
             return Optional.of(JdbcConnectionImpl.forProtocol(PROTOCOL, host, Integer.parseInt(port), db, user, password));

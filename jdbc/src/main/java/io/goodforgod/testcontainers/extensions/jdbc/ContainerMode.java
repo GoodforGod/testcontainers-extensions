@@ -5,7 +5,8 @@ package io.goodforgod.testcontainers.extensions.jdbc;
  */
 public enum ContainerMode {
     /**
-     * Specified container with same image will run ONCE per test execution and shared across all test classes (if image is same or will create container per image)
+     * Specified container with same image will run ONCE per test execution and shared across all test
+     * classes (if image is same or will create container per image)
      */
     PER_RUN,
     /**

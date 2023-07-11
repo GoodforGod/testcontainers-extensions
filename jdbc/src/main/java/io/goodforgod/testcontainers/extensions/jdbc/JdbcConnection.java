@@ -16,20 +16,36 @@ public interface JdbcConnection {
         R apply(@NotNull ResultSet currentRow) throws SQLException, E;
     }
 
+    interface Params {
+
+        @NotNull
+        String jdbcUrl();
+
+        @NotNull
+        String host();
+
+        int port();
+
+        @NotNull
+        String database();
+
+        String username();
+
+        String password();
+    }
+
+    /**
+     * @return connection parameters to container
+     */
     @NotNull
-    String host();
+    Params params();
 
-    int port();
-
+    /**
+     * @return connection parameters inside docker network, can be useful when one container require
+     *             params to connect to JDBC Database container inside docker network
+     */
     @NotNull
-    String database();
-
-    String username();
-
-    String password();
-
-    @NotNull
-    String jdbcUrl();
+    Optional<Params> paramsInNetwork();
 
     /**
      * @return new JDBC connection

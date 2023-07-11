@@ -12,15 +12,25 @@ import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension {
 
+    @Override
+    Class<? extends JdbcDatabaseContainer> getContainerType() {
+        return PostgreSQLContainer.class;
+    }
+
     @NotNull
     JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image)
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
+
+        var alias = "postgres-" + System.currentTimeMillis();
         return new PostgreSQLContainer<>(dockerImage)
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword("postgres")
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class)).withMdc("image", image))
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
+                        .withMdc("image", image)
+                        .withMdc("alias", alias))
+                .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED);
     }
 
@@ -35,6 +45,8 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
                 container.getHost(),
                 container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
+                container.getNetworkAliases().get(container.getNetworkAliases().size() - 1),
+                PostgreSQLContainer.POSTGRESQL_PORT,
                 container.getDatabaseName(),
                 container.getUsername(),
                 container.getPassword());

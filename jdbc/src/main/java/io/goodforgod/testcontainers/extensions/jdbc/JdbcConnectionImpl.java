@@ -15,15 +15,17 @@ import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-record JdbcConnectionImpl(String jdbcUrl,
-                          String host,
-                          int port,
-                          String database,
-                          String username,
-                          String password)
-        implements JdbcConnection {
+record JdbcConnectionImpl(Params params, Params network) implements JdbcConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
+
+    record ParamsImpl(String jdbcUrl,
+                      String host,
+                      int port,
+                      String database,
+                      String username,
+                      String password)
+            implements Params {}
 
     static JdbcConnection forProtocol(String driverProtocol,
                                       String host,
@@ -32,21 +34,33 @@ record JdbcConnectionImpl(String jdbcUrl,
                                       String username,
                                       String password) {
         var jdbcUrl = "jdbc:%s://%s:%d/%s".formatted(driverProtocol, host, port, database);
-        return new JdbcConnectionImpl(jdbcUrl, host, port, database, username, password);
+        var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
+        return new JdbcConnectionImpl(params, null);
     }
 
     static JdbcConnection forJDBC(String jdbcUrl,
                                   String host,
                                   int port,
+                                  String hostInNetwork,
+                                  Integer portInNetwork,
                                   String database,
                                   String username,
                                   String password) {
-        return new JdbcConnectionImpl(jdbcUrl, host, port, database, username, password);
+        var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
+        final Params network;
+        if (hostInNetwork == null) {
+            network = null;
+        } else {
+            var jdbcUrlInNetwork = jdbcUrl.replace(host + ":" + port, hostInNetwork + ":" + portInNetwork);
+            network = new ParamsImpl(jdbcUrlInNetwork, hostInNetwork, portInNetwork, database, username, password);
+        }
+
+        return new JdbcConnectionImpl(params, network);
     }
 
-    static JdbcConnection forJDBC(String jdbcUrl,
-                                  String username,
-                                  String password) {
+    static JdbcConnection forExternal(String jdbcUrl,
+                                      String username,
+                                      String password) {
         final URI uri = URI.create(jdbcUrl);
         var host = uri.getHost();
         var port = uri.getPort();
@@ -56,7 +70,13 @@ record JdbcConnectionImpl(String jdbcUrl,
                 ? uri.getPath()
                 : uri.getPath().substring(0, dbSeparator);
 
-        return new JdbcConnectionImpl(jdbcUrl, host, port, database, username, password);
+        var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
+        return new JdbcConnectionImpl(params, null);
+    }
+
+    @Override
+    public @NotNull Optional<Params> paramsInNetwork() {
+        return Optional.ofNullable(network);
     }
 
     @NotNull
@@ -64,7 +84,7 @@ record JdbcConnectionImpl(String jdbcUrl,
     public Connection open() {
         try {
             logger.debug("Opening SQL connection...");
-            return DriverManager.getConnection(jdbcUrl(), username, password);
+            return DriverManager.getConnection(params.jdbcUrl(), params.username(), params.username());
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);
         }
@@ -308,6 +328,6 @@ record JdbcConnectionImpl(String jdbcUrl,
 
     @Override
     public String toString() {
-        return jdbcUrl();
+        return params().jdbcUrl();
     }
 }

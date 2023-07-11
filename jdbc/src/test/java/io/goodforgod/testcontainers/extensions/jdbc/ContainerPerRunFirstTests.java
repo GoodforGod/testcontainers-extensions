@@ -19,7 +19,7 @@ class ContainerPerRunFirstTests {
     @Test
     void firstConnection(@ContainerJdbcConnection JdbcConnection connection) {
         assertNotNull(connection);
-        assertNotNull(connection.jdbcUrl());
+        assertNotNull(connection.params().jdbcUrl());
         assertNotNull(sameConnection);
         assertEquals(sameConnection, connection);
         if (perRunConnection == null) {
@@ -35,7 +35,7 @@ class ContainerPerRunFirstTests {
     @Test
     void secondConnection(@ContainerJdbcConnection JdbcConnection connection) {
         assertNotNull(connection);
-        assertNotNull(connection.jdbcUrl());
+        assertNotNull(connection.params().jdbcUrl());
         assertNotNull(sameConnection);
         assertEquals(sameConnection, connection);
         assertEquals(perRunConnection, connection);
