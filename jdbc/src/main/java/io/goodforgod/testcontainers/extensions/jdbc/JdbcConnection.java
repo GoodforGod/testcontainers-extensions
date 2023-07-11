@@ -43,9 +43,9 @@ public interface JdbcConnection {
     void execute(@NotNull @Language("SQL") String sql);
 
     /**
-     * @param pathToFileInResources path to SQL code to execute
+     * @param pathToResource path to SQL code to execute
      */
-    void executeFromResources(@NotNull String pathToFileInResources);
+    void executeFromResources(@NotNull String pathToResource);
 
     /**
      * @param sql       to execute and retrieve results from
@@ -88,21 +88,21 @@ public interface JdbcConnection {
     void assertCountsNone(@NotNull String tableName);
 
     /**
-     * Asserts that SELECT COUNT(*) in specified table counts at least minimal number expectedInTable
+     * Asserts that SELECT COUNT(*) in specified table counts at least minimal number expectedAtLeast
      * rows
      * 
      * @param tableName       to SELECT COUNT(*) in
-     * @param expectedInTable at least minimal number of rows expected
+     * @param expectedAtLeast at least minimal number of rows expected
      */
-    void assertCountsAtLeast(int expectedInTable, @NotNull String tableName);
+    void assertCountsAtLeast(int expectedAtLeast, @NotNull String tableName);
 
     /**
-     * Asserts that SELECT COUNT(*) in specified table counts exact number expectedInTable rows
+     * Asserts that SELECT COUNT(*) in specified table counts exact number expected rows
      * 
-     * @param tableName       to SELECT COUNT(*) in
-     * @param expectedInTable exact number of rows expected
+     * @param tableName to SELECT COUNT(*) in
+     * @param expected  exact number of rows expected
      */
-    void assertCountsExact(int expectedInTable, @NotNull String tableName);
+    void assertCountsEquals(int expected, @NotNull String tableName);
 
     /**
      * Asserts that executed SQL results in 0 rows
@@ -112,20 +112,20 @@ public interface JdbcConnection {
     void assertQueriesNone(@NotNull @Language("SQL") String sql);
 
     /**
-     * Asserts that executed SQL results in at least minimal number expectedInTable rows
+     * Asserts that executed SQL results in at least minimal number of expectedAtLeast rows
      * 
-     * @param sql          to execute
-     * @param expectedRows at least minimal number of rows expected
+     * @param sql             to execute
+     * @param expectedAtLeast at least minimal number of rows expected
      */
-    void assertQueriesAtLeast(int expectedRows, @NotNull @Language("SQL") String sql);
+    void assertQueriesAtLeast(int expectedAtLeast, @NotNull @Language("SQL") String sql);
 
     /**
-     * Asserts that executed SQL results in exact number of rows expected
+     * Asserts that executed SQL results in exact number of expected rows
      * 
-     * @param sql          to execute
-     * @param expectedRows exact number of rows expected
+     * @param sql      to execute
+     * @param expected exact number of rows expected
      */
-    void assertQueriesExact(int expectedRows, @NotNull @Language("SQL") String sql);
+    void assertQueriesEquals(int expected, @NotNull @Language("SQL") String sql);
 
     /**
      * Asserts that executed SQL results in any inserted entities
@@ -155,18 +155,18 @@ public interface JdbcConnection {
     boolean checkQueriesNone(@NotNull @Language("SQL") String sql);
 
     /**
-     * @param sql          to execute
-     * @param expectedRows at least minimal number of rows expected
-     * @return true if executed SQL results in at least minimal number expectedInTable rows
+     * @param sql             to execute
+     * @param expectedAtLeast at least minimal number of rows expected
+     * @return true if executed SQL results in at least minimal number expectedAtLeast rows
      */
-    boolean checkQueriesAtLeast(int expectedRows, @NotNull @Language("SQL") String sql);
+    boolean checkQueriesAtLeast(int expectedAtLeast, @NotNull @Language("SQL") String sql);
 
     /**
-     * @param sql          to execute
-     * @param expectedRows exact number of rows expected
-     * @return true if executed SQL results in exact number of rows expected
+     * @param sql      to execute
+     * @param expected exact number of rows expected
+     * @return true if executed SQL results in exact number of expected rows
      */
-    boolean checkQueriesExact(int expectedRows, @NotNull @Language("SQL") String sql);
+    boolean checkQueriesEquals(int expected, @NotNull @Language("SQL") String sql);
 
     /**
      * @param sql to execute

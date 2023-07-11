@@ -82,16 +82,16 @@ record JdbcConnectionImpl(String jdbcUrl,
     }
 
     @Override
-    public void executeFromResources(@NotNull String pathToFileInResources) {
-        logger.debug("Loading file from resources with path: {}", pathToFileInResources);
-        var resourceAsString = loadStringFromResources(pathToFileInResources)
-                .orElseThrow(() -> new IllegalArgumentException("Couldn't find resource with path: " + pathToFileInResources));
+    public void executeFromResources(@NotNull String pathToResource) {
+        logger.debug("Loading file from resources with path: {}", pathToResource);
+        var resourceAsString = loadStringFromResources(pathToResource)
+                .orElseThrow(() -> new IllegalArgumentException("Couldn't find resource with path: " + pathToResource));
         execute(resourceAsString);
     }
 
     private Optional<String> loadStringFromResources(String path) {
         try {
-            try (var resource = getClass().getClassLoader().getResourceAsStream("file.txt")) {
+            try (var resource = JdbcConnectionImpl.class.getClassLoader().getResourceAsStream(path)) {
                 if (resource == null) {
                     return Optional.empty();
                 } else {
@@ -106,40 +106,28 @@ record JdbcConnectionImpl(String jdbcUrl,
 
     @Override
     public int count(@NotNull String tableName) {
-        return queryOne("SELECT COUNT(*) FROM " + tableName, rs -> rs.getInt(0)).orElse(0);
+        return queryOne("SELECT COUNT(*) FROM " + tableName, rs -> rs.getInt(1)).orElse(0);
     }
 
     @Override
     public void assertCountsNone(@NotNull String tableName) {
-        assertCountsExact(0, tableName);
+        assertCountsEquals(0, tableName);
     }
 
     @Override
-    public void assertCountsAtLeast(int expectedInTable, @NotNull String tableName) {
-        final String sql = "SELECT COUNT(*) FROM " + tableName;
-        assertQuery(sql, rs -> {
-            int counter = 0;
-            while (rs.next() && counter < expectedInTable) {
-                counter++;
-            }
-
-            Assertions.assertEquals(expectedInTable, counter, "Expected to count in '%s' table at least %s rows but received %s"
-                    .formatted(tableName, expectedInTable, counter));
-        });
+    public void assertCountsAtLeast(int expectedAtLeast, @NotNull String tableName) {
+        final int count = count(tableName);
+        if (count < expectedAtLeast) {
+            Assertions.assertEquals(expectedAtLeast, count, "Expected to count in '%s' table at least %s rows but received %s"
+                    .formatted(tableName, expectedAtLeast, count));
+        }
     }
 
     @Override
-    public void assertCountsExact(int expectedInTable, @NotNull String tableName) {
-        final String sql = "SELECT COUNT(*) FROM " + tableName;
-        assertQuery(sql, rs -> {
-            int counter = 0;
-            while (rs.next()) {
-                counter++;
-            }
-
-            Assertions.assertEquals(expectedInTable, counter, "Expected to count in '%s' table %s rows but received %s"
-                    .formatted(tableName, expectedInTable, counter));
-        });
+    public void assertCountsEquals(int expected, @NotNull String tableName) {
+        final int count = count(tableName);
+        Assertions.assertEquals(expected, count, "Expected to count in '%s' table %s rows but received %s"
+                .formatted(tableName, expected, count));
     }
 
     @Override
@@ -195,33 +183,33 @@ record JdbcConnectionImpl(String jdbcUrl,
 
     @Override
     public void assertQueriesNone(@NotNull String sql) {
-        assertQueriesExact(0, sql);
+        assertQueriesEquals(0, sql);
     }
 
     @Override
-    public void assertQueriesAtLeast(int expectedRows, @NotNull String sql) {
+    public void assertQueriesAtLeast(int expectedAtLeast, @NotNull String sql) {
         assertQuery(sql, rs -> {
             int counter = 0;
-            while (rs.next() && counter < expectedRows) {
+            while (rs.next() && counter < expectedAtLeast) {
                 counter++;
             }
 
-            Assertions.assertEquals(expectedRows, counter,
+            Assertions.assertEquals(expectedAtLeast, counter,
                     "Expected to query at least %s rows but received %s for SQL: %s".formatted(
-                            expectedRows, counter, sql.replace("\n", " ")));
+                            expectedAtLeast, counter, sql.replace("\n", " ")));
         });
     }
 
     @Override
-    public void assertQueriesExact(int expectedRows, @NotNull String sql) {
+    public void assertQueriesEquals(int expected, @NotNull String sql) {
         assertQuery(sql, rs -> {
             int counter = 0;
             while (rs.next()) {
                 counter++;
             }
 
-            Assertions.assertEquals(expectedRows, counter, "Expected to query %s rows but received %s for SQL: %s".formatted(
-                    expectedRows, counter, sql.replace("\n", " ")));
+            Assertions.assertEquals(expected, counter, "Expected to query %s rows but received %s for SQL: %s".formatted(
+                    expected, counter, sql.replace("\n", " ")));
         });
     }
 
@@ -269,30 +257,30 @@ record JdbcConnectionImpl(String jdbcUrl,
 
     @Override
     public boolean checkQueriesNone(@NotNull String sql) {
-        return checkQueriesExact(0, sql);
+        return checkQueriesEquals(0, sql);
     }
 
     @Override
-    public boolean checkQueriesAtLeast(int expectedRows, @NotNull String sql) {
+    public boolean checkQueriesAtLeast(int expectedAtLeast, @NotNull String sql) {
         return checkQuery(sql, rs -> {
             int counter = 0;
-            while (rs.next() && counter < expectedRows) {
+            while (rs.next() && counter < expectedAtLeast) {
                 counter++;
             }
 
-            return expectedRows == counter;
+            return expectedAtLeast == counter;
         });
     }
 
     @Override
-    public boolean checkQueriesExact(int expectedRows, @NotNull String sql) {
+    public boolean checkQueriesEquals(int expected, @NotNull String sql) {
         return checkQuery(sql, rs -> {
             int counter = 0;
             while (rs.next()) {
                 counter++;
             }
 
-            return expectedRows == counter;
+            return expected == counter;
         });
     }
 
