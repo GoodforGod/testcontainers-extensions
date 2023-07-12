@@ -26,7 +26,7 @@ public @interface Migration {
     Mode drop();
 
     /**
-     * @return will be by default "classpath:db/migration" for FlyWay and "db/migration/changelog.sql"
+     * @return will be by default "classpath:db/migration" for Flyway and "db/migration/changelog.sql"
      *             for Liquibase
      */
     String[] migrations() default {};
