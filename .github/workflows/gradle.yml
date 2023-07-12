@@ -2,19 +2,21 @@ name: Java CI
 
 on:
   push:
+    paths:
+      - '**/java/**'
+      - '*.java'
+      - '*.gradle'
+      - '*.properties'
     branches:
       - master
-  pull_request:
-    branches:
-      - master
-      - dev
+#  pull_request:
+#    branches:
+#      - master
+#      - dev
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     strategy:
       matrix:
         java: [ '17' ]
@@ -22,45 +24,45 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            src:
-              - '**/java/**'
-              - '*.java'
-              - '*.gradle'
-              - '*.properties'
-            codestyle:
-              - 'config/codestyle.xml'
       - name: Set up JDK
         uses: actions/setup-java@v3
-
         with:
           java-version: ${{ matrix.java }}
           distribution: 'adopt'
 
       - name: Code Style
-        if: steps.filter.outputs.src == 'true' || steps.filter.outputs.codestyle == 'true'
         run: ./gradlew spotlessCheck
 
       - name: Build
-        if: steps.filter.outputs.src == 'true'
         run: ./gradlew classes
 
       - name: Test
-        if: steps.filter.outputs.src == 'true'
         run: ./gradlew test jacocoTestReport testCodeCoverageReport
 
+
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    name: Java Publish Snapshot
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+
+        with:
+          java-version: '17'
+          distribution: 'adopt'
       - name: SonarQube
-        if: steps.filter.outputs.src == 'true' && matrix.java == '17'
+        if: matrix.java == '17'
         run: ./gradlew sonar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Publish Snapshot
-        if: steps.filter.outputs.src == 'true' && matrix.java == '17'
+        if: matrix.java == '17'
         run: ./gradlew publish closeAndReleaseStagingRepository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

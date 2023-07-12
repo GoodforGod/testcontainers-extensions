@@ -124,7 +124,6 @@ nexusPublishing {
         sonatype {
             username = System.getenv("OSS_USERNAME")
             password = System.getenv("OSS_PASSWORD")
-
         }
     }
 
