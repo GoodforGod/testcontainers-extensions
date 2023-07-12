@@ -7,13 +7,3 @@ dependencies {
     implementation libs.junit.engine
     implementation libs.junit.api
 }
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            pom {
-                description = "Testcontainers Postgres Extension with advanced testing features"
-            }
-        }
-    }
-}
