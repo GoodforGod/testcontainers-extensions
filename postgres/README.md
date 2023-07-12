@@ -32,7 +32,14 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.1.0"
 
 Java 17 baseline.
 
-## Usage
+## Content
+- [Container usage](#container-usage)
+    - [Preconfigured container](#preconfigured-container)
+- [Connection](#connection)
+    - [External Connection](#external-connection)
+- [Migration](#migration)
+
+## Container usage
 
 `@TestcontainersJdbc` - provides container start in different modes per test class.
 
@@ -53,7 +60,7 @@ class ExampleTests {
 }
 ```
 
-#### Pre configured instance
+### Preconfigured container
 
 Container instance can be used by extensions via `@ContainerJdbc` annotation.
 
@@ -77,7 +84,7 @@ class ExampleTests {
 }
 ```
 
-### Connection
+## Connection
 
 `JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerJdbcConnection` annotation.
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc.
@@ -101,7 +108,25 @@ class ExampleTests {
 }
 ```
 
-### Migration
+### External Connection
+
+In case you want to use some external Postgres instance that is running in CI or other place for tests, you can use special environment variables
+and extension will use them to propagate connection and no Postgres containers will be running in such case.
+
+Special environment variables:
+- `EXTERNAL_POSTGRES_JDBC_URL` - Postgres instance JDBC url.
+- `EXTERNAL_POSTGRES_USERNAME` - Postgres username (optional).
+- `EXTERNAL_POSTGRES_PASSWORD` - Postgres password (optional).
+- `EXTERNAL_POSTGRES_HOST` - Postgres instance host.
+- `EXTERNAL_POSTGRES_PORT` - Postgres instance port.
+- `EXTERNAL_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default)
+
+Use can use either `EXTERNAL_POSTGRES_JDBC_URL` to specify connection with username & password combination
+or use combination of `EXTERNAL_POSTGRES_HOST` & `EXTERNAL_POSTGRES_PORT` & `EXTERNAL_POSTGRES_DATABASE`.
+
+`EXTERNAL_POSTGRES_JDBC_URL` env have higher priority over host & port & database.
+
+## Migration
 
 `@Migrations` allow easily migrate database between test executions and drop after tests.
 
