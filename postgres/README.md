@@ -1,9 +1,10 @@
 # Testcontainers Extensions Postgres
 
-[![GitHub Action](https://github.com/goodforgod/testcontainers-extensions-postgres/workflows/Java%20CI/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions-postgres/actions?query=workflow%3A%22Java+CI%22)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions-postgres&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions-postgres)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions-postgres&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions-postgres)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions-postgres&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions-postgres)
+[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Java%20CI/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A%22Java+CI%22)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 
 Testcontainers Postgres Extension with advanced testing features.
 
@@ -28,6 +29,8 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.1.0"
     <scope>test</scope>
 </dependency>
 ```
+
+Java 17 baseline.
 
 ## Usage
 
