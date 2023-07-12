@@ -6,10 +6,7 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 
-Template for Java library.
+Testcontainers Extensions with advanced testing features.
 
-## Features
-- Spotless for Code Style and Formatting.
-- .gitignore and .gitattributes for proper ignore and symbols check.
-- .editorconfig for simple configs code style and encoding UTF-8.
-- Proper Gradle and Gradle Wrapper configuration.
+## Featured extensions
+- [Postgres](postgres)
