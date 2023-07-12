@@ -37,14 +37,14 @@ jobs:
 
       - name: SonarQube
         if: matrix.java == '17'
-        run: ./gradlew sonarqube
+        run: ./gradlew sonar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Publish Snapshot
         if: matrix.java == '17'
-        run: ./gradlew generatePomFileForMavenJavaPublication closeAndReleaseStagingRepository
+        run: ./gradlew publish closeAndReleaseStagingRepository
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSS_SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSS_SIGNING_PASSWORD }}
