@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ "17" ]
+        java: [ '17' ]
     name: Java ${{ matrix.java }} setup
 
     steps:
@@ -24,7 +24,7 @@ jobs:
 
         with:
           java-version: ${{ matrix.java }}
-          distribution: "adopt"
+          distribution: 'adopt'
 
       - name: Code Style
         run: ./gradlew spotlessCheck
@@ -36,14 +36,14 @@ jobs:
         run: ./gradlew test jacocoTestReport testCodeCoverageReport
 
       - name: SonarQube
-        if: matrix.java == "17"
+        if: matrix.java == '17'
         run: ./gradlew sonarqube
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Publish Snapshot
-        if: matrix.java == "17"
+        if: matrix.java == '17'
         run: ./gradlew generatePomFileForMavenJavaPublication closeAndReleaseStagingRepository
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSS_SIGNING_KEY }}
