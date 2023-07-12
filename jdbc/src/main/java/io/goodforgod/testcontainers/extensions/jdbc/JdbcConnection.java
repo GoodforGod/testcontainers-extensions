@@ -7,15 +7,28 @@ import java.util.List;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
+/**
+ * Describes active JDBC connection of currently running {@link JdbcDatabaseContainer}
+ */
 public interface JdbcConnection {
 
     @FunctionalInterface
     interface ResultSetMapper<R, E extends Throwable> {
 
+        /**
+         * @param currentRow to map
+         * @return mapped value from row
+         * @throws SQLException if sql data manipulation error occurred
+         * @throws E            if mapping error occurred
+         */
         R apply(@NotNull ResultSet currentRow) throws SQLException, E;
     }
 
+    /**
+     * JDBC connection parameters
+     */
     interface Params {
 
         @NotNull

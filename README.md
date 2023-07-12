@@ -8,5 +8,7 @@
 
 Testcontainers Extensions with advanced testing features.
 
+Java 17 baseline.
+
 ## Featured extensions
 - [Postgres](postgres)

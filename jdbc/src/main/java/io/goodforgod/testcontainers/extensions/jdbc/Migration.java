@@ -5,6 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Describes database container migrations between test executions
+ */
 @Documented
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
@@ -31,11 +34,24 @@ public @interface Migration {
      */
     String[] migrations() default {};
 
+    /**
+     * Database migration engine implementation
+     */
     enum Engines {
+        /**
+         * <a href=
+         * "https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html">Flyway</a>
+         */
         FLYWAY,
+        /**
+         * <a href="https://docs.liquibase.com/concepts/introduction-to-liquibase.html">Liquibase</a>
+         */
         LIQUIBASE
     }
 
+    /**
+     * apply / drop mode execution
+     */
     enum Mode {
         /**
          * Indicates that will not run if specified

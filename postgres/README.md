@@ -37,7 +37,7 @@ Java 17 baseline.
 `@TestcontainersJdbc` - provides container start in different modes per test class.
 
 Available containers modes:
-- `PER_RUN` - start container one time per test execution. (Containers with mode `PER_RUN` should have same image to be reused between test classes)
+- `PER_RUN` - start container one time per test execution. (Containers should have same image to be reused between test classes)
 - `PER_CLASS` - start new container each test class.
 - `PER_METHOD` - start new container each test method.
 
@@ -104,7 +104,11 @@ class ExampleTests {
 ### Migration
 
 `@Migrations` allow easily migrate database between test executions and drop after tests.
-`apply` parameter configures migration mode and `drop` configures when to reset/drop/clear database.
+
+Annotation parameters:
+- `engine` - to use for migration.
+- `apply` - parameter configures migration mode.
+- `drop` - configures when to reset/drop/clear database.
 
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html)
