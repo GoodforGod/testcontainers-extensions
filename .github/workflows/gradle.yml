@@ -22,6 +22,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - '**/java/**'
+              - '*.java'
+              - '*.gradle'
+              - '*.properties'
+            codestyle:
+              - 'config/codestyle.xml'
       - name: Set up JDK
         uses: actions/setup-java@v3
 
@@ -30,23 +41,26 @@ jobs:
           distribution: 'adopt'
 
       - name: Code Style
+        if: steps.filter.outputs.src == 'true' || steps.filter.outputs.codestyle == 'true'
         run: ./gradlew spotlessCheck
 
       - name: Build
+        if: steps.filter.outputs.src == 'true'
         run: ./gradlew classes
 
       - name: Test
+        if: steps.filter.outputs.src == 'true'
         run: ./gradlew test jacocoTestReport testCodeCoverageReport
 
       - name: SonarQube
-        if: matrix.java == '17'
+        if: steps.filter.outputs.src == 'true' && matrix.java == '17'
         run: ./gradlew sonar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Publish Snapshot
-        if: matrix.java == '17'
+        if: steps.filter.outputs.src == 'true' && matrix.java == '17'
         run: ./gradlew publish closeAndReleaseStagingRepository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
