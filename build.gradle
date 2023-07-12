@@ -153,13 +153,13 @@ subprojects {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
-                artifactId = "testcontainers-extensions-$artifactId"
+                artifactId = "$artifactRootId-${project.name}"
 
-                var nameFromArtifact = artifactId
+                var artifactName = artifactId
                 pom {
                     url = "https://github.com/GoodforGod/$artifactRootId"
-                    name = nameFromArtifact
-                    description = "Testcontainers ${nameFromArtifact.capitalize()} Extension with advanced testing features"
+                    name = artifactName
+                    description = "Testcontainers ${artifactName.capitalize()} Extension with advanced testing features"
 
                     license {
                         name = "Apache License 2.0"
@@ -184,12 +184,21 @@ subprojects {
         }
         repositories {
             maven {
+                name = "OSSRH"
                 def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
                 def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                 url = version.endsWith("SNAPSHOT") ? snapshotsRepoUrl : releasesRepoUrl
                 credentials {
                     username System.getenv("OSS_USERNAME")
                     password System.getenv("OSS_PASSWORD")
+                }
+            }
+            maven {
+                name = "GitHubPackages"
+                url = "https://maven.pkg.github.com/goodforgod/$artifactRootId"
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
                 }
             }
         }
