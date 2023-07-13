@@ -6,7 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Extension annotation that is used to extend {@link PostgreSQLContainer} capabilities
+ * Extension that is running {@link PostgreSQLContainer} for tests in different modes with database
+ * schema migration support between test executions
  */
 @Order(Order.DEFAULT - 100) // Run before other extensions
 @ExtendWith(TestcontainersPostgresExtension.class)

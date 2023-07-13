@@ -1,4 +1,4 @@
-name: Test Pull Request
+name: Pull Request
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         java: [ '17' ]
-    name: Java ${{ matrix.java }} Pull Request testing setup
+    name: Java ${{ matrix.java }} Pull Request setup
 
     steps:
       - uses: actions/checkout@v3

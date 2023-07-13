@@ -13,7 +13,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Java Publish Master Snapshot
+    name: Publish Snapshot
 
     steps:
       - uses: actions/checkout@v3
@@ -37,13 +37,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Cleanup Previous Snapshots
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'testcontainers-extensions'
-          package-type: 'maven'
-          ignore-versions: '^\\d+\\.\\d+\\.\\d+$'
 
       - name: Publish Snapshot
         run: ./gradlew publish closeAndReleaseStagingRepository

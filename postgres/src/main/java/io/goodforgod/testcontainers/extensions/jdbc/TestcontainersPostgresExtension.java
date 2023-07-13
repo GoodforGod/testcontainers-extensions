@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import java.lang.annotation.Annotation;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -14,20 +15,30 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
 
     private static final String PROTOCOL = "postgresql";
 
-    private static final String EXTERNAL_JDBC_URL = "EXTERNAL_POSTGRES_URL";
-    private static final String EXTERNAL_JDBC_USERNAME = "EXTERNAL_POSTGRES_USERNAME";
-    private static final String EXTERNAL_JDBC_PASSWORD = "EXTERNAL_POSTGRES_PASSWORD";
-    private static final String EXTERNAL_JDBC_HOST = "EXTERNAL_POSTGRES_HOST";
-    private static final String EXTERNAL_JDBC_PORT = "EXTERNAL_POSTGRES_PORT";
-    private static final String EXTERNAL_JDBC_DATABASE = "EXTERNAL_POSTGRES_DATABASE";
+    private static final String EXTERNAL_TEST_JDBC_URL = "EXTERNAL_TEST_POSTGRES_URL";
+    private static final String EXTERNAL_TEST_JDBC_USERNAME = "EXTERNAL_TEST_POSTGRES_USERNAME";
+    private static final String EXTERNAL_TEST_JDBC_PASSWORD = "EXTERNAL_TEST_POSTGRES_PASSWORD";
+    private static final String EXTERNAL_TEST_JDBC_HOST = "EXTERNAL_TEST_POSTGRES_HOST";
+    private static final String EXTERNAL_TEST_JDBC_PORT = "EXTERNAL_TEST_POSTGRES_PORT";
+    private static final String EXTERNAL_TEST_JDBC_DATABASE = "EXTERNAL_TEST_POSTGRES_DATABASE";
 
     @Override
-    Class<? extends JdbcDatabaseContainer> getContainerType() {
+    protected Class<? extends JdbcDatabaseContainer> getContainerType() {
         return PostgreSQLContainer.class;
     }
 
+    @Override
+    protected Class<? extends Annotation> getContainerAnnotation() {
+        return ContainerPostgres.class;
+    }
+
+    @Override
+    protected Class<? extends Annotation> getConnectionAnnotation() {
+        return ContainerPostgresConnection.class;
+    }
+
     @NotNull
-    JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
+    protected JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image)
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
@@ -44,13 +55,13 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
     }
 
     @NotNull
-    Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersPostgres.class, context)
                 .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container) {
+    protected JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container) {
         final String alias = container.getNetworkAliases().stream()
                 .filter(a -> a.startsWith("postgres"))
                 .findFirst()
@@ -70,14 +81,14 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
     }
 
     @NotNull
-    Optional<JdbcConnection> getConnectionExternal() {
-        var url = System.getenv(EXTERNAL_JDBC_URL);
-        var host = System.getenv(EXTERNAL_JDBC_HOST);
-        var port = System.getenv(EXTERNAL_JDBC_PORT);
-        var user = System.getenv(EXTERNAL_JDBC_USERNAME);
-        var password = System.getenv(EXTERNAL_JDBC_PASSWORD);
+    protected Optional<JdbcConnection> getConnectionExternal() {
+        var url = System.getenv(EXTERNAL_TEST_JDBC_URL);
+        var host = System.getenv(EXTERNAL_TEST_JDBC_HOST);
+        var port = System.getenv(EXTERNAL_TEST_JDBC_PORT);
+        var user = System.getenv(EXTERNAL_TEST_JDBC_USERNAME);
+        var password = System.getenv(EXTERNAL_TEST_JDBC_PASSWORD);
 
-        var db = Optional.ofNullable(System.getenv(EXTERNAL_JDBC_DATABASE)).orElse("postgres");
+        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_JDBC_DATABASE)).orElse("postgres");
         if (url != null) {
             if (host != null && port != null) {
                 return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));

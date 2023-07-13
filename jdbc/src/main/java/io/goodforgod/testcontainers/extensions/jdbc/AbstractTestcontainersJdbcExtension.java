@@ -19,6 +19,7 @@ import liquibase.database.DatabaseFactory;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.flywaydb.core.Flyway;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
@@ -31,6 +32,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
+@Internal
 abstract class AbstractTestcontainersJdbcExtension implements
         BeforeAllCallback,
         BeforeEachCallback,
@@ -50,10 +52,25 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
     private record ExtensionContainer(JdbcDatabaseContainer<?> container, JdbcConnection connection) {}
 
-    private Optional<JdbcDatabaseContainer<?>> getContainerFromField(ExtensionContext context) {
+    protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
+        Optional<ExtensionContext> current = Optional.of(context);
+        while (current.isPresent()) {
+            final Optional<T> annotation = AnnotationSupport.findAnnotation(current.get().getRequiredTestClass(), annotationType);
+            if (annotation.isPresent()) {
+                return annotation;
+            }
+
+            current = current.get().getParent();
+        }
+
+        return Optional.empty();
+    }
+
+    protected Optional<JdbcDatabaseContainer<?>> getContainerFromField(ExtensionContext context) {
         logger.debug("Looking for JDBC Container...");
+        final Class<? extends Annotation> containerAnnotation = getContainerAnnotation();
         return ReflectionUtils.findFields(context.getRequiredTestClass(),
-                f -> !f.isSynthetic() && f.getAnnotation(ContainerJdbc.class) != null,
+                f -> !f.isSynthetic() && f.getAnnotation(containerAnnotation) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
                 .findFirst()
@@ -69,30 +86,20 @@ abstract class AbstractTestcontainersJdbcExtension implements
                                 } else {
                                     throw new IllegalArgumentException(
                                             "Field '%s' annotated with @%s value must be instance of %s".formatted(
-                                                    field.getName(), ContainerJdbc.class.getSimpleName(), containerType));
+                                                    field.getName(), containerAnnotation.getSimpleName(), containerType));
                                 }
                             } catch (IllegalAccessException e) {
                                 throw new IllegalStateException("Failed retrieving value from field '%s' annotated with @%s"
-                                        .formatted(field.getName(), ContainerJdbc.class.getSimpleName()), e);
+                                        .formatted(field.getName(), containerAnnotation.getSimpleName()), e);
                             }
                         }));
     }
 
-    protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
-        Optional<ExtensionContext> current = Optional.of(context);
-        while (current.isPresent()) {
-            final Optional<T> annotation = AnnotationSupport.findAnnotation(current.get().getRequiredTestClass(), annotationType);
-            if (annotation.isPresent()) {
-                return annotation;
-            }
-
-            current = current.get().getParent();
-        }
-
-        return Optional.empty();
-    }
-
     abstract Class<? extends JdbcDatabaseContainer> getContainerType();
+
+    abstract Class<? extends Annotation> getContainerAnnotation();
+
+    abstract Class<? extends Annotation> getConnectionAnnotation();
 
     @NotNull
     abstract JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image);
@@ -214,11 +221,12 @@ abstract class AbstractTestcontainersJdbcExtension implements
     }
 
     private void injectSqlConnection(JdbcConnection connection, ExtensionContext context) {
+        var connectionAnnotation = getConnectionAnnotation();
         var connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic()
                         && !Modifier.isFinal(f.getModifiers())
                         && !Modifier.isStatic(f.getModifiers())
-                        && f.getAnnotation(ContainerJdbcConnection.class) != null,
+                        && f.getAnnotation(connectionAnnotation) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
         logger.debug("Starting field injection for connection: {}", connection);
@@ -229,7 +237,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
                     field.set(instance, connection);
                 } catch (IllegalAccessException e) {
                     throw new IllegalStateException("Field '%s' annotated with @%s can't set connection".formatted(
-                            field.getName(), ContainerJdbcConnection.class.getSimpleName()), e);
+                            field.getName(), connectionAnnotation.getSimpleName()), e);
                 }
             }
         });
@@ -411,8 +419,9 @@ abstract class AbstractTestcontainersJdbcExtension implements
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        final Class<? extends Annotation> connectionAnnotation = getConnectionAnnotation();
         final boolean foundSuitable = parameterContext.getDeclaringExecutable() instanceof Method
-                && parameterContext.getParameter().getAnnotation(ContainerJdbcConnection.class) != null;
+                && parameterContext.getParameter().getAnnotation(connectionAnnotation) != null;
 
         if (!foundSuitable) {
             return false;
@@ -420,7 +429,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
         if (!parameterContext.getParameter().getType().equals(JdbcConnection.class)) {
             throw new ExtensionConfigurationException("Parameter '%s' annotated @%s is not of type %s".formatted(
-                    parameterContext.getParameter().getName(), ContainerJdbcConnection.class.getSimpleName(),
+                    parameterContext.getParameter().getName(), connectionAnnotation.getSimpleName(),
                     JdbcConnection.class));
         }
 

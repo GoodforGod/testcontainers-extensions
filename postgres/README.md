@@ -41,7 +41,7 @@ Java 17 baseline.
 
 ## Container usage
 
-`@TestcontainersJdbc` - provides container start in different modes per test class.
+`@TestcontainersPostgres` - provides container start in different modes per test class.
 
 Available containers modes:
 - `PER_RUN` - start container one time per test execution. (Containers should have same image to be reused between test classes)
@@ -50,11 +50,11 @@ Available containers modes:
 
 Simple example on how to start container per class:
 ```java
-@TestcontainersJdbc(mode = ContainerMode.PER_CLASS)
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
     @Test
-    void test(@ContainerJdbcConnection JdbcConnection connection) {
+    void test(@ContainerPostgresConnection JdbcConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -62,21 +62,21 @@ class ExampleTests {
 
 ### Preconfigured container
 
-Container instance can be used by extensions via `@ContainerJdbc` annotation.
+Container instance can be used by extensions via `@ContainerPostgres` annotation.
 
 Example:
 ```java
-@TestcontainersJdbc(mode = ContainerMode.PER_CLASS)
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
-    @ContainerJdbc
+    @ContainerPostgres
     private static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>()
             .withDatabaseName("user")
             .withUsername("user")
             .withPassword("user");
     
     @Test
-    void test(@ContainerJdbcConnection JdbcConnection connection) {
+    void test(@ContainerPostgresConnection JdbcConnection connection) {
         assertEquals("user", connection.params().database());
         assertEquals("user", connection.params().username());
         assertEquals("user", connection.params().password());
@@ -86,19 +86,19 @@ class ExampleTests {
 
 ## Connection
 
-`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerJdbcConnection` annotation.
+`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerPostgresConnection` annotation.
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc.
 
 Example:
 ```java
-@TestcontainersJdbc(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
 class ExampleTests {
 
-    @ContainerJdbcConnection
+    @ContainerPostgresConnection
     private JdbcConnection connectionInField;
 
     @Test
-    void test(@ContainerJdbcConnection JdbcConnection connectionInParam) {
+    void test(@ContainerPostgresConnection JdbcConnection connectionInParam) {
         connection.execute("CREATE TABLE users (id INT NOT NULL PRIMARY KEY);");
         connection.execute("INSERT INTO users VALUES(1);");
         connection.execute("INSERT INTO users VALUES(2);");
@@ -114,17 +114,17 @@ In case you want to use some external Postgres instance that is running in CI or
 and extension will use them to propagate connection and no Postgres containers will be running in such case.
 
 Special environment variables:
-- `EXTERNAL_POSTGRES_JDBC_URL` - Postgres instance JDBC url.
-- `EXTERNAL_POSTGRES_USERNAME` - Postgres username (optional).
-- `EXTERNAL_POSTGRES_PASSWORD` - Postgres password (optional).
-- `EXTERNAL_POSTGRES_HOST` - Postgres instance host.
-- `EXTERNAL_POSTGRES_PORT` - Postgres instance port.
-- `EXTERNAL_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default)
+- `EXTERNAL_TEST_POSTGRES_JDBC_URL` - Postgres instance JDBC url.
+- `EXTERNAL_TEST_POSTGRES_USERNAME` - Postgres username (optional).
+- `EXTERNAL_TEST_POSTGRES_PASSWORD` - Postgres password (optional).
+- `EXTERNAL_TEST_POSTGRES_HOST` - Postgres instance host.
+- `EXTERNAL_TEST_POSTGRES_PORT` - Postgres instance port.
+- `EXTERNAL_TEST_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default)
 
-Use can use either `EXTERNAL_POSTGRES_JDBC_URL` to specify connection with username & password combination
-or use combination of `EXTERNAL_POSTGRES_HOST` & `EXTERNAL_POSTGRES_PORT` & `EXTERNAL_POSTGRES_DATABASE`.
+Use can use either `EXTERNAL_TEST_POSTGRES_JDBC_URL` to specify connection with username & password combination
+or use combination of `EXTERNAL_TEST_POSTGRES_HOST` & `EXTERNAL_TEST_POSTGRES_PORT` & `EXTERNAL_TEST_POSTGRES_DATABASE`.
 
-`EXTERNAL_POSTGRES_JDBC_URL` env have higher priority over host & port & database.
+`EXTERNAL_TEST_POSTGRES_JDBC_URL` env have higher priority over host & port & database.
 
 ## Migration
 
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS users
 
 Test with container and migration per method will look like:
 ```java
-@TestcontainersJdbc(mode = ContainerMode.PER_CLASS,
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
@@ -157,7 +157,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ContainerJdbcConnection JdbcConnection connectionInParam) {
+    void test(@ContainerPostgresConnection JdbcConnection connectionInParam) {
         connection.execute("INSERT INTO users VALUES(1);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
         assertEquals(1, usersFound.size());

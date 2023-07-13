@@ -10,11 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Internal
 record JdbcConnectionImpl(Params params, Params network) implements JdbcConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);

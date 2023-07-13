@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import java.lang.annotation.Annotation;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -13,12 +14,22 @@ import org.testcontainers.utility.DockerImageName;
 final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension {
 
     @Override
-    Class<? extends JdbcDatabaseContainer> getContainerType() {
+    protected Class<? extends JdbcDatabaseContainer> getContainerType() {
         return PostgreSQLContainer.class;
     }
 
+    @Override
+    protected Class<? extends Annotation> getContainerAnnotation() {
+        return ContainerJdbc.class;
+    }
+
+    @Override
+    protected Class<? extends Annotation> getConnectionAnnotation() {
+        return ContainerJdbcConnection.class;
+    }
+
     @NotNull
-    JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
+    protected JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image)
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
@@ -35,13 +46,13 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
     }
 
     @NotNull
-    Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersJdbc.class, context)
                 .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container) {
+    protected JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container) {
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
                 container.getHost(),
                 container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
@@ -54,7 +65,7 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
 
     @Override
     @NotNull
-    Optional<JdbcConnection> getConnectionExternal() {
+    protected Optional<JdbcConnection> getConnectionExternal() {
         return Optional.empty();
     }
 }
