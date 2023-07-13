@@ -4,12 +4,10 @@ import java.lang.annotation.*;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Indicates that already instantiated annotated field with type {@link PostgreSQLContainer}
- * should be used by extension rather than creating default one
+ * Indicates that annotated field containers {@link PostgreSQLContainer} instance
+ * that should be used by {@link TestcontainersPostgres} rather than creating default container
  */
 @Documented
 @Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ContainerPostgres {
-
-}
+public @interface ContainerPostgres {}

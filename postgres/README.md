@@ -1,12 +1,13 @@
 # Testcontainers Extensions Postgres
 
 [![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Java%20CI/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A%22Java+CI%22)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 
-Testcontainers Postgres Extension with advanced testing features.
+Testcontainers Postgres Extension with advanced testing capabilities.
 
 Features:
 - Container easy run *per method*, *per class*, *per execution*.
@@ -33,20 +34,20 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.1.0"
 Java 17 baseline.
 
 ## Content
-- [Container usage](#container-usage)
-    - [Preconfigured container](#preconfigured-container)
+- [Container](#container)
+  - [Preconfigured container](#preconfigured-container)
 - [Connection](#connection)
-    - [External Connection](#external-connection)
+  - [External Connection](#external-connection)
 - [Migration](#migration)
 
-## Container usage
+## Container
 
 `@TestcontainersPostgres` - provides container start in different modes per test class.
 
 Available containers modes:
-- `PER_RUN` - start container one time per test execution. (Containers should have same image to be reused between test classes)
-- `PER_CLASS` - start new container each test class.
-- `PER_METHOD` - start new container each test method.
+- `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
+- `PER_CLASS` - start new container each *test class*.
+- `PER_METHOD` - start new container each *test method*.
 
 Simple example on how to start container per class:
 ```java
@@ -59,6 +60,8 @@ class ExampleTests {
     }
 }
 ```
+
+It is possible to customize image with annotation `image` parameter.
 
 ### Preconfigured container
 
@@ -87,7 +90,7 @@ class ExampleTests {
 ## Connection
 
 `JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerPostgresConnection` annotation.
-`JdbcConnection` provides connection parameters, useful asserts, checks, etc.
+`JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
 ```java
@@ -101,17 +104,18 @@ class ExampleTests {
     void test(@ContainerPostgresConnection JdbcConnection connectionInParam) {
         connection.execute("CREATE TABLE users (id INT NOT NULL PRIMARY KEY);");
         connection.execute("INSERT INTO users VALUES(1);");
-        connection.execute("INSERT INTO users VALUES(2);");
+        connection.assertInserted("INSERT INTO users VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
         assertEquals(2, usersFound.size());
+        connection.assertQueriesEquals(2, "SELECT * FROM users;");
     }
 }
 ```
 
 ### External Connection
 
-In case you want to use some external Postgres instance that is running in CI or other place for tests, you can use special environment variables
-and extension will use them to propagate connection and no Postgres containers will be running in such case.
+In case you want to use some external Postgres instance that is running in CI or other place for tests (due to docker limitations or other), 
+you can use special *environment variables* and extension will use them to propagate connection and no Postgres containers will be running in such case.
 
 Special environment variables:
 - `EXTERNAL_TEST_POSTGRES_JDBC_URL` - Postgres instance JDBC url.
@@ -139,7 +143,7 @@ Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html)
 - [Liquibase](https://docs.liquibase.com/concepts/introduction-to-liquibase.html)
 
-Given such migration for [Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html) on default path `db/migration`:
+Given engine is [Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html) and migration file named `V1__flyway.sql` is in resource folder on default path `db/migration`:
 ```sql
 CREATE TABLE IF NOT EXISTS users
 (
