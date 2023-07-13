@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         java: [ '17' ]
-    name: Java ${{ matrix.java }} setup
+    name: Java ${{ matrix.java }} Pull Request testing setup
 
     steps:
       - uses: actions/checkout@v3
