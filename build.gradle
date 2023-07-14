@@ -192,7 +192,7 @@ subprojects {
                     password System.getenv("OSS_PASSWORD")
                 }
             }
-//            if (!version.endsWith("SNAPSHOT")) {
+            if (!version.endsWith("SNAPSHOT")) {
                 maven {
                     name = "GitHubPackages"
                     url = "https://maven.pkg.github.com/GoodforGod/$artifactRootId"
@@ -201,7 +201,7 @@ subprojects {
                         password = System.getenv("GITHUB_TOKEN")
                     }
                 }
-//            }
+            }
         }
     }
 
