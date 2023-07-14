@@ -1,0 +1,38 @@
+name: Publish Master Snapshot
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    name: Publish Release
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: Code Style
+        env:
+          RELEASE_VERSION: ${GITHUB_REF##*/}
+        run: echo $RELEASE_VERSION
+
+      - name: Build
+        run: ./gradlew classes
+
+      - name: Test
+        run: ./gradlew test jacocoTestReport testCodeCoverageReport
+
+#      - name: Publish Release
+#        run: ./gradlew publish closeSonatypeStagingRepository
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          OSS_USERNAME: ${{ secrets.OSS_USERNAME }}
+#          OSS_PASSWORD: ${{ secrets.OSS_PASSWORD }}
+#          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSS_SIGNING_KEY }}
+#          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSS_SIGNING_PASSWORD }}
