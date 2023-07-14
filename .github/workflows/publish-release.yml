@@ -19,7 +19,7 @@ jobs:
 
       - name: Code Style
         env:
-          RELEASE_VERSION: ${GITHUB_REF##*/}
+          RELEASE_VERSION: ${GITHUB_REF##*/v}
         run: echo $RELEASE_VERSION
 
       - name: Build
