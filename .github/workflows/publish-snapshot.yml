@@ -41,7 +41,6 @@ jobs:
       - name: Publish Snapshot
         run: ./gradlew publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OSS_USERNAME: ${{ secrets.OSS_USERNAME }}
           OSS_PASSWORD: ${{ secrets.OSS_PASSWORD }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSS_SIGNING_KEY }}
