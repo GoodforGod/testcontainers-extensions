@@ -38,7 +38,8 @@ reporting {
 
 allprojects {
     group = groupId
-    version = System.getenv().getOrDefault("RELEASE_VERSION", artifactVersion)
+    var ver = System.getenv().getOrDefault("RELEASE_VERSION", artifactVersion)
+    version = ver.startsWith("v") ? ver.substring(1) : ver
 
     repositories {
         mavenLocal()

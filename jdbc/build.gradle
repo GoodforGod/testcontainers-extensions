@@ -16,7 +16,7 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             pom {
-                description = "Testcontainers JDBC util library is used to create other extensions"
+                description = "Testcontainers JDBC library is used to create other extensions"
             }
         }
     }
