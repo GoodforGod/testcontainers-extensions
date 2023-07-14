@@ -8,7 +8,7 @@ on:
       - '*.gradle'
       - '*.properties'
     branches:
-      - dev
+      - master
 
 jobs:
   publish-snapshot:
