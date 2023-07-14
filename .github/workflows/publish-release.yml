@@ -1,4 +1,4 @@
-name: Publish Master Snapshot
+name: Publish Release
 
 on:
   release:
