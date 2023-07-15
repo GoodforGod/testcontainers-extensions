@@ -33,7 +33,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 @Internal
-abstract class AbstractTestcontainersJdbcExtension implements
+abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContainer> implements
         BeforeAllCallback,
         BeforeEachCallback,
         AfterAllCallback,
@@ -50,7 +50,24 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private record ExtensionContainer(JdbcDatabaseContainer<?> container, JdbcConnection connection) {}
+    private static final class ExtensionContainer {
+
+        private final JdbcDatabaseContainer<?> container;
+        private final JdbcConnection connection;
+
+        ExtensionContainer(JdbcDatabaseContainer<?> container, JdbcConnection connection) {
+            this.container = container;
+            this.connection = connection;
+        }
+
+        JdbcDatabaseContainer<?> container() {
+            return container;
+        }
+
+        JdbcConnection connection() {
+            return connection;
+        }
+    }
 
     protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
         Optional<ExtensionContext> current = Optional.of(context);
@@ -66,7 +83,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
         return Optional.empty();
     }
 
-    protected Optional<JdbcDatabaseContainer<?>> getContainerFromField(ExtensionContext context) {
+    protected Optional<C> getContainerFromField(ExtensionContext context) {
         logger.debug("Looking for JDBC Container...");
         final Class<? extends Annotation> containerAnnotation = getContainerAnnotation();
         return ReflectionUtils.findFields(context.getRequiredTestClass(),
@@ -81,34 +98,34 @@ abstract class AbstractTestcontainersJdbcExtension implements
                                 Object possibleContainer = field.get(instance);
                                 var containerType = getContainerType();
                                 if (containerType.isAssignableFrom(possibleContainer.getClass())) {
-                                    logger.debug("Found SQL Container in field: {}", field.getName());
-                                    return ((JdbcDatabaseContainer<?>) possibleContainer);
+                                    logger.debug("Found JDBC Container in field: {}", field.getName());
+                                    return ((C) possibleContainer);
                                 } else {
-                                    throw new IllegalArgumentException(
-                                            "Field '%s' annotated with @%s value must be instance of %s".formatted(
+                                    throw new IllegalArgumentException(String.format(
+                                            "Field '%s' annotated with @%s value must be instance of %s",
                                                     field.getName(), containerAnnotation.getSimpleName(), containerType));
                                 }
                             } catch (IllegalAccessException e) {
-                                throw new IllegalStateException("Failed retrieving value from field '%s' annotated with @%s"
-                                        .formatted(field.getName(), containerAnnotation.getSimpleName()), e);
+                                throw new IllegalStateException(String.format("Failed retrieving value from field '%s' annotated with @%s",
+                                        field.getName(), containerAnnotation.getSimpleName()), e);
                             }
                         }));
     }
 
-    abstract Class<? extends JdbcDatabaseContainer> getContainerType();
+    abstract Class<C> getContainerType();
 
     abstract Class<? extends Annotation> getContainerAnnotation();
 
     abstract Class<? extends Annotation> getConnectionAnnotation();
 
     @NotNull
-    abstract JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image);
+    abstract C getDefaultContainer(@NotNull String image);
 
     @NotNull
     abstract Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context);
 
     @NotNull
-    abstract JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container);
+    abstract JdbcConnection getConnectionForContainer(@NotNull C container);
 
     @NotNull
     abstract Optional<JdbcConnection> getConnectionExternal();
@@ -198,13 +215,17 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
     private void tryMigrateIfRequired(ContainerMetadata annotation, JdbcConnection jdbcConnection) {
         if (annotation.migration().engine() == Migration.Engines.FLYWAY) {
-            logger.debug("Starting schema migration for engine '{}' for connection: {}", annotation.migration().engine(),
-                    jdbcConnection);
+            logger.debug("Starting schema migration for engine '{}' for connection: {}",
+                    annotation.migration().engine(), jdbcConnection);
             migrateFlyway(jdbcConnection, Arrays.asList(annotation.migration().migrations()));
+            logger.debug("Finished schema migration for engine '{}' for connection: {}",
+                    annotation.migration().engine(), jdbcConnection);
         } else if (annotation.migration().engine() == Migration.Engines.LIQUIBASE) {
-            logger.debug("Starting schema migration for engine '{}' for connection: {}", annotation.migration().engine(),
-                    jdbcConnection);
+            logger.debug("Starting schema migration for engine '{}' for connection: {}",
+                    annotation.migration().engine(), jdbcConnection);
             migrateLiquibase(jdbcConnection, Arrays.asList(annotation.migration().migrations()));
+            logger.debug("Finished schema migration for engine '{}' for connection: {}",
+                    annotation.migration().engine(), jdbcConnection);
         }
     }
 
@@ -236,7 +257,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
                     field.setAccessible(true);
                     field.set(instance, connection);
                 } catch (IllegalAccessException e) {
-                    throw new IllegalStateException("Field '%s' annotated with @%s can't set connection".formatted(
+                    throw new IllegalStateException(String.format("Field '%s' annotated with @%s can't set connection",
                             field.getName(), connectionAnnotation.getSimpleName()), e);
                 }
             }
@@ -271,13 +292,13 @@ abstract class AbstractTestcontainersJdbcExtension implements
 
             var extensionContainer = IMAGE_TO_SHARED_CONTAINER.computeIfAbsent(imageToLook, k -> {
                 var container = containerFromField.orElseGet(() -> {
-                    logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                    logger.debug("Getting default JDBC Container for image: {}", metadata.image());
                     return getDefaultContainer(metadata.image());
                 });
 
-                logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
-                container.start();
-                container.withReuse(true);
+                logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+                container.withReuse(true).start();
+                logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
                 var sqlConnection = getConnectionForContainer(container);
                 return new ExtensionContainer(container, sqlConnection);
             });
@@ -289,12 +310,13 @@ abstract class AbstractTestcontainersJdbcExtension implements
             }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var container = getContainerFromField(context).orElseGet(() -> {
-                logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                logger.debug("Getting default JDBC Container for image: {}", metadata.image());
                 return getDefaultContainer(metadata.image());
             });
 
-            logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
             container.start();
+            logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
             var sqlConnection = getConnectionForContainer(container);
             var extensionContainer = new ExtensionContainer(container, sqlConnection);
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
@@ -322,12 +344,13 @@ abstract class AbstractTestcontainersJdbcExtension implements
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var container = getContainerFromField(context).orElseGet(() -> {
-                logger.debug("Getting default SQL Container for image: {}", metadata.image());
+                logger.debug("Getting default JDBC Container for image: {}", metadata.image());
                 return getDefaultContainer(metadata.image());
             });
 
-            logger.debug("Starting in mode '{}' SQL Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
             container.start();
+            logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
             var sqlConnection = getConnectionForContainer(container);
 
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
@@ -363,8 +386,10 @@ abstract class AbstractTestcontainersJdbcExtension implements
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainer.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(), extensionContainer.container);
                 extensionContainer.container().stop();
+                logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
+                        extensionContainer.container);
             }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
@@ -396,8 +421,10 @@ abstract class AbstractTestcontainersJdbcExtension implements
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' SQL Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(), extensionContainer.container);
                 extensionContainer.container().stop();
+                logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
+                        extensionContainer.container);
             }
         } else if (metadata.runMode() == ContainerMode.PER_RUN) {
             Optional.ofNullable(IMAGE_TO_SHARED_CONTAINER.get(metadata.image())).ifPresent(extensionContainer -> {
@@ -411,8 +438,9 @@ abstract class AbstractTestcontainersJdbcExtension implements
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
         for (ExtensionContainer container : IMAGE_TO_SHARED_CONTAINER.values()) {
-            logger.debug("Stopping in mode '{}' SQL Container: {}", ContainerMode.PER_RUN, container);
+            logger.debug("Stopping in mode '{}' JDBC Container: {}", ContainerMode.PER_RUN, container);
             container.container().stop();
+            logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", ContainerMode.PER_RUN, container);
         }
     }
 
@@ -428,7 +456,7 @@ abstract class AbstractTestcontainersJdbcExtension implements
         }
 
         if (!parameterContext.getParameter().getType().equals(JdbcConnection.class)) {
-            throw new ExtensionConfigurationException("Parameter '%s' annotated @%s is not of type %s".formatted(
+            throw new ExtensionConfigurationException(String.format("Parameter '%s' annotated @%s is not of type %s",
                     parameterContext.getParameter().getName(), connectionAnnotation.getSimpleName(),
                     JdbcConnection.class));
         }

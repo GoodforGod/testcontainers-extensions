@@ -5,17 +5,17 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension {
+final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected Class<? extends JdbcDatabaseContainer> getContainerType() {
-        return PostgreSQLContainer.class;
+    protected Class<PostgreSQLContainer<?>> getContainerType() {
+        return (Class<PostgreSQLContainer<?>>) ((Class<?>) PostgreSQLContainer.class);
     }
 
     @Override
@@ -29,7 +29,7 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
     }
 
     @NotNull
-    protected JdbcDatabaseContainer<?> getDefaultContainer(@NotNull String image) {
+    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image)
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
@@ -52,7 +52,7 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(@NotNull JdbcDatabaseContainer<?> container) {
+    protected JdbcConnection getConnectionForContainer(@NotNull PostgreSQLContainer<?> container) {
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
                 container.getHost(),
                 container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),

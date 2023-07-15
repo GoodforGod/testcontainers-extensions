@@ -15,4 +15,5 @@
     </root>
 
     <logger level="DEBUG" name="org.testcontainers"/>
+    <logger level="TRACE" name="io.goodforgod.testcontainers.extensions"/>
 </configuration>

@@ -1,6 +1,6 @@
 # Testcontainers Extensions Postgres
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Java%20CI/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A%22Java+CI%22)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -31,7 +31,23 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.1.0"
 </dependency>
 ```
 
-Java 17 baseline.
+[Postgres JDBC Driver](https://mvnrepository.com/artifact/org.postgresql/postgresql) must be on classpath, if it is somehow not on your classpath already,
+don't forget to add:
+
+**Gradle**
+```groovy
+testImplementation "org.postgresql:postgresql:42.6.0"
+```
+
+**Maven**
+```xml
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.6.0</version>
+    <scope>test</scope>
+</dependency>
+```
 
 ## Content
 - [Container](#container)
@@ -118,12 +134,12 @@ In case you want to use some external Postgres instance that is running in CI or
 you can use special *environment variables* and extension will use them to propagate connection and no Postgres containers will be running in such case.
 
 Special environment variables:
-- `EXTERNAL_TEST_POSTGRES_JDBC_URL` - Postgres instance JDBC url.
-- `EXTERNAL_TEST_POSTGRES_USERNAME` - Postgres username (optional).
-- `EXTERNAL_TEST_POSTGRES_PASSWORD` - Postgres password (optional).
-- `EXTERNAL_TEST_POSTGRES_HOST` - Postgres instance host.
-- `EXTERNAL_TEST_POSTGRES_PORT` - Postgres instance port.
-- `EXTERNAL_TEST_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default)
+- `EXTERNAL_TEST_POSTGRES_JDBC_URL` - Postgres instance instance JDBC url.
+- `EXTERNAL_TEST_POSTGRES_USERNAME` - Postgres instance username (optional).
+- `EXTERNAL_TEST_POSTGRES_PASSWORD` - Postgres instance password (optional).
+- `EXTERNAL_TEST_POSTGRES_HOST` - Postgres instance host (optional if JDBC url specified).
+- `EXTERNAL_TEST_POSTGRES_PORT` - Postgres instance port (optional if JDBC url specified).
+- `EXTERNAL_TEST_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default) (optional if JDBC url specified)
 
 Use can use either `EXTERNAL_TEST_POSTGRES_JDBC_URL` to specify connection with username & password combination
 or use combination of `EXTERNAL_TEST_POSTGRES_HOST` & `EXTERNAL_TEST_POSTGRES_PORT` & `EXTERNAL_TEST_POSTGRES_DATABASE`.
