@@ -6,69 +6,66 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExtension<MySQLContainer<?>> {
+final class TestcontainersCockroachdbExtension extends AbstractTestcontainersJdbcExtension<CockroachContainer> {
 
-    private static final String PROTOCOL = "mysql";
-    private static final String DATABASE_NAME = "mysql";
+    private static final String PROTOCOL = "postgresql";
+    private static final int PORT = 26257;
 
-    private static final String EXTERNAL_TEST_MYSQL_JDBC_URL = "EXTERNAL_TEST_MYSQL_JDBC_URL";
-    private static final String EXTERNAL_TEST_MYSQL_USERNAME = "EXTERNAL_TEST_MYSQL_USERNAME";
-    private static final String EXTERNAL_TEST_MYSQL_PASSWORD = "EXTERNAL_TEST_MYSQL_PASSWORD";
-    private static final String EXTERNAL_TEST_MYSQL_HOST = "EXTERNAL_TEST_MYSQL_HOST";
-    private static final String EXTERNAL_TEST_MYSQL_PORT = "EXTERNAL_TEST_MYSQL_PORT";
-    private static final String EXTERNAL_TEST_MYSQL_DATABASE = "EXTERNAL_TEST_MYSQL_DATABASE";
+    private static final String EXTERNAL_TEST_COCKROACHDB_JDBC_URL = "EXTERNAL_TEST_COCKROACHDB_JDBC_URL";
+    private static final String EXTERNAL_TEST_COCKROACHDB_USERNAME = "EXTERNAL_TEST_COCKROACHDB_USERNAME";
+    private static final String EXTERNAL_TEST_COCKROACHDB_PASSWORD = "EXTERNAL_TEST_COCKROACHDB_PASSWORD";
+    private static final String EXTERNAL_TEST_COCKROACHDB_HOST = "EXTERNAL_TEST_COCKROACHDB_HOST";
+    private static final String EXTERNAL_TEST_COCKROACHDB_PORT = "EXTERNAL_TEST_COCKROACHDB_PORT";
+    private static final String EXTERNAL_TEST_COCKROACHDB_DATABASE = "EXTERNAL_TEST_COCKROACHDB_DATABASE";
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected Class<MySQLContainer<?>> getContainerType() {
-        return (Class<MySQLContainer<?>>) ((Class<?>) MySQLContainer.class);
+    protected Class<CockroachContainer> getContainerType() {
+        return CockroachContainer.class;
     }
 
     @Override
     protected Class<? extends Annotation> getContainerAnnotation() {
-        return ContainerMysql.class;
+        return ContainerCockroachdb.class;
     }
 
     @Override
     protected Class<? extends Annotation> getConnectionAnnotation() {
-        return ContainerMysqlConnection.class;
+        return ContainerCockroachdbConnection.class;
     }
 
     @NotNull
-    protected MySQLContainer<?> getDefaultContainer(@NotNull String image) {
+    protected CockroachContainer getDefaultContainer(@NotNull String image) {
         var dockerImage = DockerImageName.parse(image)
-                .asCompatibleSubstituteFor(DockerImageName.parse(MySQLContainer.NAME));
+                .asCompatibleSubstituteFor(DockerImageName.parse("cockroachdb/cockroach"));
 
-        var alias = "mysql-" + System.currentTimeMillis();
-        return new MySQLContainer<>(dockerImage)
-                .withDatabaseName(DATABASE_NAME)
-                .withUsername("mysql")
-                .withPassword("mysql")
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MySQLContainer.class))
+        var alias = "cockroachdb-" + System.currentTimeMillis();
+        return new CockroachContainer(dockerImage)
+                .withDatabaseName("cockroachdb")
+                .withUsername("cockroachdb")
+                .withPassword("cockroachdb")
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
                         .withMdc("image", image)
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
-                .waitingFor(Wait.forHealthcheck())
                 .withStartupTimeout(Duration.ofMinutes(5));
     }
 
     @NotNull
     protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
-        return findAnnotation(TestcontainersMysql.class, context)
+        return findAnnotation(TestcontainersCockroachdb.class, context)
                 .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(@NotNull MySQLContainer<?> container) {
+    protected JdbcConnection getConnectionForContainer(@NotNull CockroachContainer container) {
         final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.startsWith("mysql"))
+                .filter(a -> a.startsWith("cockroachdb"))
                 .findFirst()
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
@@ -77,9 +74,9 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
 
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
                 container.getHost(),
-                container.getMappedPort(MySQLContainer.MYSQL_PORT),
+                container.getMappedPort(PORT),
                 alias,
-                MySQLContainer.MYSQL_PORT,
+                PORT,
                 container.getDatabaseName(),
                 container.getUsername(),
                 container.getPassword());
@@ -87,13 +84,13 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
 
     @NotNull
     protected Optional<JdbcConnection> getConnectionExternal() {
-        var url = System.getenv(EXTERNAL_TEST_MYSQL_JDBC_URL);
-        var host = System.getenv(EXTERNAL_TEST_MYSQL_HOST);
-        var port = System.getenv(EXTERNAL_TEST_MYSQL_PORT);
-        var user = System.getenv(EXTERNAL_TEST_MYSQL_USERNAME);
-        var password = System.getenv(EXTERNAL_TEST_MYSQL_PASSWORD);
+        var url = System.getenv(EXTERNAL_TEST_COCKROACHDB_JDBC_URL);
+        var host = System.getenv(EXTERNAL_TEST_COCKROACHDB_HOST);
+        var port = System.getenv(EXTERNAL_TEST_COCKROACHDB_PORT);
+        var user = System.getenv(EXTERNAL_TEST_COCKROACHDB_USERNAME);
+        var password = System.getenv(EXTERNAL_TEST_COCKROACHDB_PASSWORD);
 
-        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_MYSQL_DATABASE)).orElse(DATABASE_NAME);
+        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_COCKROACHDB_DATABASE)).orElse("cockroachdb");
         if (url != null) {
             if (host != null && port != null) {
                 return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));

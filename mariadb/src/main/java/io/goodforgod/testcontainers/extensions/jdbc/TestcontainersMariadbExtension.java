@@ -15,7 +15,7 @@ import org.testcontainers.utility.DockerImageName;
 final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExtension<MariaDBContainer<?>> {
 
     private static final String PROTOCOL = "mariadb";
-    private static final String DATABASE_NAME = "test";
+    private static final String DATABASE_NAME = "mariadb";
     private static final Integer MARIADB_PORT = 3306;
 
     private static final String EXTERNAL_TEST_MARIADB_JDBC_URL = "EXTERNAL_TEST_MARIADB_JDBC_URL";
@@ -49,8 +49,8 @@ final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExt
         var alias = "mariadb-" + System.currentTimeMillis();
         return new MariaDBContainer<>(dockerImage)
                 .withDatabaseName(DATABASE_NAME)
-                .withUsername("test")
-                .withPassword("test")
+                .withUsername("mariadb")
+                .withPassword("mariadb")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MariaDBContainer.class))
                         .withMdc("image", image)
                         .withMdc("alias", alias))

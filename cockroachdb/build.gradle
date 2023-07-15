@@ -1,0 +1,9 @@
+dependencies {
+    api project(":jdbc")
+    api libs.testcontainers.cockroach
+
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+
+    testImplementation libs.driver.postgres
+}

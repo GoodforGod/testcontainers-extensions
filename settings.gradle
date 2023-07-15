@@ -13,6 +13,5 @@ include "jdbc"
 include "mariadb"
 include "mysql"
 include "oracle"
-include "sqllite"
 include "cockroachdb"
 
