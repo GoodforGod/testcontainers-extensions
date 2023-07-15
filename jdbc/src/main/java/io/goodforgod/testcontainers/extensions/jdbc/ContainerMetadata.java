@@ -4,6 +4,7 @@ import org.jetbrains.annotations.ApiStatus.Internal;
 
 @Internal
 final class ContainerMetadata {
+
     private final String image;
     private final ContainerMode runMode;
     private final Migration migration;

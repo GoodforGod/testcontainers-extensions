@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 final class JdbcConnectionImpl implements JdbcConnection {
 
     private static final class ParamsImpl implements JdbcConnection.Params {
+
         private final String jdbcUrl;
         private final String host;
         private final int port;
@@ -193,8 +194,9 @@ final class JdbcConnectionImpl implements JdbcConnection {
     public void assertCountsAtLeast(int expectedAtLeast, @NotNull String tableName) {
         final int count = count(tableName);
         if (count < expectedAtLeast) {
-            Assertions.assertEquals(expectedAtLeast, count, String.format("Expected to count in '%s' table at least %s rows but received %s",
-                    tableName, expectedAtLeast, count));
+            Assertions.assertEquals(expectedAtLeast, count,
+                    String.format("Expected to count in '%s' table at least %s rows but received %s",
+                            tableName, expectedAtLeast, count));
         }
     }
 
@@ -285,7 +287,7 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
             Assertions.assertEquals(expected, counter,
                     String.format("Expected to query %s rows but received %s for SQL: %s",
-                    expected, counter, sql.replace("\n", " ")));
+                            expected, counter, sql.replace("\n", " ")));
         });
     }
 

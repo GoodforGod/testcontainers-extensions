@@ -103,11 +103,13 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                                 } else {
                                     throw new IllegalArgumentException(String.format(
                                             "Field '%s' annotated with @%s value must be instance of %s",
-                                                    field.getName(), containerAnnotation.getSimpleName(), containerType));
+                                            field.getName(), containerAnnotation.getSimpleName(), containerType));
                                 }
                             } catch (IllegalAccessException e) {
-                                throw new IllegalStateException(String.format("Failed retrieving value from field '%s' annotated with @%s",
-                                        field.getName(), containerAnnotation.getSimpleName()), e);
+                                throw new IllegalStateException(
+                                        String.format("Failed retrieving value from field '%s' annotated with @%s",
+                                                field.getName(), containerAnnotation.getSimpleName()),
+                                        e);
                             }
                         }));
     }
@@ -282,6 +284,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                 tryMigrateIfRequired(metadata, externalConnection);
             }
 
+            injectSqlConnection(externalConnection, context);
             return;
         }
 
@@ -308,6 +311,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
                 tryMigrateIfRequired(metadata, extensionContainer.connection());
             }
+            injectSqlConnection(extensionContainer.connection(), context);
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var container = getContainerFromField(context).orElseGet(() -> {
                 logger.debug("Getting default JDBC Container for image: {}", metadata.image());
@@ -325,6 +329,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
                 tryMigrateIfRequired(metadata, sqlConnection);
             }
+            injectSqlConnection(sqlConnection, context);
         }
     }
 
@@ -336,7 +341,6 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
                 tryMigrateIfRequired(metadata, externalConnection);
             }
-
             injectSqlConnection(externalConnection, context);
             return;
         }
@@ -362,11 +366,10 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
             storage.put(ContainerMode.PER_METHOD, new ExtensionContainer(container, sqlConnection));
         } else {
             var sqlConnection = storage.get(JdbcConnection.class, JdbcConnection.class);
-            injectSqlConnection(sqlConnection, context);
-
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
                 tryMigrateIfRequired(metadata, sqlConnection);
             }
+            injectSqlConnection(sqlConnection, context);
         }
     }
 
