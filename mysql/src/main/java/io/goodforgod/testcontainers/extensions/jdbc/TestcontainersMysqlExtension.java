@@ -15,7 +15,7 @@ import org.testcontainers.utility.DockerImageName;
 final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExtension<MySQLContainer<?>> {
 
     private static final String PROTOCOL = "mysql";
-    private static final String DATABASE_NAME = "mysql";
+    private static final String DATABASE_NAME = "test";
 
     private static final String EXTERNAL_TEST_MYSQL_JDBC_URL = "EXTERNAL_TEST_MYSQL_JDBC_URL";
     private static final String EXTERNAL_TEST_MYSQL_USERNAME = "EXTERNAL_TEST_MYSQL_USERNAME";
