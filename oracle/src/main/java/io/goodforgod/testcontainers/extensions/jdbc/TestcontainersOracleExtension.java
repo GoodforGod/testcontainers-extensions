@@ -39,8 +39,9 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
     }
 
     @NotNull
-    protected OracleContainer getDefaultContainer(@NotNull String image) {
-        var dockerImage = DockerImageName.parse(image)
+    @Override
+    protected OracleContainer getDefaultContainer(@NotNull ContainerMetadata metadata) {
+        var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("gvenzl/oracle-xe"));
 
         var alias = "oracle-" + System.currentTimeMillis();
@@ -48,7 +49,7 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
                 .withPassword("test")
                 .withDatabaseName("oracle")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
-                        .withMdc("image", image)
+                        .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
@@ -88,8 +89,8 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
         var port = System.getenv(EXTERNAL_TEST_ORACLE_PORT);
         var user = System.getenv(EXTERNAL_TEST_ORACLE_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_ORACLE_PASSWORD);
-
         var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_ORACLE_DATABASE)).orElse("xepdb1");
+
         if (url != null) {
             if (host != null && port != null) {
                 return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));

@@ -39,8 +39,9 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
     }
 
     @NotNull
-    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull String image) {
-        var dockerImage = DockerImageName.parse(image)
+    @Override
+    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+        var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
         var alias = "postgres-" + System.currentTimeMillis();
@@ -49,7 +50,7 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
                 .withUsername("postgres")
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
-                        .withMdc("image", image)
+                        .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
@@ -89,8 +90,8 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
         var port = System.getenv(EXTERNAL_TEST_POSTGRES_PORT);
         var user = System.getenv(EXTERNAL_TEST_POSTGRES_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_POSTGRES_PASSWORD);
-
         var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_POSTGRES_DATABASE)).orElse("postgres");
+
         if (url != null) {
             if (host != null && port != null) {
                 return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));

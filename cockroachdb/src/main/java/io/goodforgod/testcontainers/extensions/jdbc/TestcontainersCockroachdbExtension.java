@@ -39,8 +39,9 @@ final class TestcontainersCockroachdbExtension extends AbstractTestcontainersJdb
     }
 
     @NotNull
-    protected CockroachContainer getDefaultContainer(@NotNull String image) {
-        var dockerImage = DockerImageName.parse(image)
+    @Override
+    protected CockroachContainer getDefaultContainer(@NotNull ContainerMetadata metadata) {
+        var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("cockroachdb/cockroach"));
 
         var alias = "cockroachdb-" + System.currentTimeMillis();
@@ -49,7 +50,7 @@ final class TestcontainersCockroachdbExtension extends AbstractTestcontainersJdb
                 .withUsername("cockroachdb")
                 .withPassword("cockroachdb")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
-                        .withMdc("image", image)
+                        .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)

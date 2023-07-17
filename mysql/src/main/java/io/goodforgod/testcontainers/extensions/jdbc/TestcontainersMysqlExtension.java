@@ -41,8 +41,8 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
     }
 
     @NotNull
-    protected MySQLContainer<?> getDefaultContainer(@NotNull String image) {
-        var dockerImage = DockerImageName.parse(image)
+    protected MySQLContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+        var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(MySQLContainer.NAME));
 
         var alias = "mysql-" + System.currentTimeMillis();
@@ -51,7 +51,7 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
                 .withUsername("mysql")
                 .withPassword("mysql")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MySQLContainer.class))
-                        .withMdc("image", image)
+                        .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
@@ -92,8 +92,8 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
         var port = System.getenv(EXTERNAL_TEST_MYSQL_PORT);
         var user = System.getenv(EXTERNAL_TEST_MYSQL_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_MYSQL_PASSWORD);
-
         var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_MYSQL_DATABASE)).orElse(DATABASE_NAME);
+
         if (url != null) {
             if (host != null && port != null) {
                 return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));

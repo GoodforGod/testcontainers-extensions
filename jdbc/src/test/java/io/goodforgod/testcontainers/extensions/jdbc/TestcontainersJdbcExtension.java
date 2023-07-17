@@ -29,8 +29,8 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
     }
 
     @NotNull
-    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull String image) {
-        var dockerImage = DockerImageName.parse(image)
+    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+        var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
         var alias = "postgres-" + System.currentTimeMillis();
@@ -39,7 +39,7 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
                 .withUsername("postgres")
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
-                        .withMdc("image", image)
+                        .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED);

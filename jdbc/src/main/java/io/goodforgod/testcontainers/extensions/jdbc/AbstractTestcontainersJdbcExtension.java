@@ -7,10 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
@@ -21,10 +18,10 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import org.flywaydb.core.Flyway;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.util.ReflectionUtils;
-import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,35 +35,44 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         BeforeEachCallback,
         AfterAllCallback,
         AfterEachCallback,
-        TestExecutionListener,
         ParameterResolver {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(AbstractTestcontainersJdbcExtension.class);
 
-    private static final Map<String, ExtensionContainer> IMAGE_TO_SHARED_CONTAINER = new ConcurrentHashMap<>();
-    private static volatile JdbcConnection externalConnection = null;
+    private static final Map<String, ExtensionContainerImpl> IMAGE_TO_SHARED_CONTAINER = new ConcurrentHashMap<>();
     private static volatile boolean isLiquibaseActivated = false;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    private JdbcConnection externalConnection = null;
 
-    private static final class ExtensionContainer {
+    private static final class ExtensionContainerImpl implements ExtensionContainer {
 
         private final JdbcDatabaseContainer<?> container;
         private final JdbcConnection connection;
 
-        ExtensionContainer(JdbcDatabaseContainer<?> container, JdbcConnection connection) {
+        ExtensionContainerImpl(JdbcDatabaseContainer<?> container, JdbcConnection connection) {
             this.container = container;
             this.connection = connection;
-        }
-
-        JdbcDatabaseContainer<?> container() {
-            return container;
         }
 
         JdbcConnection connection() {
             return connection;
         }
+
+        @Override
+        public void start() {
+            container.start();
+        }
+
+        @Override
+        public void stop() {
+            container.stop();
+        }
+    }
+
+    static List<ExtensionContainer> getSharedContainers() {
+        return new ArrayList<>(IMAGE_TO_SHARED_CONTAINER.values());
     }
 
     protected final <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
@@ -121,7 +127,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
     abstract Class<? extends Annotation> getConnectionAnnotation();
 
     @NotNull
-    abstract C getDefaultContainer(@NotNull String image);
+    abstract C getDefaultContainer(@NotNull ContainerMetadata metadata);
 
     @NotNull
     abstract Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context);
@@ -131,6 +137,24 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
 
     @NotNull
     abstract Optional<JdbcConnection> getConnectionExternal();
+
+    @Nullable
+    private JdbcConnection getConnectionExternalCached() {
+        if (externalConnection != null) {
+            logger.debug("Found external connection to database, no containers will be created during tests: {}",
+                    externalConnection);
+
+            return externalConnection;
+        }
+
+        final Optional<JdbcConnection> connectionExternal = getConnectionExternal();
+        if (connectionExternal.isPresent()) {
+            logger.debug("Found external connection to database, no containers will be created during tests: {}",
+                    externalConnection);
+        }
+
+        return connectionExternal.orElse(null);
+    }
 
     private ContainerMetadata getMetadata(@NotNull ExtensionContext context) {
         return findMetadata(context).orElseThrow(() -> new ExtensionConfigurationException("Extension annotation not found"));
@@ -170,7 +194,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                     : locations;
 
             if (!isLiquibaseActivated) {
-                final boolean julEnabled = Optional.ofNullable(System.getenv("TEST_CONTAINERS_EXTENSION_SQL_JUL_ENABLED"))
+                final boolean julEnabled = Optional.ofNullable(System.getenv("TEST_CONTAINERS_EXTENSION_JDBC_JUL_ENABLED"))
                         .map(Boolean::parseBoolean)
                         .orElse(true);
 
@@ -266,9 +290,8 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         });
     }
 
-    @Override
     public void testPlanExecutionStarted(TestPlan testPlan) {
-        externalConnection = getConnectionExternal().orElse(null);
+        var externalConnection = getConnectionExternalCached();
         if (externalConnection != null) {
             logger.debug("Found external connection to database, no containers will be created during tests: {}",
                     externalConnection);
@@ -279,6 +302,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
     public void beforeAll(ExtensionContext context) throws Exception {
         var metadata = getMetadata(context);
 
+        var externalConnection = getConnectionExternalCached();
         if (externalConnection != null) {
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
                 tryMigrateIfRequired(metadata, externalConnection);
@@ -296,14 +320,14 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
             var extensionContainer = IMAGE_TO_SHARED_CONTAINER.computeIfAbsent(imageToLook, k -> {
                 var container = containerFromField.orElseGet(() -> {
                     logger.debug("Getting default JDBC Container for image: {}", metadata.image());
-                    return getDefaultContainer(metadata.image());
+                    return getDefaultContainer(metadata);
                 });
 
                 logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
                 container.withReuse(true).start();
                 logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
                 var sqlConnection = getConnectionForContainer(container);
-                return new ExtensionContainer(container, sqlConnection);
+                return new ExtensionContainerImpl(container, sqlConnection);
             });
 
             storage.put(JdbcConnection.class, extensionContainer.connection());
@@ -315,14 +339,14 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var container = getContainerFromField(context).orElseGet(() -> {
                 logger.debug("Getting default JDBC Container for image: {}", metadata.image());
-                return getDefaultContainer(metadata.image());
+                return getDefaultContainer(metadata);
             });
 
             logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
             container.start();
             logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
             var sqlConnection = getConnectionForContainer(container);
-            var extensionContainer = new ExtensionContainer(container, sqlConnection);
+            var extensionContainer = new ExtensionContainerImpl(container, sqlConnection);
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
             storage.put(JdbcConnection.class, sqlConnection);
 
@@ -337,6 +361,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
     public void beforeEach(ExtensionContext context) throws Exception {
         var metadata = getMetadata(context);
 
+        var externalConnection = getConnectionExternalCached();
         if (externalConnection != null) {
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
                 tryMigrateIfRequired(metadata, externalConnection);
@@ -349,7 +374,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var container = getContainerFromField(context).orElseGet(() -> {
                 logger.debug("Getting default JDBC Container for image: {}", metadata.image());
-                return getDefaultContainer(metadata.image());
+                return getDefaultContainer(metadata);
             });
 
             logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
@@ -363,7 +388,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
 
             injectSqlConnection(sqlConnection, context);
             storage.put(JdbcConnection.class, sqlConnection);
-            storage.put(ContainerMode.PER_METHOD, new ExtensionContainer(container, sqlConnection));
+            storage.put(ContainerMode.PER_METHOD, new ExtensionContainerImpl(container, sqlConnection));
         } else {
             var sqlConnection = storage.get(JdbcConnection.class, JdbcConnection.class);
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
@@ -377,6 +402,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
     public void afterEach(ExtensionContext context) throws Exception {
         var metadata = getMetadata(context);
 
+        var externalConnection = getConnectionExternalCached();
         if (externalConnection != null) {
             if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
                 tryDropIfRequired(metadata, externalConnection);
@@ -387,15 +413,15 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
 
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainer.class);
+            var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
                 logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(), extensionContainer.container);
-                extensionContainer.container().stop();
+                extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
                         extensionContainer.container);
             }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
-            var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
+            var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
             if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
                 tryDropIfRequired(metadata, extensionContainer.connection());
             }
@@ -412,6 +438,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
     public void afterAll(ExtensionContext context) throws Exception {
         var metadata = getMetadata(context);
 
+        var externalConnection = getConnectionExternalCached();
         if (externalConnection != null) {
             if (metadata.migration().drop() == Migration.Mode.PER_CLASS) {
                 tryDropIfRequired(metadata, externalConnection);
@@ -422,10 +449,10 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
 
         var storage = context.getStore(NAMESPACE);
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
-            var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainer.class);
+            var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
                 logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(), extensionContainer.container);
-                extensionContainer.container().stop();
+                extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
                         extensionContainer.container);
             }
@@ -435,15 +462,6 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                     tryDropIfRequired(metadata, extensionContainer.connection());
                 }
             });
-        }
-    }
-
-    @Override
-    public void testPlanExecutionFinished(TestPlan testPlan) {
-        for (ExtensionContainer container : IMAGE_TO_SHARED_CONTAINER.values()) {
-            logger.debug("Stopping in mode '{}' JDBC Container: {}", ContainerMode.PER_RUN, container);
-            container.container().stop();
-            logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", ContainerMode.PER_RUN, container);
         }
     }
 
@@ -470,6 +488,7 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        var externalConnection = getConnectionExternalCached();
         if (externalConnection != null) {
             return externalConnection;
         }
