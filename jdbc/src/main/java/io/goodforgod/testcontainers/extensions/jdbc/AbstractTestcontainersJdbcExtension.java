@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.util.ReflectionUtils;
-import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -58,11 +57,6 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
 
         JdbcConnection connection() {
             return connection;
-        }
-
-        @Override
-        public void start() {
-            container.start();
         }
 
         @Override
@@ -140,20 +134,16 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
 
     @Nullable
     private JdbcConnection getConnectionExternalCached() {
-        if (externalConnection != null) {
-            logger.debug("Found external connection to database, no containers will be created during tests: {}",
-                    externalConnection);
-
-            return externalConnection;
+        if (this.externalConnection == null) {
+            this.externalConnection = getConnectionExternal().orElse(null);
         }
 
-        final Optional<JdbcConnection> connectionExternal = getConnectionExternal();
-        if (connectionExternal.isPresent()) {
+        if (this.externalConnection != null) {
             logger.debug("Found external connection to database, no containers will be created during tests: {}",
                     externalConnection);
         }
 
-        return connectionExternal.orElse(null);
+        return this.externalConnection;
     }
 
     private ContainerMetadata getMetadata(@NotNull ExtensionContext context) {
@@ -288,14 +278,6 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                 }
             }
         });
-    }
-
-    public void testPlanExecutionStarted(TestPlan testPlan) {
-        var externalConnection = getConnectionExternalCached();
-        if (externalConnection != null) {
-            logger.debug("Found external connection to database, no containers will be created during tests: {}",
-                    externalConnection);
-        }
     }
 
     @Override
