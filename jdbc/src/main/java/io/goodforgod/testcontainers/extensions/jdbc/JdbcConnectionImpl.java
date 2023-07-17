@@ -17,17 +17,66 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Internal
-record JdbcConnectionImpl(Params params, Params network) implements JdbcConnection {
+final class JdbcConnectionImpl implements JdbcConnection {
+
+    private static final class ParamsImpl implements JdbcConnection.Params {
+
+        private final String jdbcUrl;
+        private final String host;
+        private final int port;
+        private final String database;
+        private final String username;
+        private final String password;
+
+        ParamsImpl(String jdbcUrl, String host, int port, String database, String username, String password) {
+            this.jdbcUrl = jdbcUrl;
+            this.host = host;
+            this.port = port;
+            this.database = database;
+            this.username = username;
+            this.password = password;
+        }
+
+        @Override
+        public @NotNull String jdbcUrl() {
+            return jdbcUrl;
+        }
+
+        @Override
+        public @NotNull String host() {
+            return host;
+        }
+
+        @Override
+        public int port() {
+            return port;
+        }
+
+        @Override
+        public @NotNull String database() {
+            return database;
+        }
+
+        @Override
+        public String username() {
+            return username;
+        }
+
+        @Override
+        public String password() {
+            return password;
+        }
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
-    record ParamsImpl(String jdbcUrl,
-                      String host,
-                      int port,
-                      String database,
-                      String username,
-                      String password)
-            implements Params {}
+    private final Params params;
+    private final Params network;
+
+    JdbcConnectionImpl(Params params, Params network) {
+        this.params = params;
+        this.network = network;
+    }
 
     static JdbcConnection forProtocol(String driverProtocol,
                                       String host,
@@ -35,7 +84,7 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
                                       String database,
                                       String username,
                                       String password) {
-        var jdbcUrl = "jdbc:%s://%s:%d/%s".formatted(driverProtocol, host, port, database);
+        var jdbcUrl = String.format("jdbc:%s://%s:%d/%s", driverProtocol, host, port, database);
         var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
         return new JdbcConnectionImpl(params, null);
     }
@@ -74,6 +123,11 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
 
         var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
         return new JdbcConnectionImpl(params, null);
+    }
+
+    @Override
+    public @NotNull Params params() {
+        return params;
     }
 
     @Override
@@ -121,7 +175,7 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
                 }
             }
         } catch (Exception e) {
-            logger.warn("Failed loading '%s' due to ".formatted(path) + e.getMessage());
+            logger.warn("Failed loading '{}' due to: {}", path, e.getMessage());
             return Optional.empty();
         }
     }
@@ -140,16 +194,17 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
     public void assertCountsAtLeast(int expectedAtLeast, @NotNull String tableName) {
         final int count = count(tableName);
         if (count < expectedAtLeast) {
-            Assertions.assertEquals(expectedAtLeast, count, "Expected to count in '%s' table at least %s rows but received %s"
-                    .formatted(tableName, expectedAtLeast, count));
+            Assertions.assertEquals(expectedAtLeast, count,
+                    String.format("Expected to count in '%s' table at least %s rows but received %s",
+                            tableName, expectedAtLeast, count));
         }
     }
 
     @Override
     public void assertCountsEquals(int expected, @NotNull String tableName) {
         final int count = count(tableName);
-        Assertions.assertEquals(expected, count, "Expected to count in '%s' table %s rows but received %s"
-                .formatted(tableName, expected, count));
+        Assertions.assertEquals(expected, count, String.format("Expected to count in '%s' table %s rows but received %s",
+                tableName, expected, count));
     }
 
     @Override
@@ -217,7 +272,7 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
             }
 
             Assertions.assertEquals(expectedAtLeast, counter,
-                    "Expected to query at least %s rows but received %s for SQL: %s".formatted(
+                    String.format("Expected to query at least %s rows but received %s for SQL: %s",
                             expectedAtLeast, counter, sql.replace("\n", " ")));
         });
     }
@@ -230,8 +285,9 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
                 counter++;
             }
 
-            Assertions.assertEquals(expected, counter, "Expected to query %s rows but received %s for SQL: %s".formatted(
-                    expected, counter, sql.replace("\n", " ")));
+            Assertions.assertEquals(expected, counter,
+                    String.format("Expected to query %s rows but received %s for SQL: %s",
+                            expected, counter, sql.replace("\n", " ")));
         });
     }
 
@@ -242,7 +298,7 @@ record JdbcConnectionImpl(Params params, Params network) implements JdbcConnecti
                 var stmt = connection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             if (rs == 0) {
-                Assertions.fail("Expected query to update but it didn't for SQL: %s".formatted(sql.replace("\n", " ")));
+                Assertions.fail(String.format("Expected query to update but it didn't for SQL: %s", sql.replace("\n", " ")));
             }
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);

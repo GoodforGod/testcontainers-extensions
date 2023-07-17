@@ -4,10 +4,14 @@ pluginManagement {
         mavenCentral()
     }
 }
-apply from: 'dependencies.gradle'
+apply from: "dependencies.gradle"
 
 rootProject.name = artifactRootId
 
 include "postgres"
 include "jdbc"
+include "mariadb"
+include "mysql"
+include "oracle"
+include "cockroachdb"
 

@@ -53,8 +53,8 @@ subprojects {
     apply plugin: "java-library"
     apply plugin: "com.diffplug.spotless"
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 
     dependencies {
         compileOnly "org.jetbrains:annotations:24.0.1"

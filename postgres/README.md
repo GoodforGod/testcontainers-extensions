@@ -1,6 +1,6 @@
 # Testcontainers Extensions Postgres
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Java%20CI/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A%22Java+CI%22)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -11,14 +11,14 @@ Testcontainers Postgres Extension with advanced testing capabilities.
 
 Features:
 - Container easy run *per method*, *per class*, *per execution*.
-- Container easy migration with *[Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html)* / *[Liquibase](https://docs.liquibase.com/concepts/introduction-to-liquibase.html)*.
+- Container easy migration with *[Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html)* / *[Liquibase](https://www.liquibase.com/databases/postgresql)*.
 - Container easy connection injection with asserts.
 
 ## Dependency :rocket:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.1.0"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.2.0"
 ```
 
 **Maven**
@@ -26,12 +26,29 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.1.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <scope>test</scope>
 </dependency>
 ```
 
-Java 17 baseline.
+### JDBC Driver
+[Postgres JDBC Driver](https://mvnrepository.com/artifact/org.postgresql/postgresql) must be on classpath, if it is somehow not on your classpath already,
+don't forget to add:
+
+**Gradle**
+```groovy
+testImplementation "org.postgresql:postgresql:42.6.0"
+```
+
+**Maven**
+```xml
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.6.0</version>
+    <scope>test</scope>
+</dependency>
+```
 
 ## Content
 - [Container](#container)
@@ -119,11 +136,11 @@ you can use special *environment variables* and extension will use them to propa
 
 Special environment variables:
 - `EXTERNAL_TEST_POSTGRES_JDBC_URL` - Postgres instance JDBC url.
-- `EXTERNAL_TEST_POSTGRES_USERNAME` - Postgres username (optional).
-- `EXTERNAL_TEST_POSTGRES_PASSWORD` - Postgres password (optional).
-- `EXTERNAL_TEST_POSTGRES_HOST` - Postgres instance host.
-- `EXTERNAL_TEST_POSTGRES_PORT` - Postgres instance port.
-- `EXTERNAL_TEST_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default)
+- `EXTERNAL_TEST_POSTGRES_USERNAME` - Postgres instance username (optional).
+- `EXTERNAL_TEST_POSTGRES_PASSWORD` - Postgres instance password (optional).
+- `EXTERNAL_TEST_POSTGRES_HOST` - Postgres instance host (optional if JDBC url specified).
+- `EXTERNAL_TEST_POSTGRES_PORT` - Postgres instance port (optional if JDBC url specified).
+- `EXTERNAL_TEST_POSTGRES_DATABASE` - Postgres instance database (`postgres` by default) (optional if JDBC url specified)
 
 Use can use either `EXTERNAL_TEST_POSTGRES_JDBC_URL` to specify connection with username & password combination
 or use combination of `EXTERNAL_TEST_POSTGRES_HOST` & `EXTERNAL_TEST_POSTGRES_PORT` & `EXTERNAL_TEST_POSTGRES_DATABASE`.
@@ -140,10 +157,10 @@ Annotation parameters:
 - `drop` - configures when to reset/drop/clear database.
 
 Available migration engines:
-- [Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html)
-- [Liquibase](https://docs.liquibase.com/concepts/introduction-to-liquibase.html)
+- [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html)
+- [Liquibase](https://www.liquibase.com/databases/postgresql)
 
-Given engine is [Flyway](https://documentation.red-gate.com/fd/quickstart-how-flyway-works-184127223.html) and migration file named `V1__flyway.sql` is in resource folder on default path `db/migration`:
+Given engine is [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html) and migration file named `V1__flyway.sql` is in resource folder on default path `db/migration`:
 ```sql
 CREATE TABLE IF NOT EXISTS users
 (

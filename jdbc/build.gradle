@@ -1,15 +1,15 @@
 dependencies {
-    implementation "org.flywaydb:flyway-core:9.20.0"
-    implementation "org.liquibase:liquibase-core:4.23.0"
+    implementation libs.flyway.core
+    implementation libs.liquibase.core
     implementation libs.slf4j.jul
     implementation libs.slf4j.api
-
     implementation libs.testcontainers.jdbc
+
     implementation libs.junit.launcher
     implementation libs.junit.api
 
     testImplementation libs.driver.postgres
-    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.postgres
 }
 
 publishing {
