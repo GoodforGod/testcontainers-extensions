@@ -3,6 +3,7 @@ package io.goodforgod.testcontainers.extensions.kafka;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 
 interface KafkaConnection {
@@ -67,6 +68,9 @@ interface KafkaConnection {
 
         boolean checkReceivedEqualsInTime(int expected, @NotNull Duration timeToWait);
     }
+
+    @NotNull
+    Properties properties();
 
     void send(@NotNull String topic, @NotNull Event... events);
 

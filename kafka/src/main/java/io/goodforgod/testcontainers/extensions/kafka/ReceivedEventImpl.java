@@ -5,8 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.header.Header;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,8 +23,7 @@ final class ReceivedEventImpl implements ReceivedEvent {
     private final long timestamp;
 
     public ReceivedEventImpl(ConsumerRecord<byte[], byte[]> record) {
-        this(
-                new EventImpl.KeyImpl(record.key()),
+        this(new EventImpl.KeyImpl(record.key()),
                 new EventImpl.ValueImpl(record.value()),
                 getHeaders(record),
                 record.topic(),
@@ -38,7 +37,7 @@ final class ReceivedEventImpl implements ReceivedEvent {
         for (var header : record.headers()) {
             headers.add(new EventImpl.HeaderImpl(header.key(), new EventImpl.ValueImpl(header.value())));
         }
-        return headers;
+        return List.copyOf(headers);
     }
 
     ReceivedEventImpl(Key key, Value value, List<Header> headers, String topic, int partition, long offset, long timestamp) {
@@ -89,5 +88,59 @@ final class ReceivedEventImpl implements ReceivedEvent {
     @Override
     public @NotNull OffsetDateTime datetime() {
         return OffsetDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.of("Z"));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ReceivedEventImpl event = (ReceivedEventImpl) o;
+        return partition == event.partition && offset == event.offset && timestamp == event.timestamp
+                && Objects.equals(key, event.key) && Objects.equals(value, event.value) && Objects.equals(headers, event.headers)
+                && Objects.equals(topic, event.topic);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, value, headers, topic, partition, offset, timestamp);
+    }
+
+    @Override
+    public String toString() {
+        if (key == null && headers.isEmpty()) {
+            return "[topic=" + topic +
+                    ", offset=" + offset +
+                    ", timestamp=" + datetime() +
+                    ", value=" + value +
+                    ", partition=" + partition +
+                    ']';
+        } else if (key == null) {
+            return "[topic=" + topic +
+                    ", offset=" + offset +
+                    ", timestamp=" + datetime() +
+                    ", value=" + value +
+                    ", headers=" + headers +
+                    ", partition=" + partition +
+                    ']';
+        } else if (headers.isEmpty()) {
+            return "[topic=" + topic +
+                    ", offset=" + offset +
+                    ", timestamp=" + datetime() +
+                    ", key=" + key +
+                    ", value=" + value +
+                    ", partition=" + partition +
+                    ']';
+        } else {
+            return "[topic=" + topic +
+                    ", offset=" + offset +
+                    ", timestamp=" + datetime() +
+                    ", key=" + key +
+                    ", value=" + value +
+                    ", headers=" + headers +
+                    ", partition=" + partition +
+                    ']';
+        }
     }
 }

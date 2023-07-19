@@ -3,7 +3,10 @@ package io.goodforgod.testcontainers.extensions.oracle;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import io.goodforgod.testcontainers.extensions.jdbc.*;
+import io.goodforgod.testcontainers.extensions.jdbc.ContainerOracleConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.Migration;
+import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersOracle;
 import org.junit.jupiter.api.*;
 
 @TestcontainersOracle(mode = ContainerMode.PER_CLASS,

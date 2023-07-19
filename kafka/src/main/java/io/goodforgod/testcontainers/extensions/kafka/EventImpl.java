@@ -1,9 +1,7 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -28,6 +26,26 @@ final class EventImpl implements Event {
         @Override
         public @NotNull String asString() {
             return new String(key, StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            KeyImpl key1 = (KeyImpl) o;
+            return Arrays.equals(key, key1.key);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(key);
+        }
+
+        @Override
+        public String toString() {
+            return asString();
         }
     }
 
@@ -58,6 +76,26 @@ final class EventImpl implements Event {
         public @NotNull JSONArray asJsonArray() {
             return new JSONArray(asString());
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            ValueImpl value1 = (ValueImpl) o;
+            return Arrays.equals(value, value1.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(value);
+        }
+
+        @Override
+        public String toString() {
+            return asString();
+        }
     }
 
     static final class HeaderImpl implements Header {
@@ -78,6 +116,26 @@ final class EventImpl implements Event {
         @Override
         public @NotNull Value value() {
             return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            HeaderImpl header = (HeaderImpl) o;
+            return Objects.equals(key, header.key) && Objects.equals(value, header.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(key, value);
+        }
+
+        @Override
+        public String toString() {
+            return "[key=" + key + ", value=" + value + ']';
         }
     }
 
@@ -165,6 +223,34 @@ final class EventImpl implements Event {
         @Override
         public @NotNull Event build() {
             return new EventImpl(new KeyImpl(key), new ValueImpl(value), List.copyOf(headers));
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        EventImpl event = (EventImpl) o;
+        return Objects.equals(key, event.key) && Objects.equals(value, event.value) && Objects.equals(headers, event.headers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, value, headers);
+    }
+
+    @Override
+    public String toString() {
+        if (key == null && headers.isEmpty()) {
+            return "[value=" + value + ']';
+        } else if (key == null) {
+            return "[value=" + value + ", headers=" + headers + ']';
+        } else if (headers == null) {
+            return "[key=" + key + ", value=" + value + ']';
+        } else {
+            return "[key=" + key + ", value=" + value + ", headers=" + headers + ']';
         }
     }
 }

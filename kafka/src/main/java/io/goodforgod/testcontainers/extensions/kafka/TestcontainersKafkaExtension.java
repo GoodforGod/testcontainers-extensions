@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -47,6 +48,16 @@ final class TestcontainersKafkaExtension implements
 
         private void add(KafkaConnectionImpl connection) {
             connections.add(connection);
+        }
+
+        private void clear() {
+            for (KafkaConnectionImpl connection : connections) {
+                try {
+                    connection.clear();
+                } catch (Exception e) {
+                    // do nothing
+                }
+            }
         }
 
         private void close() {
@@ -147,9 +158,11 @@ final class TestcontainersKafkaExtension implements
         var alias = "kafka-" + System.currentTimeMillis();
         return new KafkaContainer(dockerImage)
                 .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
+                .withEnv("AUTO_CREATE_TOPICS", "true")
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
                 .withKraft()
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
                 .withStartupTimeout(Duration.ofMinutes(3));
     }
 
@@ -202,7 +215,7 @@ final class TestcontainersKafkaExtension implements
         return findMetadata(context).orElseThrow(() -> new ExtensionConfigurationException("Extension annotation not found"));
     }
 
-    private void injectKafkaConnection(Properties properties, ExtensionContext context) {
+    private void injectKafkaConnection(Properties containerProperties, ExtensionContext context) {
         var annotationProducer = getAnnotationConnection();
         var connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic()
@@ -211,7 +224,7 @@ final class TestcontainersKafkaExtension implements
                         && f.getAnnotation(annotationProducer) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
-        logger.debug("Starting @ContainerKafkaConnection field injection for container properties: {}", properties);
+        logger.debug("Starting @ContainerKafkaConnection field injection for container properties: {}", containerProperties);
 
         var storage = context.getStore(NAMESPACE);
         var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
@@ -220,7 +233,7 @@ final class TestcontainersKafkaExtension implements
                 try {
                     final ContainerKafkaConnection annotation = field.getAnnotation(ContainerKafkaConnection.class);
                     final Properties fieldProperties = new Properties();
-                    fieldProperties.putAll(properties);
+                    fieldProperties.putAll(containerProperties);
                     Arrays.stream(annotation.properties())
                             .forEach(property -> fieldProperties.put(property.name(), property.value()));
 
@@ -317,10 +330,10 @@ final class TestcontainersKafkaExtension implements
                 logger.debug("Stopped successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
                         extensionContainer.container);
             }
-
-            var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
-            pool.close();
         }
+
+        var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
+        pool.clear();
     }
 
     @Override

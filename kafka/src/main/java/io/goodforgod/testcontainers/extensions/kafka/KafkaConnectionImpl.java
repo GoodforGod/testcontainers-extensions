@@ -4,13 +4,20 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -19,6 +26,7 @@ import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
+import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @Internal
 final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
@@ -44,28 +52,64 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         private final AtomicBoolean isActive = new AtomicBoolean(true);
 
         private final KafkaConsumer<byte[], byte[]> consumer;
-        private final BlockingQueue<ConsumerRecord<byte[], byte[]>> messageQueue = new ArrayBlockingQueue<>(100_000_000);
+        private final BlockingQueue<ConsumerRecord<byte[], byte[]>> messageQueue = new LinkedBlockingDeque<>();
         private final List<String> topics;
+        private final String groupId;
 
         ConsumerImpl(KafkaConsumer<byte[], byte[]> consumer, List<String> topics) {
+            this.groupId = consumer.groupMetadata().groupId();
             this.consumer = consumer;
             this.topics = topics;
-            executor.execute(this::launch);
+
+            final AtomicBoolean wait = new AtomicBoolean(true);
+            this.consumer.subscribe(topics, new ConsumerRebalanceListener() {
+
+                @Override
+                public void onPartitionsRevoked(Collection<TopicPartition> partitions) {}
+
+                @Override
+                public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+                    logger.info("Kafka Consumer '{}' partitions assigned: {}", groupId, partitions);
+                    wait.set(false);
+                }
+            });
+
+            this.executor.execute(this::launch);
+
+            while (wait.get()) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    // do nothing
+                }
+            }
         }
 
         private void launch() {
+            logger.info("Kafka Consumer '{}' started consuming events from topics: {}", groupId, topics);
             while (isActive.get()) {
                 try {
-                    var records = consumer.poll(Duration.ofSeconds(30));
-                    for (var record : records) {
-                        messageQueue.offer(record);
-                    }
+                    poll(Duration.ofMillis(50));
                 } catch (WakeupException ignore) {} catch (Exception e) {
-                    logger.error("Kafka Consumer for {} topics got unhandled exception", topics, e);
+                    logger.error("Kafka Consumer '{}' for {} topics got unhandled exception", groupId, topics, e);
                     consumer.close();
                     break;
                 }
             }
+        }
+
+        private void poll(Duration maxPollTimeout) {
+            var records = consumer.poll(maxPollTimeout);
+            if (!records.isEmpty()) {
+                logger.info("Kafka Consumer '{}' polled '{}' records from topics: {}", groupId, records.count(), topics);
+            } else {
+                logger.trace("Kafka Consumer '{}' polled '{}' records...", groupId, records.count());
+            }
+
+            for (var record : records) {
+                messageQueue.offer(record);
+            }
+            consumer.commitSync();
         }
 
         @Override
@@ -102,26 +146,31 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
 
             if (receivedEvents.size() == expectedAtLeast) {
                 receivedPreviously.addAll(receivedEvents);
-                return receivedEvents;
+                return List.copyOf(receivedEvents);
             }
 
-            Awaitility.await()
-                    .atMost(timeout)
-                    .until(() -> {
-                        try {
-                            var received = messageQueue.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
-                            if (received == null) {
-                                return receivedEvents;
-                            }
+            try {
+                Awaitility.await()
+                        .atMost(timeout)
+                        .until(() -> {
+                            try {
+                                var received = messageQueue.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                                if (received == null) {
+                                    return receivedEvents;
+                                }
 
-                            var event = new ReceivedEventImpl(received);
-                            receivedEvents.add(event);
-                            return receivedEvents;
-                        } catch (InterruptedException e) {
-                            return Assertions.fail(String.format("Expected to receive at least %s event, but was interrupted: %s",
-                                    expectedAtLeast, e.getMessage()));
-                        }
-                    }, received -> received.size() >= expectedAtLeast);
+                                var event = new ReceivedEventImpl(received);
+                                receivedEvents.add(event);
+                                return receivedEvents;
+                            } catch (InterruptedException e) {
+                                return Assertions
+                                        .fail(String.format("Expected to receive at least %s event, but was interrupted: %s",
+                                                expectedAtLeast, e.getMessage()));
+                            }
+                        }, received -> received.size() >= expectedAtLeast);
+            } catch (ConditionTimeoutException e) {
+                // do nothing
+            }
 
             receivedPreviously.addAll(receivedEvents);
             return List.copyOf(receivedEvents);
@@ -150,14 +199,14 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         @Override
         public void assertReceivedNone(@NotNull Duration timeToWait) {
             if (!checkReceivedNone(timeToWait)) {
-                Assertions.fail("Expected to receive 0 events, but receive at least 1 event");
+                Assertions.fail("Expected to receive 0 events, but received at least 1 event");
             }
         }
 
         @Override
         public @NotNull ReceivedEvent assertReceived(@NotNull Duration timeout) {
             var received = getReceived(timeout);
-            return received.orElseGet(() -> Assertions.fail("Expected to receive 1 event, but receive 0 event"));
+            return received.orElseGet(() -> Assertions.fail("Expected to receive 1 event, but received 0 event"));
         }
 
         @Override
@@ -223,22 +272,28 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
             if (isActive.compareAndSet(true, false)) {
-                logger.debug("Stopping Kafka Consumer for {} topics...", topics);
+                logger.debug("Stopping Kafka Consumer '{}' for {} topics...", groupId, topics);
                 final long started = System.nanoTime();
 
                 consumer.wakeup();
                 executor.shutdownNow();
                 consumer.close(Duration.ofMinutes(3));
+                executor.shutdown();
 
                 receivedPreviously.clear();
                 messageQueue.clear();
 
-                logger.info("Stopped Kafka Consumer for {} topics took {}", topics,
+                logger.info("Stopped Kafka Consumer '{}' for {} topics took {}", groupId, topics,
                         Duration.ofNanos(System.nanoTime() - started));
             }
         }
+    }
+
+    @Override
+    public @NotNull Properties properties() {
+        return new Properties(properties);
     }
 
     @Override
@@ -249,15 +304,35 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
     @Override
     public void send(@NotNull String topic, @NotNull List<Event> events) {
         if (isClosed) {
-            throw new IllegalStateException("Can't subscribed cause was closed");
+            throw new KafkaException("Can't subscribed cause was closed");
         }
 
         if (this.producer == null) {
             this.producer = getProducer(properties);
         }
 
+        createTopicsIfNeeded(List.of(topic));
+
         for (Event event : events) {
-            this.producer.send(new ProducerRecord<>(topic, event.key().asBytes(), event.value().asBytes()));
+            final byte[] key = (event.key() == null)
+                    ? null
+                    : event.key().asBytes();
+
+            final List<Header> headers = (event.headers().isEmpty())
+                    ? null
+                    : event.headers().stream()
+                            .map(header -> new RecordHeader(header.key(), header.value().asBytes()))
+                            .collect(Collectors.toList());
+
+            try {
+                logger.trace("Kafka Producer sending event: {}", event);
+                var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers)).get(5,
+                        TimeUnit.SECONDS);
+                logger.info("Kafka Producer sent with offset '{}' with partition '{}' with timestamp '{}' event: {}",
+                        result.offset(), result.partition(), result.timestamp(), event);
+            } catch (Exception e) {
+                throw new KafkaException("Kafka Producer sent event failed: " + event, e);
+            }
         }
     }
 
@@ -269,8 +344,10 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
     @Override
     public @NotNull Consumer subscribe(@NotNull List<String> topics) {
         if (isClosed) {
-            throw new IllegalStateException("Can't subscribed cause was closed");
+            throw new KafkaException("Can't subscribed cause was closed");
         }
+
+        createTopicsIfNeeded(topics);
 
         var kafkaConsumer = getConsumer(properties);
         var consumer = new ConsumerImpl(kafkaConsumer, topics);
@@ -288,25 +365,93 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
 
     private static KafkaConsumer<byte[], byte[]> getConsumer(Properties properties) {
         final Properties consumerProperties = new Properties();
+        final String id = "testcontainers-" + UUID.randomUUID();
         consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-        consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
-        consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, UUID.randomUUID().toString());
+        consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
+        consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, id);
+        consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG, id);
         consumerProperties.putAll(properties);
         return new KafkaConsumer<>(consumerProperties, new ByteArrayDeserializer(), new ByteArrayDeserializer());
     }
 
+    private static Admin getAdmin(Properties properties) {
+        final Properties adminProperties = new Properties();
+        adminProperties.putAll(properties);
+        return Admin.create(adminProperties);
+    }
+
+    private void createTopicsIfNeeded(@NotNull List<String> topics) {
+        try {
+            var admin = getAdmin(properties);
+            logger.trace("Looking for existing topics...");
+            var existingTopics = admin.listTopics().names().get(5, TimeUnit.SECONDS);
+            logger.trace("Found existing topics: {}", existingTopics);
+
+            var topicsToCreate = topics.stream()
+                    .filter(topic -> !existingTopics.contains(topic))
+                    .map(topic -> new NewTopic(topic, Optional.of(1), Optional.empty()))
+                    .collect(Collectors.toSet());
+
+            if (!topicsToCreate.isEmpty()) {
+                logger.trace("Creating topics: {}", topics);
+                var result = admin.createTopics(topicsToCreate);
+                result.all().get(5, TimeUnit.SECONDS);
+                logger.info("Created topics: {}", topics);
+            } else {
+                logger.trace("Required topics already exist: {}", topics);
+            }
+        } catch (Exception e) {
+            throw new KafkaException("Kafka Admin operation failed for topics: " + topics, e);
+        }
+    }
+
+    void clear() {
+        if (producer != null) {
+            producer.close(Duration.ofMinutes(3));
+            producer = null;
+        }
+
+        for (var consumer : consumers) {
+            try {
+                consumer.close();
+            } catch (Exception e) {
+                // do nothing
+            }
+        }
+        consumers.clear();
+    }
+
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (!isClosed) {
             isClosed = true;
             if (producer != null) {
                 producer.close(Duration.ofMinutes(3));
+                producer = null;
             }
 
-            for (var consumer : consumers) {
-                consumer.close();
-            }
-            consumers.clear();
+            clear();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        KafkaConnectionImpl that = (KafkaConnectionImpl) o;
+        return Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(properties);
+    }
+
+    @Override
+    public String toString() {
+        return properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
     }
 }
