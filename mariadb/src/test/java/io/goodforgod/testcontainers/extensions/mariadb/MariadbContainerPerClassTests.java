@@ -2,8 +2,8 @@ package io.goodforgod.testcontainers.extensions.mariadb;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.ContainerMariadbConnection;
-import io.goodforgod.testcontainers.extensions.jdbc.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersMariadb;
 import org.junit.jupiter.api.*;

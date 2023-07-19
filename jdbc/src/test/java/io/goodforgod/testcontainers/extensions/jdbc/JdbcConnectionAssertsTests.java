@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 

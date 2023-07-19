@@ -3,6 +3,7 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.*;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_RUN, image = "postgres:15.3-alpine")

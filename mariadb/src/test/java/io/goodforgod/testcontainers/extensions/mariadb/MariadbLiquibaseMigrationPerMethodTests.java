@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.mariadb;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.*;
 import org.junit.jupiter.api.*;
 

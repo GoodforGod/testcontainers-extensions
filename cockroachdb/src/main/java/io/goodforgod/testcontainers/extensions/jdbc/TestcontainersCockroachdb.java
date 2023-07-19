@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,8 +26,6 @@ public @interface TestcontainersCockroachdb {
      * @return when to start container
      */
     ContainerMode mode() default ContainerMode.PER_METHOD;
-
-    int nodes() default 1;
 
     Migration migration() default @Migration(engine = Migration.Engines.FLYWAY,
             apply = Migration.Mode.NONE,

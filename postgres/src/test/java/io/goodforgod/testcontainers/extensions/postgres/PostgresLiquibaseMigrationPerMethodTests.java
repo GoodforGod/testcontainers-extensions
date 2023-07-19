@@ -2,11 +2,12 @@ package io.goodforgod.testcontainers.extensions.postgres;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.*;
 import org.junit.jupiter.api.*;
 
 @TestcontainersPostgres(mode = ContainerMode.PER_CLASS,
-        image = "postgres:15.2-alpine",
+        image = "postgres:15.3-alpine",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
                 apply = Migration.Mode.PER_METHOD,

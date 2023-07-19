@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 @Internal
