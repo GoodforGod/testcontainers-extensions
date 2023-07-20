@@ -134,17 +134,17 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         }
 
         @Override
-        public @NotNull List<ReceivedEvent> getReceivedAtLeast(int expectedAtLeast, @NotNull Duration timeout) {
+        public @NotNull List<ReceivedEvent> getReceived(int expectedEvents, @NotNull Duration timeout) {
             final List<ReceivedEvent> receivedEvents = new CopyOnWriteArrayList<>();
 
             final List<ConsumerRecord<byte[], byte[]>> drainTo = new ArrayList<>();
-            messageQueue.drainTo(drainTo, expectedAtLeast);
+            messageQueue.drainTo(drainTo, expectedEvents);
             for (var consumerRecord : drainTo) {
                 var event = new ReceivedEventImpl(consumerRecord);
                 receivedEvents.add(event);
             }
 
-            if (receivedEvents.size() == expectedAtLeast) {
+            if (receivedEvents.size() == expectedEvents) {
                 receivedPreviously.addAll(receivedEvents);
                 return List.copyOf(receivedEvents);
             }
@@ -165,9 +165,9 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
                             } catch (InterruptedException e) {
                                 return Assertions
                                         .fail(String.format("Expected to receive at least %s event, but was interrupted: %s",
-                                                expectedAtLeast, e.getMessage()));
+                                                expectedEvents, e.getMessage()));
                             }
-                        }, received -> received.size() >= expectedAtLeast);
+                        }, received -> received.size() >= expectedEvents);
             } catch (ConditionTimeoutException e) {
                 // do nothing
             }
@@ -204,14 +204,14 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         }
 
         @Override
-        public @NotNull ReceivedEvent assertReceived(@NotNull Duration timeout) {
+        public @NotNull ReceivedEvent assertReceivedAtLeast(@NotNull Duration timeout) {
             var received = getReceived(timeout);
             return received.orElseGet(() -> Assertions.fail("Expected to receive 1 event, but received 0 event"));
         }
 
         @Override
         public @NotNull List<ReceivedEvent> assertReceivedAtLeast(int expectedAtLeast, @NotNull Duration timeout) {
-            final List<ReceivedEvent> received = getReceivedAtLeast(expectedAtLeast, timeout);
+            final List<ReceivedEvent> received = getReceived(expectedAtLeast, timeout);
             if (received.size() < expectedAtLeast) {
                 return Assertions.fail(String.format("Expected to receive at least %s event, but received %s events",
                         expectedAtLeast, received.size()));
@@ -248,14 +248,8 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         }
 
         @Override
-        public boolean checkReceived(@NotNull Duration timeout) {
-            var received = getReceived(timeout);
-            return received.isPresent();
-        }
-
-        @Override
         public boolean checkReceivedAtLeast(int expectedAtLeast, @NotNull Duration timeout) {
-            final List<ReceivedEvent> received = getReceivedAtLeast(expectedAtLeast, timeout);
+            final List<ReceivedEvent> received = getReceived(expectedAtLeast, timeout);
             return received.size() >= expectedAtLeast;
         }
 

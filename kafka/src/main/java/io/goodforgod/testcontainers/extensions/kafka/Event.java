@@ -8,8 +8,14 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/**
+ * Kafka Event constructed from {@link org.apache.kafka.clients.consumer.ConsumerRecord}
+ */
 public interface Event {
 
+    /**
+     * Kafka Event key
+     */
     interface Key {
 
         byte[] asBytes();
@@ -18,6 +24,9 @@ public interface Event {
         String asString();
     }
 
+    /**
+     * Kafka Event Value
+     */
     interface Value {
 
         byte[] asBytes();
@@ -32,6 +41,9 @@ public interface Event {
         JSONArray asJsonArray();
     }
 
+    /**
+     * Kafka Event Header
+     */
     interface Header {
 
         @NotNull
@@ -41,39 +53,72 @@ public interface Event {
         Value value();
     }
 
+    /**
+     * @return The key (or null if no key is specified)
+     */
     Key key();
 
+    /**
+     * @return kafka event value
+     */
     @NotNull
     Value value();
 
+    /**
+     * @return kafka event headers
+     */
     @NotNull
     List<Header> headers();
 
+    /**
+     * @return kafka event builder that can be used further for
+     *             {@link KafkaConnection#send(String, List)}
+     */
     @NotNull
     static Builder builder() {
         return new EventImpl.EventBuilder();
     }
 
+    /**
+     * @param valueAsBytes for {@link Event#value()}
+     * @return event with value only
+     */
     @NotNull
     static Event ofValue(byte[] valueAsBytes) {
         return new EventImpl(null, new EventImpl.ValueImpl(valueAsBytes), Collections.emptyList());
     }
 
+    /**
+     * @param valueAsString for {@link Event#value()}
+     * @return event with value only
+     */
     @NotNull
-    static Event ofValue(@NotNull String valueAsBytes) {
-        return ofValue(valueAsBytes.getBytes(StandardCharsets.UTF_8));
+    static Event ofValue(@NotNull String valueAsString) {
+        return ofValue(valueAsString.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * @param valueAsJson for {@link Event#value()}
+     * @return event with value only
+     */
     @NotNull
-    static Event ofValue(@NotNull JSONObject valueAsBytes) {
-        return ofValue(valueAsBytes.toString().getBytes(StandardCharsets.UTF_8));
+    static Event ofValue(@NotNull JSONObject valueAsJson) {
+        return ofValue(valueAsJson.toString().getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * @param valueAsJsonArray for {@link Event#value()}
+     * @return event with value only
+     */
     @NotNull
-    static Event ofValue(@NotNull JSONArray valueAsBytes) {
-        return ofValue(valueAsBytes.toString().getBytes(StandardCharsets.UTF_8));
+    static Event ofValue(@NotNull JSONArray valueAsJsonArray) {
+        return ofValue(valueAsJsonArray.toString().getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * @param valueAsBytes for {@link Event#value()}
+     * @return event with value and random key for {@link Event#key()}
+     */
     @NotNull
     static Event ofValueAndRandomKey(byte[] valueAsBytes) {
         return new EventImpl(new EventImpl.KeyImpl(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)),
@@ -81,19 +126,31 @@ public interface Event {
                 Collections.emptyList());
     }
 
+    /**
+     * @param valueAsString for {@link Event#value()}
+     * @return event with value and random key for {@link Event#key()}
+     */
     @NotNull
-    static Event ofValueAndRandomKey(@NotNull String valueAsBytes) {
-        return ofValueAndRandomKey(valueAsBytes.getBytes(StandardCharsets.UTF_8));
+    static Event ofValueAndRandomKey(@NotNull String valueAsString) {
+        return ofValueAndRandomKey(valueAsString.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * @param valueAsJson for {@link Event#value()}
+     * @return event with value and random key for {@link Event#key()}
+     */
     @NotNull
-    static Event ofValueAndRandomKey(@NotNull JSONObject valueAsBytes) {
-        return ofValueAndRandomKey(valueAsBytes.toString().getBytes(StandardCharsets.UTF_8));
+    static Event ofValueAndRandomKey(@NotNull JSONObject valueAsJson) {
+        return ofValueAndRandomKey(valueAsJson.toString().getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * @param valueAsJsonArray for {@link Event#value()}
+     * @return event with value and random key for {@link Event#key()}
+     */
     @NotNull
-    static Event ofValueAndRandomKey(@NotNull JSONArray valueAsBytes) {
-        return ofValueAndRandomKey(valueAsBytes.toString().getBytes(StandardCharsets.UTF_8));
+    static Event ofValueAndRandomKey(@NotNull JSONArray valueAsJsonArray) {
+        return ofValueAndRandomKey(valueAsJsonArray.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     interface Builder {
@@ -122,6 +179,9 @@ public interface Event {
         @NotNull
         Builder withHeader(@NotNull String key, @NotNull String value);
 
+        /**
+         * @return kafka event
+         */
         @NotNull
         Event build();
     }
