@@ -8,6 +8,15 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
 
+/**
+ * Kafka Connection to {@link TestcontainersKafka}
+ * <p>
+ * Provides:
+ * Producer functionality
+ * <a href="https://docs.confluent.io/platform/current/clients/producer.html">Kafka Producer</a>
+ * Consumer functionality
+ * <a href="https://docs.confluent.io/platform/current/clients/consumer.html">Kafka Consumer</a>
+ */
 interface KafkaConnection {
 
     /**
@@ -44,11 +53,11 @@ interface KafkaConnection {
          * @return try to receive N specified events as list in specified time
          */
         @NotNull
-        List<ReceivedEvent> getReceived(int expectedEvents, @NotNull Duration timeout);
+        List<ReceivedEvent> getReceivedAtLeast(int expectedEvents, @NotNull Duration timeout);
 
         @NotNull
-        default List<ReceivedEvent> getReceived(int expectedEvents) {
-            return getReceived(expectedEvents, Duration.ofSeconds(15));
+        default List<ReceivedEvent> getReceivedAtLeast(int expectedEvents) {
+            return getReceivedAtLeast(expectedEvents, Duration.ofSeconds(15));
         }
 
         /**

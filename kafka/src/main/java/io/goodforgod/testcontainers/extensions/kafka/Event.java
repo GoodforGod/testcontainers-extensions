@@ -34,9 +34,19 @@ public interface Event {
         @NotNull
         String asString();
 
+        /**
+         * <a href="https://www.baeldung.com/java-org-json">JSON</a>
+         * 
+         * @return as json object
+         */
         @NotNull
         JSONObject asJson();
 
+        /**
+         * <a href="https://www.baeldung.com/java-org-json">JSON</a>
+         * 
+         * @return as json object
+         */
         @NotNull
         JSONArray asJsonArray();
     }
@@ -98,6 +108,8 @@ public interface Event {
     }
 
     /**
+     * JSON <a href="https://www.baeldung.com/java-org-json">JSON</a>
+     * 
      * @param valueAsJson for {@link Event#value()}
      * @return event with value only
      */
@@ -107,6 +119,8 @@ public interface Event {
     }
 
     /**
+     * JSON <a href="https://www.baeldung.com/java-org-json">JSON</a>
+     * 
      * @param valueAsJsonArray for {@link Event#value()}
      * @return event with value only
      */
@@ -136,6 +150,8 @@ public interface Event {
     }
 
     /**
+     * JSON <a href="https://www.baeldung.com/java-org-json">JSON</a>
+     * 
      * @param valueAsJson for {@link Event#value()}
      * @return event with value and random key for {@link Event#key()}
      */
@@ -145,6 +161,8 @@ public interface Event {
     }
 
     /**
+     * JSON <a href="https://www.baeldung.com/java-org-json">JSON</a>
+     * 
      * @param valueAsJsonArray for {@link Event#value()}
      * @return event with value and random key for {@link Event#key()}
      */
@@ -167,9 +185,17 @@ public interface Event {
         @NotNull
         Builder withValue(@NotNull String value);
 
+        /**
+         * @param value JSON <a href="https://www.baeldung.com/java-org-json">JSON</a>
+         * @return self
+         */
         @NotNull
         Builder withValue(@NotNull JSONObject value);
 
+        /**
+         * @param value JSON <a href="https://www.baeldung.com/java-org-json">JSON</a>
+         * @return self
+         */
         @NotNull
         Builder withValue(@NotNull JSONArray value);
 

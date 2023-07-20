@@ -23,7 +23,9 @@ final class ReceivedEventImpl implements ReceivedEvent {
     private final long timestamp;
 
     public ReceivedEventImpl(ConsumerRecord<byte[], byte[]> record) {
-        this(new EventImpl.KeyImpl(record.key()),
+        this((record.key() == null)
+                ? null
+                : new EventImpl.KeyImpl(record.key()),
                 new EventImpl.ValueImpl(record.value()),
                 getHeaders(record),
                 record.topic(),

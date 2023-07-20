@@ -37,7 +37,7 @@ class KafkaConnectionAssertsTests {
         assertNotEquals(-1, received.get().offset());
         assertNotEquals(-1, received.get().partition());
         assertNotEquals(-1, received.get().timestamp());
-        assertNotEquals(topic, received.get().topic());
+        assertEquals(topic, received.get().topic());
         assertNotNull(received.get().datetime());
         assertEquals(event.key(), received.get().key());
         assertEquals(event.key().toString(), received.get().key().toString());
@@ -56,7 +56,7 @@ class KafkaConnectionAssertsTests {
         var topic = "example";
         var consumer = connection.subscribe(topic);
         connection.send(topic, Event.ofValue("value1"), Event.ofValue("value2"));
-        var received = consumer.getReceived(2, Duration.ofSeconds(1));
+        var received = consumer.getReceivedAtLeast(2, Duration.ofSeconds(1));
         assertEquals(2, received.size());
         assertNotEquals(received.get(0), received.get(1));
         assertNotEquals(received.get(0).toString(), received.get(1).toString());
