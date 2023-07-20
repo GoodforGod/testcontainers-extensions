@@ -118,7 +118,7 @@ class ExampleTests {
     private JdbcConnection connectionInField;
 
     @Test
-    void test(@ContainerCockroachdbConnection JdbcConnection connectionInParam) {
+    void test(@ContainerCockroachdbConnection JdbcConnection connection) {
         connection.execute("CREATE TABLE users (id INT NOT NULL PRIMARY KEY);");
         connection.execute("INSERT INTO users VALUES(1);");
         connection.assertInserted("INSERT INTO users VALUES(2);");
@@ -178,7 +178,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ContainerCockroachdbConnection JdbcConnection connectionInParam) {
+    void test(@ContainerCockroachdbConnection JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
         assertEquals(1, usersFound.size());
