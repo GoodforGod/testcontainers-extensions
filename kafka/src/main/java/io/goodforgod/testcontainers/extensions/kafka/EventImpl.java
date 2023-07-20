@@ -35,7 +35,7 @@ final class EventImpl implements Event {
             if (o == null || getClass() != o.getClass())
                 return false;
             KeyImpl key1 = (KeyImpl) o;
-            return Arrays.equals(key, key1.key);
+            return Objects.equals(asString(), key1.asString());
         }
 
         @Override
@@ -84,7 +84,7 @@ final class EventImpl implements Event {
             if (o == null || getClass() != o.getClass())
                 return false;
             ValueImpl value1 = (ValueImpl) o;
-            return Arrays.equals(value, value1.value);
+            return Objects.equals(asString(), value1.asString());
         }
 
         @Override
@@ -174,8 +174,7 @@ final class EventImpl implements Event {
 
         @Override
         public @NotNull Builder withKey(@NotNull String key) {
-            this.key = key.getBytes(StandardCharsets.UTF_8);
-            return this;
+            return withKey(key.getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
@@ -192,20 +191,17 @@ final class EventImpl implements Event {
 
         @Override
         public @NotNull Builder withValue(@NotNull String value) {
-            this.value = value.getBytes(StandardCharsets.UTF_8);
-            return this;
+            return withValue(value.getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
         public @NotNull Builder withValue(@NotNull JSONObject value) {
-            this.value = value.toString().getBytes(StandardCharsets.UTF_8);
-            return this;
+            return withValue(value.toString().getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
         public @NotNull Builder withValue(@NotNull JSONArray value) {
-            this.value = value.toString().getBytes(StandardCharsets.UTF_8);
-            return this;
+            return withValue(value.toString().getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
@@ -216,8 +212,7 @@ final class EventImpl implements Event {
 
         @Override
         public @NotNull Builder withHeader(@NotNull String key, @NotNull String value) {
-            this.headers.add(new HeaderImpl(key, new ValueImpl(value.getBytes(StandardCharsets.UTF_8))));
-            return this;
+            return withHeader(key, value.getBytes(StandardCharsets.UTF_8));
         }
 
         @Override

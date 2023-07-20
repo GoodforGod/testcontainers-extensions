@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.time.Duration;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.opentest4j.AssertionFailedError;
@@ -17,11 +18,37 @@ class KafkaConnectionAssertsTests {
 
     @Test
     void getReceived() {
+        // given
         var topic = "example";
         var consumer = connection.subscribe(topic);
-        connection.send(topic, Event.ofValue("value"));
+
+        // when
+        var event = Event.builder()
+                .withKey("1")
+                .withValue(new JSONObject().put("name", "bob"))
+                .withHeader("1", "1")
+                .withHeader("2", "2")
+                .build();
+        connection.send(topic, event);
+
+        // then
         var received = consumer.getReceived(Duration.ofSeconds(1));
         assertTrue(received.isPresent());
+        assertNotEquals(-1, received.get().offset());
+        assertNotEquals(-1, received.get().partition());
+        assertNotEquals(-1, received.get().timestamp());
+        assertNotEquals(topic, received.get().topic());
+        assertNotNull(received.get().datetime());
+        assertEquals(event.key(), received.get().key());
+        assertEquals(event.key().toString(), received.get().key().toString());
+        assertEquals(event.value(), received.get().value());
+        assertEquals(event.value().toString(), received.get().value().toString());
+        assertEquals(event.value().asString(), received.get().value().asString());
+        assertEquals(event.value().asJson().toString(), received.get().value().asJson().toString());
+        assertEquals(2, event.headers().size());
+        assertEquals(event.headers(), received.get().headers());
+        assertEquals(event.headers().get(0), received.get().headers().get(0));
+        assertEquals(event.headers().get(0).toString(), received.get().headers().get(0).toString());
     }
 
     @Test
@@ -31,6 +58,8 @@ class KafkaConnectionAssertsTests {
         connection.send(topic, Event.ofValue("value1"), Event.ofValue("value2"));
         var received = consumer.getReceived(2, Duration.ofSeconds(1));
         assertEquals(2, received.size());
+        assertNotEquals(received.get(0), received.get(1));
+        assertNotEquals(received.get(0).toString(), received.get(1).toString());
     }
 
     @Test
