@@ -22,8 +22,14 @@ sonarqube {
 }
 
 dependencies {
+    jacocoAggregation project(":common")
     jacocoAggregation project(":jdbc")
     jacocoAggregation project(":postgres")
+    jacocoAggregation project(":oracle")
+    jacocoAggregation project(":mysql")
+    jacocoAggregation project(":mariadb")
+    jacocoAggregation project(":cockroachdb")
+    jacocoAggregation project(":kafka")
 }
 
 reporting {
