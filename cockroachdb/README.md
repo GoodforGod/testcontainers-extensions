@@ -37,7 +37,7 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testImplementation "org.postgresql:postgresql:42.6.0"
+testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 ```
 
 **Maven**
