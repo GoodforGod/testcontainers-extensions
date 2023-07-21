@@ -1,4 +1,4 @@
-package io.goodforgod.testcontainers.extensions.jdbc;
+package io.goodforgod.testcontainers.extensions;
 
 /**
  * Container mode indicating when to run container

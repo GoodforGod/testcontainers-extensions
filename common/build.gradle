@@ -1,0 +1,9 @@
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                description = "Testcontainers Common library is used to create other extensions"
+            }
+        }
+    }
+}

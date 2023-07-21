@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -382,6 +383,21 @@ final class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public boolean checkDeleted(String sql) {
         return checkInserted(sql);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        JdbcConnectionImpl that = (JdbcConnectionImpl) o;
+        return Objects.equals(params, that.params) && Objects.equals(network, that.network);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(params, network);
     }
 
     @Override

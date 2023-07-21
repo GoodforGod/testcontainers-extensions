@@ -8,10 +8,12 @@ apply from: "dependencies.gradle"
 
 rootProject.name = artifactRootId
 
-include "postgres"
+include "common"
 include "jdbc"
+include "postgres"
 include "mariadb"
 include "mysql"
 include "oracle"
 include "cockroachdb"
+include "kafka"
 

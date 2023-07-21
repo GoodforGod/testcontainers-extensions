@@ -1,0 +1,11 @@
+dependencies {
+    api project(":common")
+    api libs.testcontainers.kafka
+    api libs.json
+
+    implementation libs.kafka.client
+    implementation libs.slf4j.api
+
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+}

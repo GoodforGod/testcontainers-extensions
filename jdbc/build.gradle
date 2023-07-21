@@ -1,4 +1,6 @@
 dependencies {
+    api project(":common")
+
     implementation libs.flyway.core
     implementation libs.liquibase.core
     implementation libs.slf4j.jul

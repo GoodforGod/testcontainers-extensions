@@ -2,13 +2,13 @@ package io.goodforgod.testcontainers.extensions.postgres;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.goodforgod.testcontainers.extensions.jdbc.ContainerMode;
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.ContainerPostgresConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersPostgres;
 import org.junit.jupiter.api.*;
 
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:15.3-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PostgresContainerPerClassTests {

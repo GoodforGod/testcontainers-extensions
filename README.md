@@ -13,6 +13,7 @@ Makes testing with Testcontainers even easier.
 
 ## Featured extensions
 - [Postgres](postgres)
+- [Kafka](kafka)
 - [Oracle](oracle)
 - [MariaDB](mariadb)
 - [MySQL](mysql)

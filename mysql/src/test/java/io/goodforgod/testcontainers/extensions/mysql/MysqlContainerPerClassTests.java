@@ -2,7 +2,7 @@ package io.goodforgod.testcontainers.extensions.mysql;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.goodforgod.testcontainers.extensions.jdbc.ContainerMode;
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.ContainerMysqlConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersMysql;
