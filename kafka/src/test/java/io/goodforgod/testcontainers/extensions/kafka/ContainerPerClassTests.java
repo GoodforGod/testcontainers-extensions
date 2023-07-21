@@ -23,6 +23,7 @@ class ContainerPerClassTests {
         assertNotNull(connection.properties());
         assertNotNull(sameConnection);
         assertEquals(sameConnection, connection);
+        assertEquals(sameConnection.toString(), connection.toString());
         firstConnection = connection;
     }
 

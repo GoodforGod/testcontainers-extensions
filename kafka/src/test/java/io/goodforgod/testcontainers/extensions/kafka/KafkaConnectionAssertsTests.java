@@ -49,6 +49,7 @@ class KafkaConnectionAssertsTests {
         assertEquals(event.headers(), received.get().headers());
         assertEquals(event.headers().get(0), received.get().headers().get(0));
         assertEquals(event.headers().get(0).toString(), received.get().headers().get(0).toString());
+        assertNotNull(received.get().toString());
     }
 
     @Test
@@ -81,8 +82,9 @@ class KafkaConnectionAssertsTests {
     void assertReceived() {
         var topic = "example";
         var consumer = connection.subscribe(topic);
-        connection.send(topic, Event.ofValue("value"));
-        consumer.assertReceivedAtLeast(Duration.ofSeconds(1));
+        connection.send(topic, Event.builder().withValue("value").withHeader("1", "1").build());
+        var receivedEvent = consumer.assertReceivedAtLeast(Duration.ofSeconds(1));
+        assertNotNull(receivedEvent.toString());
     }
 
     @Test
@@ -111,8 +113,11 @@ class KafkaConnectionAssertsTests {
     void assertReceivedEquals() {
         var topic = "example";
         var consumer = connection.subscribe(topic);
-        connection.send(topic, Event.ofValue("value1"), Event.ofValue("value2"));
-        consumer.assertReceivedEqualsInTime(2, Duration.ofSeconds(1));
+        connection.send(topic, Event.builder().withValue("value1").withKey("1").build(),
+                Event.ofValue("value2"));
+        var receivedEvents = consumer.assertReceivedEqualsInTime(2, Duration.ofSeconds(1));
+        assertNotEquals(receivedEvents.get(0), receivedEvents.get(1));
+        assertNotEquals(receivedEvents.get(0).toString(), receivedEvents.get(1).toString());
     }
 
     @Test

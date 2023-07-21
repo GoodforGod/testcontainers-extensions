@@ -90,9 +90,11 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
             while (isActive.get()) {
                 try {
                     poll(Duration.ofMillis(50));
-                } catch (WakeupException ignore) {} catch (Exception e) {
+                } catch (WakeupException ignore) {
+                    // do nothing
+                } catch (Exception e) {
                     logger.error("Kafka Consumer '{}' for {} topics got unhandled exception", groupId, topics, e);
-                    consumer.close();
+                    consumer.close(Duration.ofMinutes(3));
                     break;
                 }
             }
@@ -271,16 +273,18 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
                 logger.debug("Stopping Kafka Consumer '{}' for {} topics...", groupId, topics);
                 final long started = System.nanoTime();
 
-                consumer.wakeup();
-                executor.shutdownNow();
-                consumer.close(Duration.ofMinutes(3));
-                executor.shutdown();
-
-                receivedPreviously.clear();
-                messageQueue.clear();
-
-                logger.info("Stopped Kafka Consumer '{}' for {} topics took {}", groupId, topics,
-                        Duration.ofNanos(System.nanoTime() - started));
+                try {
+                    executor.shutdownNow();
+                    consumer.wakeup();
+                    executor.awaitTermination(1, TimeUnit.MINUTES);
+                    consumer.close(Duration.ofMinutes(3));
+                } catch (Exception e) {
+                    // do nothing
+                } finally {
+                    reset();
+                    logger.info("Stopped Kafka Consumer '{}' for {} topics took {}", groupId, topics,
+                            Duration.ofNanos(System.nanoTime() - started));
+                }
             }
         }
     }
