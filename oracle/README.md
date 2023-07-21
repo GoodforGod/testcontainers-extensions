@@ -37,7 +37,7 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testImplementation "com.oracle.database.jdbc:ojdbc8:21.5.0.0"
+testRuntimeOnly "com.oracle.database.jdbc:ojdbc8:21.5.0.0"
 ```
 
 **Maven**

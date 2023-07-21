@@ -37,7 +37,7 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testImplementation "org.mariadb.jdbc:mariadb-java-client:3.1.4"
+testRuntimeOnly "org.mariadb.jdbc:mariadb-java-client:3.1.4"
 ```
 
 **Maven**

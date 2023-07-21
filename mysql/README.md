@@ -37,7 +37,7 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testImplementation "mysql:mysql-connector-java:8.0.33"
+testRuntimeOnly "mysql:mysql-connector-java:8.0.33"
 ```
 
 **Maven**
