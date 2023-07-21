@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.2.0"
+testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.3.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.2.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-oracle</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -37,7 +37,7 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testImplementation "com.oracle.database.jdbc:ojdbc8:21.5.0.0"
+testRuntimeOnly "com.oracle.database.jdbc:ojdbc8:21.5.0.0"
 ```
 
 **Maven**
@@ -119,7 +119,7 @@ class ExampleTests {
     private JdbcConnection connectionInField;
 
     @Test
-    void test(@ContainerOracleConnection JdbcConnection connectionInParam) {
+    void test(@ContainerOracleConnection JdbcConnection connection) {
         connection.execute("CREATE TABLE users (id INT NOT NULL PRIMARY KEY)");
         connection.execute("INSERT INTO users VALUES(1)");
         connection.assertInserted("INSERT INTO users VALUES(2)");
@@ -179,7 +179,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ContainerOracleConnection JdbcConnection connectionInParam) {
+    void test(@ContainerOracleConnection JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1)");
         var usersFound = connection.queryMany("SELECT * FROM users", r -> r.getInt(1));
         assertEquals(1, usersFound.size());

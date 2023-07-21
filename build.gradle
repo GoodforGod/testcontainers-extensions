@@ -1,5 +1,3 @@
-import java.time.Duration
-
 buildscript {
     dependencies {
         classpath "com.diffplug.spotless:spotless-plugin-gradle:6.19.0"
@@ -24,8 +22,14 @@ sonarqube {
 }
 
 dependencies {
+    jacocoAggregation project(":common")
     jacocoAggregation project(":jdbc")
     jacocoAggregation project(":postgres")
+    jacocoAggregation project(":oracle")
+    jacocoAggregation project(":mysql")
+    jacocoAggregation project(":mariadb")
+    jacocoAggregation project(":cockroachdb")
+    jacocoAggregation project(":kafka")
 }
 
 reporting {

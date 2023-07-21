@@ -11,3 +11,7 @@ Base module to build other extensions.
 
 Used by extensions:
 - [Postgres](../postgres)
+- [Oracle](../oracle)
+- [MariaDB](../mariadb)
+- [MySQL](../mysql)
+- [Cockroachdb](../cockroachdb)

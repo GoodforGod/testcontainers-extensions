@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;

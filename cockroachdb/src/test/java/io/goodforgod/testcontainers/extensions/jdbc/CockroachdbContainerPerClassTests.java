@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.*;
 
 @TestcontainersCockroachdb(mode = ContainerMode.PER_CLASS, image = "cockroachdb/cockroach:latest-v23.1")
