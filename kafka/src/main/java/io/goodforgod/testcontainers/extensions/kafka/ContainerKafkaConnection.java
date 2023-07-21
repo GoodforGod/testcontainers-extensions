@@ -14,7 +14,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 public @interface ContainerKafkaConnection {
 
     /**
-     * @return {@link KafkaConnection} properties that will be used {@link ConsumerConfig} &
+     * @return {@link KafkaConnection} properties that will be used {@link ConsumerConfig} and
      *             {@link ProducerConfig}
      */
     Property[] properties() default {};
