@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly libs.driver.cassandra.core
+    compileOnly libs.driver.cassandra
 
     api project(":common")
     api libs.testcontainers.cassandra
@@ -9,5 +9,5 @@ dependencies {
     implementation libs.junit.launcher
     implementation libs.junit.api
 
-    testImplementation libs.driver.cassandra.core
+    testImplementation libs.driver.cassandra
 }

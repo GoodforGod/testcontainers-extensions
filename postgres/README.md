@@ -160,7 +160,7 @@ Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html)
 - [Liquibase](https://www.liquibase.com/databases/postgresql)
 
-Given engine is [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html) and migration file named `V1__flyway.sql` is in resource folder on default path `db/migration`:
+Given engine is [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html) and migration file named `V1__flyway.sql` is in resource directory on default path `db/migration`:
 ```sql
 CREATE TABLE IF NOT EXISTS users
 (
