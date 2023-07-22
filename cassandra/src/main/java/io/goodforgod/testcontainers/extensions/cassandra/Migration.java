@@ -29,8 +29,7 @@ public @interface Migration {
     Mode drop();
 
     /**
-     * @return will be by default null for Simple and "db/migration/changelog.cql"
-     *             for Liquibase
+     * @return path for resource directory with scripts or scripts itself
      */
     String[] migrations();
 
@@ -39,7 +38,8 @@ public @interface Migration {
      */
     enum Engines {
         /**
-         *
+         * For apply use scripts in ASC order to execute that are pretended to set up tables and data
+         * For drop clean all Non System tables in all cassandra
          */
         SCRIPTS
     }

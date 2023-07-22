@@ -19,13 +19,13 @@ class SimplePerClassMigrationTests {
     @Order(1)
     @Test
     void firstRun(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
     }
 
     @Order(2)
     @Test
     void secondRun(@ContainerCassandraConnection CassandraConnection connection) {
-        var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(0)).orElse(null);
+        var usersFound = connection.queryOne("SELECT * FROM default.users;", r -> r.getInt(0)).orElse(null);
         assertEquals(1, usersFound);
     }
 }

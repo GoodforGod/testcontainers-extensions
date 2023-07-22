@@ -12,13 +12,13 @@ import org.opentest4j.AssertionFailedError;
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD,
-                migrations = { "migration" }))
+                migrations = { "migration/setup.cql" }))
 class CassandraConnectionAssertsTests {
 
     @Test
     void execute(@ContainerCassandraConnection CassandraConnection connection) {
         assertThrows(CassandraConnectionException.class,
-                () -> connection.execute("CREATE TABLE users(id INT, PRIMARY KEY (id))"));
+                () -> connection.execute("CREATE TABLE default.users(id INT, PRIMARY KEY (id))"));
     }
 
     @Test
@@ -28,163 +28,163 @@ class CassandraConnectionAssertsTests {
 
     @Test
     void queryOne(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(0)).orElse(null);
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        var usersFound = connection.queryOne("SELECT * FROM default.users;", r -> r.getInt(0)).orElse(null);
         assertEquals(1, usersFound);
     }
 
     @Test
     void queryMany(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(0));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        var usersFound = connection.queryMany("SELECT * FROM default.users;", r -> r.getInt(0));
         assertEquals(2, usersFound.size());
     }
 
     @Test
     void count(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertEquals(1, connection.count("users"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertEquals(1, connection.count("default.users"));
     }
 
     @Test
     void assertCountsNoneWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsNone("users"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsNone("default.users"));
     }
 
     @Test
     void assertCountsNoneWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertDoesNotThrow(() -> connection.assertCountsNone("users"));
+        assertDoesNotThrow(() -> connection.assertCountsNone("default.users"));
     }
 
     @Test
     void assertCountsAtLeastWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsAtLeast(1, "users"));
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsAtLeast(1, "default.users"));
     }
 
     @Test
     void assertCountsAtLeastWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "users"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "default.users"));
     }
 
     @Test
     void assertCountsAtLeastWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "users"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "default.users"));
     }
 
     @Test
     void assertCountsExactWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "users"));
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "default.users"));
     }
 
     @Test
     void assertCountsExactWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "users"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "default.users"));
     }
 
     @Test
     void assertCountsExactWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertDoesNotThrow(() -> connection.assertCountsEquals(1, "users"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertDoesNotThrow(() -> connection.assertCountsEquals(1, "default.users"));
     }
 
     @Test
     void assertQueriesNoneWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesNone("SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesNone("SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesNoneWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertDoesNotThrow(() -> connection.assertQueriesNone("SELECT * FROM users;"));
+        assertDoesNotThrow(() -> connection.assertQueriesNone("SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesAtLeastWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesAtLeast(1, "SELECT * FROM users;"));
+        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesAtLeast(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesAtLeastWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        assertDoesNotThrow(() -> connection.assertQueriesAtLeast(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        assertDoesNotThrow(() -> connection.assertQueriesAtLeast(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesAtLeastWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertDoesNotThrow(() -> connection.assertQueriesAtLeast(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertDoesNotThrow(() -> connection.assertQueriesAtLeast(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesExactWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesEquals(1, "SELECT * FROM users;"));
+        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesEquals(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesExactWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesEquals(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        assertThrows(AssertionFailedError.class, () -> connection.assertQueriesEquals(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void assertQueriesExactWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertDoesNotThrow(() -> connection.assertQueriesEquals(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertDoesNotThrow(() -> connection.assertQueriesEquals(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesNoneWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertFalse(connection.checkQueriesNone("SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertFalse(connection.checkQueriesNone("SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesNoneWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertTrue(connection.checkQueriesNone("SELECT * FROM users;"));
+        assertTrue(connection.checkQueriesNone("SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesAtLeastWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertFalse(connection.checkQueriesAtLeast(1, "SELECT * FROM users;"));
+        assertFalse(connection.checkQueriesAtLeast(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesAtLeastWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        assertTrue(connection.checkQueriesAtLeast(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        assertTrue(connection.checkQueriesAtLeast(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesAtLeastWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertTrue(connection.checkQueriesAtLeast(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertTrue(connection.checkQueriesAtLeast(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesExactWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
-        assertFalse(connection.checkQueriesEquals(1, "SELECT * FROM users;"));
+        assertFalse(connection.checkQueriesEquals(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesExactWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        connection.execute("INSERT INTO users(id) VALUES(2);");
-        assertFalse(connection.checkQueriesEquals(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        connection.execute("INSERT INTO default.users(id) VALUES(2);");
+        assertFalse(connection.checkQueriesEquals(1, "SELECT * FROM default.users;"));
     }
 
     @Test
     void checkQueriesExactWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
-        connection.execute("INSERT INTO users(id) VALUES(1);");
-        assertTrue(connection.checkQueriesEquals(1, "SELECT * FROM users;"));
+        connection.execute("INSERT INTO default.users(id) VALUES(1);");
+        assertTrue(connection.checkQueriesEquals(1, "SELECT * FROM default.users;"));
     }
 }

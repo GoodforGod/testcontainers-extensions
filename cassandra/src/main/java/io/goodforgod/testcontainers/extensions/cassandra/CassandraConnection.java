@@ -39,8 +39,6 @@ public interface CassandraConnection {
         @NotNull
         String datacenter();
 
-        String keyspace();
-
         String username();
 
         String password();
@@ -103,34 +101,34 @@ public interface CassandraConnection {
             throws E;
 
     /**
-     * @param tableName to SELECT COUNT(*) in
+     * @param tableNameWithKeyspace example: mykeyspace.mytable
      * @return SELECT COUNT(*) from specified table
      */
-    long count(@NotNull String tableName);
+    long count(@NotNull String tableNameWithKeyspace);
 
     /**
      * Asserts that SELECT COUNT(*) in specified table counts 0 rows
      *
-     * @param tableName to SELECT COUNT(*) in
+     * @param table example: mykeyspace.mytable
      */
-    void assertCountsNone(@NotNull String tableName);
+    void assertCountsNone(@NotNull String table);
 
     /**
      * Asserts that SELECT COUNT(*) in specified table counts at least minimal number expectedAtLeast
      * rows
      *
-     * @param tableName       to SELECT COUNT(*) in
+     * @param table           example: mykeyspace.mytable
      * @param expectedAtLeast at least minimal number of rows expected
      */
-    void assertCountsAtLeast(long expectedAtLeast, @NotNull String tableName);
+    void assertCountsAtLeast(long expectedAtLeast, @NotNull String table);
 
     /**
      * Asserts that SELECT COUNT(*) in specified table counts exact number expected rows
      *
-     * @param tableName to SELECT COUNT(*) in
-     * @param expected  exact number of rows expected
+     * @param table    example: mykeyspace.mytable
+     * @param expected exact number of rows expected
      */
-    void assertCountsEquals(long expected, @NotNull String tableName);
+    void assertCountsEquals(long expected, @NotNull String table);
 
     /**
      * Asserts that executed CQL results in 0 rows

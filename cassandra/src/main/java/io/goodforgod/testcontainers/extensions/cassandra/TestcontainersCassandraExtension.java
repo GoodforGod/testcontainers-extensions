@@ -41,7 +41,6 @@ class TestcontainersCassandraExtension implements
     private static final String EXTERNAL_TEST_CASSANDRA_HOST = "EXTERNAL_TEST_CASSANDRA_HOST";
     private static final String EXTERNAL_TEST_CASSANDRA_PORT = "EXTERNAL_TEST_CASSANDRA_PORT";
     private static final String EXTERNAL_TEST_CASSANDRA_DATACENTER = "EXTERNAL_TEST_CASSANDRA_DATACENTER";
-    private static final String EXTERNAL_TEST_CASSANDRA_KEYSPACE = "EXTERNAL_TEST_CASSANDRA_KEYSPACE";
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersCassandraExtension.class);
@@ -164,20 +163,13 @@ class TestcontainersCassandraExtension implements
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
                 .orElse(null);
 
-        var connection = ((CassandraConnectionImpl) CassandraConnectionImpl.forContainer(container.getHost(),
+        return CassandraConnectionImpl.forContainer(container.getHost(),
                 container.getMappedPort(CassandraContainer.CQL_PORT),
                 alias,
                 CassandraContainer.CQL_PORT,
                 container.getLocalDatacenter(),
-                null,
                 container.getUsername(),
-                container.getPassword()));
-
-        var keyspace = "cassandra";
-        connection.execute("CREATE KEYSPACE IF NOT EXISTS " + keyspace
-                + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};", null);
-
-        return connection.withKeyspace(keyspace);
+                container.getPassword());
     }
 
     @NotNull
@@ -187,10 +179,9 @@ class TestcontainersCassandraExtension implements
         var user = System.getenv(EXTERNAL_TEST_CASSANDRA_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_CASSANDRA_PASSWORD);
         var dc = Optional.ofNullable(System.getenv(EXTERNAL_TEST_CASSANDRA_DATACENTER)).orElse("datacenter1");
-        var keyspace = System.getenv(EXTERNAL_TEST_CASSANDRA_KEYSPACE);
 
         if (host != null && port != null) {
-            return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, keyspace, user, password));
+            return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, user, password));
         } else
             return Optional.empty();
     }
@@ -222,7 +213,7 @@ class TestcontainersCassandraExtension implements
                     final File file = new File(path);
                     return file.isFile()
                             ? Stream.of(file)
-                            : Arrays.stream(file.listFiles());
+                            : Arrays.stream(file.listFiles()).sorted();
                 })
                 .collect(Collectors.toList());
     }
@@ -280,7 +271,7 @@ class TestcontainersCassandraExtension implements
 
         for (Table table : tables) {
             if (!table.keyspace().startsWith("system")) {
-                ((CassandraConnectionImpl) connection).execute("TRUNCATE TABLE " + table.keyspace() + "." + table.name(), null);
+                connection.execute("TRUNCATE TABLE " + table.keyspace() + "." + table.name());
             }
         }
     }

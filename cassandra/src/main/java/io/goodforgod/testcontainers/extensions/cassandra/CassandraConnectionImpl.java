@@ -6,7 +6,6 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import java.net.InetSocketAddress;
@@ -29,15 +28,13 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
         private final String host;
         private final int port;
         private final String datacenter;
-        private final String keyspace;
         private final String username;
         private final String password;
 
-        ParamsImpl(String host, int port, String datacenter, String keyspace, String username, String password) {
+        ParamsImpl(String host, int port, String datacenter, String username, String password) {
             this.host = host;
             this.port = port;
             this.datacenter = datacenter;
-            this.keyspace = keyspace;
             this.username = username;
             this.password = password;
         }
@@ -58,11 +55,6 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
         }
 
         @Override
-        public String keyspace() {
-            return keyspace;
-        }
-
-        @Override
         public String username() {
             return username;
         }
@@ -77,7 +69,6 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
             return "[host=" + host +
                     ", port=" + port +
                     ", datacenter=" + datacenter +
-                    ", keyspace=" + keyspace +
                     ", username=" + username +
                     ", password=" + password + ']';
         }
@@ -107,15 +98,14 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
                                             String hostInNetwork,
                                             Integer portInNetwork,
                                             String datacenter,
-                                            String keyspace,
                                             String username,
                                             String password) {
-        var params = new ParamsImpl(host, port, datacenter, keyspace, username, password);
+        var params = new ParamsImpl(host, port, datacenter, username, password);
         final Params network;
         if (hostInNetwork == null) {
             network = null;
         } else {
-            network = new ParamsImpl(hostInNetwork, portInNetwork, datacenter, keyspace, username, password);
+            network = new ParamsImpl(hostInNetwork, portInNetwork, datacenter, username, password);
         }
 
         return new CassandraConnectionImpl(params, network);
@@ -124,21 +114,10 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
     static CassandraConnection forExternal(String host,
                                            int port,
                                            String datacenter,
-                                           String keyspace,
                                            String username,
                                            String password) {
-        var params = new ParamsImpl(host, port, datacenter, keyspace, username, password);
+        var params = new ParamsImpl(host, port, datacenter, username, password);
         return new CassandraConnectionImpl(params, null);
-    }
-
-    CassandraConnection withKeyspace(String keyspace) {
-        var params = new ParamsImpl(params().host(), params().port(), params().datacenter(), keyspace, params().username(),
-                params().password());
-        var network = paramsInNetwork()
-                .map(p -> new ParamsImpl(p.host(), p.port(), p.datacenter(), keyspace, p.username(), p.password()))
-                .orElse(null);
-
-        return new CassandraConnectionImpl(params, network);
     }
 
     @Override
@@ -177,22 +156,7 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
     public void execute(@Language("CQL") @NotNull String cql) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var simpleStatement = SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
-            connection.execute(boundStatement).wasApplied();
-        } catch (Exception e) {
-            throw new CassandraConnectionException(e);
-        }
-    }
-
-    void execute(@Language("CQL") @NotNull String cql, String keyspace) {
-        logger.debug("Executing CQL:\n{}", cql);
-        try {
-            var simpleStatement = (keyspace == null)
-                    ? SimpleStatement.newInstance(cql)
-                    : SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
             connection.execute(boundStatement).wasApplied();
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -229,30 +193,30 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
     }
 
     @Override
-    public long count(@NotNull String tableName) {
-        return queryOne("SELECT COUNT(*) FROM " + tableName, rs -> rs.getLong(0)).orElse(0L);
+    public long count(@NotNull String tableNameWithKeyspace) {
+        return queryOne("SELECT COUNT(*) FROM " + tableNameWithKeyspace, rs -> rs.getLong(0)).orElse(0L);
     }
 
     @Override
-    public void assertCountsNone(@NotNull String tableName) {
-        assertCountsEquals(0, tableName);
+    public void assertCountsNone(@NotNull String table) {
+        assertCountsEquals(0, table);
     }
 
     @Override
-    public void assertCountsAtLeast(long expectedAtLeast, @NotNull String tableName) {
-        final long count = count(tableName);
+    public void assertCountsAtLeast(long expectedAtLeast, @NotNull String table) {
+        final long count = count(table);
         if (count < expectedAtLeast) {
             Assertions.assertEquals(expectedAtLeast, count,
                     String.format("Expected to count in '%s' table at least %s rows but received %s",
-                            tableName, expectedAtLeast, count));
+                            table, expectedAtLeast, count));
         }
     }
 
     @Override
-    public void assertCountsEquals(long expected, @NotNull String tableName) {
-        final long count = count(tableName);
+    public void assertCountsEquals(long expected, @NotNull String table) {
+        final long count = count(table);
         Assertions.assertEquals(expected, count, String.format("Expected to count in '%s' table %s rows but received %s",
-                tableName, expected, count));
+                table, expected, count));
     }
 
     @Override
@@ -261,8 +225,7 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var simpleStatement = SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
             var row = connection.execute(boundStatement).one();
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))
@@ -278,28 +241,7 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var simpleStatement = SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
-            var rows = connection.execute(boundStatement).all();
-            final List<T> result = new ArrayList<>(rows.size());
-            for (Row row : rows) {
-                result.add(extractor.apply(row));
-            }
-            return result;
-        } catch (Throwable e) {
-            throw new CassandraConnectionException(e);
-        }
-    }
-
-    <T, E extends Throwable> List<T> queryMany(@Language("CQL") @NotNull String cql,
-                                               @NotNull CassandraConnection.RowMapper<T, E> extractor,
-                                               String keyspace) {
-        logger.debug("Executing CQL:\n{}", cql);
-        try {
-            var simpleStatement = (keyspace == null)
-                    ? SimpleStatement.newInstance(cql)
-                    : SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
             var rows = connection.execute(boundStatement).all();
             final List<T> result = new ArrayList<>(rows.size());
             for (Row row : rows) {
@@ -320,8 +262,7 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
     private void assertQuery(@Language("CQL") String cql, QueryAssert consumer) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var simpleStatement = SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
             var rows = connection.execute(boundStatement);
             consumer.accept(rows);
         } catch (Exception e) {
@@ -363,8 +304,7 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
     private boolean checkQuery(@Language("CQL") String cql, QueryChecker checker) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var simpleStatement = SimpleStatement.newInstance(cql).setKeyspace(params().keyspace());
-            var boundStatement = connection.prepare(simpleStatement).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
             var rows = connection.execute(boundStatement);
             return checker.apply(rows);
         } catch (Exception e) {
