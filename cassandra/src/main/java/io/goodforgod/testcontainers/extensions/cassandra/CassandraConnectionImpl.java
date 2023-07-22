@@ -12,10 +12,8 @@ import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecReg
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -206,7 +204,13 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
         logger.debug("Loading file from resources with path: {}", pathToResource);
         var resourceAsString = loadStringFromResources(pathToResource)
                 .orElseThrow(() -> new IllegalArgumentException("Couldn't find resource with path: " + pathToResource));
-        execute(resourceAsString);
+
+        final List<String> queries = Arrays.stream(resourceAsString.split(";"))
+                .map(query -> query + ";")
+                .collect(Collectors.toList());
+        for (String query : queries) {
+            execute(query);
+        }
     }
 
     private Optional<String> loadStringFromResources(String path) {

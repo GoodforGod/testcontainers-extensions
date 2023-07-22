@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -218,7 +219,10 @@ class TestcontainersCassandraExtension implements
                 .flatMap(location -> {
                     final URL url = loader.getResource(location);
                     final String path = url.getPath();
-                    return Arrays.stream(Objects.requireNonNull(new File(path).listFiles()));
+                    final File file = new File(path);
+                    return file.isFile()
+                            ? Stream.of(file)
+                            : Arrays.stream(file.listFiles());
                 })
                 .collect(Collectors.toList());
     }
@@ -237,33 +241,46 @@ class TestcontainersCassandraExtension implements
         for (File file : filesToUseForMigration) {
             try {
                 final String cql = Files.readString(file.toPath());
-                connection.execute(cql);
+                final List<String> queries = Arrays.stream(cql.split(";"))
+                        .map(query -> query + ";")
+                        .collect(Collectors.toList());
+
+                for (String query : queries) {
+                    connection.execute(query);
+                }
             } catch (IOException e) {
                 throw new IllegalArgumentException("Illegal file for migration: " + file.getPath(), e);
             }
         }
     }
 
+    private static class Table {
+
+        private final String keyspace;
+        private final String name;
+
+        private Table(String keyspace, String name) {
+            this.keyspace = keyspace;
+            this.name = name;
+        }
+
+        public String keyspace() {
+            return keyspace;
+        }
+
+        public String name() {
+            return name;
+        }
+    }
+
     private static void dropScripts(CassandraConnection connection, List<String> locations) {
-        if (connection.params().keyspace() != null) {
-            var keyspace = connection.params().keyspace();
+        var tables = ((CassandraConnectionImpl) connection).queryMany(
+                "SELECT keyspace_name, table_name FROM system_schema.tables;",
+                r -> new Table(r.getString(0), r.getString(1)));
 
-            List<String> tables = ((CassandraConnectionImpl) connection).queryMany(
-                    "SELECT table_name FROM system_schema.tables WHERE keyspace_name='" + keyspace + "';", r -> r.getString(0),
-                    null);
-            for (String table : tables) {
-                ((CassandraConnectionImpl) connection).execute("TRUNCATE TABLE " + keyspace + "." + table, null);
-            }
-
-            // connectionWithoutKeyspace.execute("DROP KEYSPACE " + keyspace + ";");
-            // connectionWithoutKeyspace.execute("CREATE KEYSPACE IF NOT EXISTS " + keyspace
-            // + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};");
-        } else {
-            var keyspaces = connection.queryMany("DESCRIBE KEYSPACES;", row -> row.getString(0));
-            for (String keyspace : keyspaces) {
-                ((CassandraConnectionImpl) connection).execute("DROP KEYSPACE " + keyspace + ";", null);
-                ((CassandraConnectionImpl) connection).execute("CREATE KEYSPACE IF NOT EXISTS " + keyspace
-                        + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};", null);
+        for (Table table : tables) {
+            if (!table.keyspace().startsWith("system")) {
+                ((CassandraConnectionImpl) connection).execute("TRUNCATE TABLE " + table.keyspace() + "." + table.name(), null);
             }
         }
     }

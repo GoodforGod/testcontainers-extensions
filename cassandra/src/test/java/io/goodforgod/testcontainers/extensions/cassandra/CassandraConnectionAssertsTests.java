@@ -18,7 +18,7 @@ class CassandraConnectionAssertsTests {
     @Test
     void execute(@ContainerCassandraConnection CassandraConnection connection) {
         assertThrows(CassandraConnectionException.class,
-                () -> connection.execute("CREATE TABLE users (id INT, PRIMARY KEY (id))"));
+                () -> connection.execute("CREATE TABLE users(id INT, PRIMARY KEY (id))"));
     }
 
     @Test
