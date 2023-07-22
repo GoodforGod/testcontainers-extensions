@@ -46,9 +46,6 @@ final class TestcontainersCockroachdbExtension extends AbstractTestcontainersJdb
 
         var alias = "cockroachdb-" + System.currentTimeMillis();
         return new CockroachContainer(dockerImage)
-                .withDatabaseName("cockroachdb")
-                .withUsername("cockroachdb")
-                .withPassword("cockroachdb")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))

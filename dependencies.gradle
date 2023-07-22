@@ -6,7 +6,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("slf4j", "1.7.36")
             version("junit-api", "5.9.3")
             version("junit-platform", "1.9.3")
-            version("testcontainers", "1.18.3")
+            version("testcontainers", "1.17.6")
             version("flyway", "9.20.0")
             version("liquibase", "4.23.0")
             version("kafka", "3.5.0")
@@ -28,6 +28,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-oracle", "org.testcontainers", "oracle-xe").versionRef("testcontainers")
             library("testcontainers-cockroach", "org.testcontainers", "cockroachdb").versionRef("testcontainers")
             library("testcontainers-kafka", "org.testcontainers", "kafka").versionRef("testcontainers")
+            library("testcontainers-cassandra", "org.testcontainers", "cassandra").versionRef("testcontainers")
 
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-mysql", "org.flywaydb", "flyway-mysql").versionRef("flyway")
@@ -39,6 +40,8 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-mariadb", "org.mariadb.jdbc", "mariadb-java-client").version("3.1.4")
             library("driver-mysql", "mysql", "mysql-connector-java").version("8.0.33")
             library("driver-oracle", "com.oracle.database.jdbc", "ojdbc8").version("21.5.0.0")
+            library("driver-cassandra-core", "com.datastax.oss", "java-driver-core").version("4.17.0")
+            library("driver-cassandra-mapping", "com.datastax.oss", "java-driver-mapper-runtime").version("4.17.0")
 
             library("kafka-client", "org.apache.kafka", "kafka-clients").versionRef("kafka")
             library("json", "org.json", "json").version("20230618")

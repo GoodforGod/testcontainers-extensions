@@ -161,7 +161,7 @@ final class TestcontainersKafkaExtension implements
                 .withEnv("AUTO_CREATE_TOPICS", "true")
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
-                .withKraft()
+                .withEmbeddedZookeeper()
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
                 .withStartupTimeout(Duration.ofMinutes(3));
     }

@@ -67,6 +67,11 @@ final class JdbcConnectionImpl implements JdbcConnection {
         public String password() {
             return password;
         }
+
+        @Override
+        public String toString() {
+            return jdbcUrl;
+        }
     }
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
