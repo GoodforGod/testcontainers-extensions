@@ -17,29 +17,29 @@ class RedisConnectionAssertsTests {
 
     @Test
     void countPrefix(@ContainerRedisConnection RedisConnection connection) {
-        connection.get().sadd("11", "1");
-        connection.get().sadd("12", "2");
-        assertEquals(1, connection.countPrefix("1"));
+        connection.commands().sadd("11", "1");
+        connection.commands().sadd("12", "2");
+        assertEquals(2, connection.countPrefix("1"));
     }
 
     @Test
     void assertCountsPrefixNoneWhenMore(@ContainerRedisConnection RedisConnection connection) {
-        connection.get().sadd("11", "1");
-        connection.get().sadd("12", "2");
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsPrefixNone("2"));
+        connection.commands().sadd("11", "1");
+        connection.commands().sadd("12", "2");
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsPrefixNone("1"));
     }
 
     @Test
     void count(@ContainerRedisConnection RedisConnection connection) {
-        connection.get().sadd("11", "1");
-        connection.get().sadd("12", "2");
+        connection.commands().sadd("11", "1");
+        connection.commands().sadd("12", "2");
         assertEquals(1, connection.count("11"));
     }
 
     @Test
     void assertCountsNoneWhenMore(@ContainerRedisConnection RedisConnection connection) {
-        connection.get().sadd("11", "1");
-        connection.get().sadd("12", "2");
+        connection.commands().sadd("11", "1");
+        connection.commands().sadd("12", "2");
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsNone("11", "12"));
     }
 
@@ -55,14 +55,14 @@ class RedisConnectionAssertsTests {
 
     @Test
     void assertCountsAtLeastWhenMore(@ContainerRedisConnection RedisConnection connection) {
-        connection.get().sadd("11", "1");
-        connection.get().sadd("12", "2");
+        connection.commands().sadd("11", "1");
+        connection.commands().sadd("12", "2");
         assertDoesNotThrow(() -> connection.assertCountsPrefixAtLeast(1, "1"));
     }
 
     @Test
     void assertCountsAtLeastWhenEquals(@ContainerRedisConnection RedisConnection connection) {
-        connection.get().sadd("11", "1");
+        connection.commands().sadd("11", "1");
         assertDoesNotThrow(() -> connection.assertCountsPrefixAtLeast(1, "1"));
     }
 

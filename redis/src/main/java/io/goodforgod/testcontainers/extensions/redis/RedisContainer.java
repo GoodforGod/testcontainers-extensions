@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import java.time.Duration;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -8,11 +9,9 @@ public final class RedisContainer extends GenericContainer<RedisContainer> {
 
     public static final Integer PORT = 6379;
 
-    private static final String DEFAULT_USER = "redis";
+    private static final String DEFAULT_USER = "default";
     private static final String DEFAULT_PASSWORD = "redis";
-
-    private String user = DEFAULT_USER;
-    private String password = DEFAULT_PASSWORD;
+    private static final int DEFAULT_DATABASE = 0;
 
     public RedisContainer(DockerImageName dockerImageName) {
         super(dockerImageName);
@@ -24,27 +23,22 @@ public final class RedisContainer extends GenericContainer<RedisContainer> {
 
     @Override
     protected void configure() {
-        withEnv("REDIS_ARGS",
-                "--requirepass password --user username on >password ~* allcommands --user default off nopass nocommands");
+        withExposedPorts(PORT);
+        withCommand("redis-server", "--requirepass " + DEFAULT_PASSWORD);
         waitingFor(Wait.forListeningPort());
+        withStartupTimeout(Duration.ofSeconds(5));
     }
 
     public String getUser() {
-        return user;
-    }
-
-    public RedisContainer withUser(String user) {
-        this.user = user;
-        return this;
+        return DEFAULT_USER;
     }
 
     public String getPassword() {
-        return password;
+        return DEFAULT_PASSWORD;
     }
 
-    public RedisContainer withPassword(String password) {
-        this.password = password;
-        return this;
+    public int getDatabase() {
+        return DEFAULT_DATABASE;
     }
 
     public int getPort() {

@@ -2,10 +2,8 @@ package io.goodforgod.testcontainers.extensions.redis;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
-import redis.clients.jedis.Jedis;
 
 /**
  * Describes active Redis connection of currently running {@link RedisContainer}
@@ -25,6 +23,8 @@ public interface RedisConnection {
         String username();
 
         String password();
+
+        int database();
     }
 
     /**
@@ -44,7 +44,7 @@ public interface RedisConnection {
      * @return new Redis connection
      */
     @NotNull
-    Jedis get();
+    RedisCommands commands();
 
     void deleteAll();
 
@@ -93,7 +93,7 @@ public interface RedisConnection {
      * @param keyPrefix       my-key-prefix
      * @param expectedAtLeast at least minimal number of values expected
      */
-    Map<String, String> assertCountsPrefixAtLeast(long expectedAtLeast, @NotNull String keyPrefix);
+    List<String> assertCountsPrefixAtLeast(long expectedAtLeast, @NotNull String keyPrefix);
 
     /**
      * Asserts that keys with prefix counts exact number expected values
@@ -101,7 +101,7 @@ public interface RedisConnection {
      * @param keyPrefix my-key-prefix
      * @param expected  exact number of values expected
      */
-    Map<String, String> assertCountsPrefixEquals(long expected, @NotNull String keyPrefix);
+    List<String> assertCountsPrefixEquals(long expected, @NotNull String keyPrefix);
 
     /**
      * Asserts that keys at least minimal number expectedAtLeast

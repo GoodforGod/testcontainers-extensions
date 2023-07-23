@@ -11,7 +11,7 @@ import redis.clients.jedis.*;
 import redis.clients.jedis.args.FlushMode;
 
 @Internal
-final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
+final class RedisConnectionImpl implements RedisConnection {
 
     private static final class ParamsImpl implements Params {
 
@@ -19,12 +19,14 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
         private final int port;
         private final String username;
         private final String password;
+        private final int database;
 
-        ParamsImpl(String host, int port, String username, String password) {
+        ParamsImpl(String host, int port, String username, String password, int database) {
             this.host = host;
             this.port = port;
             this.username = username;
             this.password = password;
+            this.database = database;
         }
 
         @Override
@@ -48,6 +50,11 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
         }
 
         @Override
+        public int database() {
+            return database;
+        }
+
+        @Override
         public String toString() {
             return "[host=" + host +
                     ", port=" + port +
@@ -60,7 +67,7 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
 
     private final Params params;
     private final Params network;
-    private final Jedis jedis;
+    private final RedisCommandsImpl jedis;
 
     RedisConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -80,21 +87,22 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
             config.password(params().password());
         }
 
-        this.jedis = new Jedis(new HostAndPort(params().host(), params().port()), config.build());
+        this.jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
     }
 
     static RedisConnection forContainer(String host,
                                         int port,
                                         String hostInNetwork,
                                         Integer portInNetwork,
+                                        int database,
                                         String username,
                                         String password) {
-        var params = new ParamsImpl(host, port, username, password);
+        var params = new ParamsImpl(host, port, username, password, database);
         final Params network;
         if (hostInNetwork == null) {
             network = null;
         } else {
-            network = new ParamsImpl(hostInNetwork, portInNetwork, username, password);
+            network = new ParamsImpl(hostInNetwork, portInNetwork, username, password, database);
         }
 
         return new RedisConnectionImpl(params, network);
@@ -102,9 +110,10 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
 
     static RedisConnection forExternal(String host,
                                        int port,
+                                       int database,
                                        String username,
                                        String password) {
-        var params = new ParamsImpl(host, port, username, password);
+        var params = new ParamsImpl(host, port, username, password, database);
         return new RedisConnectionImpl(params, null);
     }
 
@@ -119,7 +128,7 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
     }
 
     @NotNull
-    public Jedis get() {
+    public RedisCommands commands() {
         return jedis;
     }
 
@@ -128,9 +137,18 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
         jedis.flushAll(FlushMode.SYNC);
     }
 
+    private List<String> getValuesByPrefix(@NotNull String keyPrefix) {
+        final Set<String> keys = jedis.keys(keyPrefix + "*");
+        if (keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return jedis.mget(keys.toArray(String[]::new));
+    }
+
     @Override
     public int countPrefix(@NotNull String keyPrefix) {
-        return jedis.hgetAll(keyPrefix).size();
+        return getValuesByPrefix(keyPrefix).size();
     }
 
     @Override
@@ -162,8 +180,8 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
     }
 
     @Override
-    public Map<String, String> assertCountsPrefixAtLeast(long expectedAtLeast, @NotNull String keyPrefix) {
-        final Map<String, String> keyToValue = jedis.hgetAll(keyPrefix);
+    public List<String> assertCountsPrefixAtLeast(long expectedAtLeast, @NotNull String keyPrefix) {
+        final List<String> keyToValue = getValuesByPrefix(keyPrefix);
         final long count = keyToValue.size();
         if (count < expectedAtLeast) {
             Assertions.assertEquals(expectedAtLeast, count,
@@ -175,8 +193,8 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
     }
 
     @Override
-    public Map<String, String> assertCountsPrefixEquals(long expected, @NotNull String keyPrefix) {
-        final Map<String, String> keyToValue = jedis.hgetAll(keyPrefix);
+    public List<String> assertCountsPrefixEquals(long expected, @NotNull String keyPrefix) {
+        final List<String> keyToValue = getValuesByPrefix(keyPrefix);
         final long count = keyToValue.size();
         Assertions.assertEquals(expected, count, String.format("Expected to count for '%s' prefix %s values but received %s",
                 keyPrefix, expected, count));
@@ -235,8 +253,7 @@ final class RedisConnectionImpl implements RedisConnection, AutoCloseable {
         return params().toString();
     }
 
-    @Override
-    public void close() {
+    void close() {
         jedis.close();
     }
 }

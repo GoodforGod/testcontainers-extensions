@@ -33,6 +33,7 @@ class TestcontainersRedisExtension implements
     private static final String EXTERNAL_TEST_REDIS_PASSWORD = "EXTERNAL_TEST_REDIS_PASSWORD";
     private static final String EXTERNAL_TEST_REDIS_HOST = "EXTERNAL_TEST_REDIS_HOST";
     private static final String EXTERNAL_TEST_REDIS_PORT = "EXTERNAL_TEST_REDIS_PORT";
+    private static final String EXTERNAL_TEST_REDIS_DATABASE = "EXTERNAL_TEST_REDIS_DATABASE ";
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersRedisExtension.class);
@@ -59,6 +60,11 @@ class TestcontainersRedisExtension implements
         @Override
         public void stop() {
             container.stop();
+        }
+
+        @Override
+        public String toString() {
+            return container.getDockerImageName();
         }
     }
 
@@ -158,6 +164,7 @@ class TestcontainersRedisExtension implements
                 container.getMappedPort(RedisContainer.PORT),
                 alias,
                 RedisContainer.PORT,
+                container.getDatabase(),
                 container.getUser(),
                 container.getPassword());
     }
@@ -168,9 +175,10 @@ class TestcontainersRedisExtension implements
         var port = System.getenv(EXTERNAL_TEST_REDIS_PORT);
         var user = System.getenv(EXTERNAL_TEST_REDIS_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_REDIS_PASSWORD);
+        var database = Optional.ofNullable(System.getenv(EXTERNAL_TEST_REDIS_DATABASE)).map(Integer::parseInt).orElse(0);
 
         if (host != null && port != null) {
-            return Optional.of(RedisConnectionImpl.forExternal(host, Integer.parseInt(port), user, password));
+            return Optional.of(RedisConnectionImpl.forExternal(host, Integer.parseInt(port), database, user, password));
         } else
             return Optional.empty();
     }
@@ -237,9 +245,10 @@ class TestcontainersRedisExtension implements
                     return getDefaultContainer(metadata);
                 });
 
-                logger.debug("Starting in mode '{}' Redis Container: {}", metadata.runMode(), container);
+                logger.debug("Starting in mode '{}' Redis Container: {}", metadata.runMode(), container.getDockerImageName());
                 container.withReuse(true).start();
-                logger.debug("Started successfully in mode '{}' Redis Container: {}", metadata.runMode(), container);
+                logger.debug("Started successfully in mode '{}' Redis Container: {}", metadata.runMode(),
+                        container.getDockerImageName());
                 var queryConnection = getConnectionForContainer(container);
                 return new ExtensionContainerImpl(container, queryConnection);
             });
@@ -253,9 +262,10 @@ class TestcontainersRedisExtension implements
                 return getDefaultContainer(metadata);
             });
 
-            logger.debug("Starting in mode '{}' Redis Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' Redis Container: {}", metadata.runMode(), container.getDockerImageName());
             container.start();
-            logger.debug("Started successfully in mode '{}' Redis Container: {}", metadata.runMode(), container);
+            logger.debug("Started successfully in mode '{}' Redis Container: {}", metadata.runMode(),
+                    container.getDockerImageName());
             var connection = getConnectionForContainer(container);
             var extensionContainer = new ExtensionContainerImpl(container, connection);
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
@@ -282,9 +292,10 @@ class TestcontainersRedisExtension implements
                 return getDefaultContainer(metadata);
             });
 
-            logger.debug("Starting in mode '{}' Redis Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' Redis Container: {}", metadata.runMode(), container.getDockerImageName());
             container.start();
-            logger.debug("Started successfully in mode '{}' Redis Container: {}", metadata.runMode(), container);
+            logger.debug("Started successfully in mode '{}' Redis Container: {}", metadata.runMode(),
+                    container.getDockerImageName());
             var queryConnection = getConnectionForContainer(container);
 
             injectConnection(queryConnection, context);
@@ -311,12 +322,13 @@ class TestcontainersRedisExtension implements
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' Redis Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' Redis Container: {}", metadata.runMode(),
+                        extensionContainer.container.getDockerImageName());
                 var connection = storage.get(RedisConnection.class, RedisConnection.class);
                 ((RedisConnectionImpl) connection).close();
                 extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' Redis Container: {}", metadata.runMode(),
-                        extensionContainer.container);
+                        extensionContainer.container.getDockerImageName());
             }
         }
     }
@@ -334,12 +346,13 @@ class TestcontainersRedisExtension implements
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' Redis Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' Redis Container: {}", metadata.runMode(),
+                        extensionContainer.container.getDockerImageName());
                 var connection = storage.get(RedisConnection.class, RedisConnection.class);
                 ((RedisConnectionImpl) connection).close();
                 extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' Redis Container: {}", metadata.runMode(),
-                        extensionContainer.container);
+                        extensionContainer.container.getDockerImageName());
             }
         }
     }

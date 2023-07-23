@@ -17,20 +17,17 @@ class ContainerFromAnnotationTests {
 
     @ContainerRedis
     private static final RedisContainer container = new RedisContainer(DockerImageName.parse("redis:7.0-alpine"))
-            .withUser("my")
-            .withPassword("my")
+            .withNetworkAliases("myredis")
             .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class)))
             .withNetwork(Network.SHARED);
 
     @Test
     void checkParams(@ContainerRedisConnection RedisConnection connection) {
-        assertEquals("my", connection.params().username());
-        assertEquals("my", connection.params().password());
+        assertEquals("myredis", connection.paramsInNetwork().get().host());
     }
 
     @Test
     void checkParamsAgain(@ContainerRedisConnection RedisConnection connection) {
-        assertEquals("my", connection.params().username());
-        assertEquals("my", connection.params().password());
+        assertEquals("myredis", connection.paramsInNetwork().get().host());
     }
 }
