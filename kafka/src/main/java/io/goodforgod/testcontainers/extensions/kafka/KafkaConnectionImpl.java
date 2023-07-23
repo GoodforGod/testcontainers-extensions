@@ -29,7 +29,7 @@ import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @Internal
-final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
+final class KafkaConnectionImpl implements KafkaConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(KafkaConnection.class);
 
@@ -43,7 +43,7 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         this.properties = properties;
     }
 
-    static final class ConsumerImpl implements Consumer, AutoCloseable {
+    static final class ConsumerImpl implements Consumer {
 
         private static final Logger logger = LoggerFactory.getLogger(Consumer.class);
 
@@ -267,8 +267,7 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
             messageQueue.clear();
         }
 
-        @Override
-        public void close() {
+        void close() {
             if (isActive.compareAndSet(true, false)) {
                 logger.debug("Stopping Kafka Consumer '{}' for {} topics...", groupId, topics);
                 final long started = System.nanoTime();
@@ -420,8 +419,7 @@ final class KafkaConnectionImpl implements KafkaConnection, AutoCloseable {
         consumers.clear();
     }
 
-    @Override
-    public void close() {
+    void close() {
         if (!isClosed) {
             isClosed = true;
             if (producer != null) {

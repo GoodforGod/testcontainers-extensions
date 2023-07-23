@@ -64,6 +64,11 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         public void stop() {
             container.stop();
         }
+
+        @Override
+        public String toString() {
+            return container.getDockerImageName();
+        }
     }
 
     static List<ExtensionContainer> getSharedContainers() {
@@ -306,9 +311,10 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                     return getDefaultContainer(metadata);
                 });
 
-                logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+                logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container.getDockerImageName());
                 container.withReuse(true).start();
-                logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+                logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
+                        container.getDockerImageName());
                 var sqlConnection = getConnectionForContainer(container);
                 return new ExtensionContainerImpl(container, sqlConnection);
             });
@@ -325,9 +331,10 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                 return getDefaultContainer(metadata);
             });
 
-            logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container.getDockerImageName());
             container.start();
-            logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+            logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
+                    container.getDockerImageName());
             var sqlConnection = getConnectionForContainer(container);
             var extensionContainer = new ExtensionContainerImpl(container, sqlConnection);
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
@@ -360,9 +367,10 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
                 return getDefaultContainer(metadata);
             });
 
-            logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' JDBC Container: {}", metadata.runMode(), container.getDockerImageName());
             container.start();
-            logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(), container);
+            logger.debug("Started successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
+                    container.getDockerImageName());
             var sqlConnection = getConnectionForContainer(container);
 
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
@@ -398,10 +406,11 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(),
+                        extensionContainer.container.getDockerImageName());
                 extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
-                        extensionContainer.container);
+                        extensionContainer.container.getDockerImageName());
             }
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
@@ -434,10 +443,11 @@ abstract class AbstractTestcontainersJdbcExtension<C extends JdbcDatabaseContain
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' JDBC Container: {}", metadata.runMode(),
+                        extensionContainer.container.getDockerImageName());
                 extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' JDBC Container: {}", metadata.runMode(),
-                        extensionContainer.container);
+                        extensionContainer.container.getDockerImageName());
             }
         } else if (metadata.runMode() == ContainerMode.PER_RUN) {
             Optional.ofNullable(IMAGE_TO_SHARED_CONTAINER.get(metadata.image())).ifPresent(extensionContainer -> {

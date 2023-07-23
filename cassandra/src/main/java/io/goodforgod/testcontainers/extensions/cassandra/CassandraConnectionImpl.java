@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Internal
-final class CassandraConnectionImpl implements CassandraConnection, AutoCloseable {
+final class CassandraConnectionImpl implements CassandraConnection {
 
     private static final class ParamsImpl implements Params {
 
@@ -353,8 +353,7 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
         return params().toString();
     }
 
-    @Override
-    public void close() throws Exception {
+    void close() {
         connection.close();
     }
 }

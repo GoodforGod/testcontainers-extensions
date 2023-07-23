@@ -1,8 +1,6 @@
 dependencies {
     api project(":jdbc")
-    api(libs.testcontainers.oracle) {
-        exclude group: "junit"
-    }
+    api libs.testcontainers.oracle
 
     implementation libs.flyway.oracle
     implementation libs.junit.launcher
