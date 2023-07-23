@@ -1,1 +1,1 @@
-io.goodforgod.testcontainers.extensions.jdbc.TestcontainersCassandraExtensionListener
+io.goodforgod.testcontainers.extensions.jdbc.TestcontainersJdbcExtensionListener
