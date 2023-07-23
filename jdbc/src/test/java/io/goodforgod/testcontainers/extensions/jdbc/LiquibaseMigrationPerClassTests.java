@@ -12,7 +12,6 @@ import org.junit.jupiter.api.*;
                 apply = Migration.Mode.PER_CLASS,
                 drop = Migration.Mode.PER_CLASS))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class LiquibaseMigrationPerClassTests {
 
     @Order(1)

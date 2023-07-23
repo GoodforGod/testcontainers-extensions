@@ -193,8 +193,8 @@ final class CassandraConnectionImpl implements CassandraConnection, AutoCloseabl
     }
 
     @Override
-    public long count(@NotNull String tableNameWithKeyspace) {
-        return queryOne("SELECT COUNT(*) FROM " + tableNameWithKeyspace, rs -> rs.getLong(0)).orElse(0L);
+    public long count(@NotNull String table) {
+        return queryOne("SELECT COUNT(*) FROM " + table, rs -> rs.getLong(0)).orElse(0L);
     }
 
     @Override

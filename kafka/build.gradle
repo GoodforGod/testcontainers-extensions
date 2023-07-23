@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly libs.kafka.client
+    compileOnly libs.driver.kafka
 
     api project(":common")
     api libs.testcontainers.kafka
@@ -9,5 +9,5 @@ dependencies {
     implementation libs.junit.launcher
     implementation libs.junit.api
 
-    testRuntimeOnly libs.kafka.client
+    testRuntimeOnly libs.driver.kafka
 }

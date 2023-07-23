@@ -8,7 +8,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_RUN, image = "postgres:15.3-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ContainerPerRunSecondTests {
 
     static volatile JdbcConnection perRunConnection;

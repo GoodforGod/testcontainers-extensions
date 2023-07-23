@@ -7,7 +7,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS, image = "cassandra:4.1")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ContainerPerClassTests {
 
     @ContainerCassandraConnection

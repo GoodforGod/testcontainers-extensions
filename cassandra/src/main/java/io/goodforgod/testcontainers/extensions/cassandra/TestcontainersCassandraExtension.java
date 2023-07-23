@@ -296,7 +296,7 @@ class TestcontainersCassandraExtension implements
         }
     }
 
-    private void injectSqlConnection(CassandraConnection connection, ExtensionContext context) {
+    private void injectConnection(CassandraConnection connection, ExtensionContext context) {
         var connectionAnnotation = getConnectionAnnotation();
         var connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic()
@@ -329,7 +329,7 @@ class TestcontainersCassandraExtension implements
                 tryMigrateIfRequired(metadata, externalConnection);
             }
 
-            injectSqlConnection(externalConnection, context);
+            injectConnection(externalConnection, context);
             return;
         }
 
@@ -356,7 +356,7 @@ class TestcontainersCassandraExtension implements
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
                 tryMigrateIfRequired(metadata, extensionContainer.connection());
             }
-            injectSqlConnection(extensionContainer.connection(), context);
+            injectConnection(extensionContainer.connection(), context);
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var container = getContainerFromField(context).orElseGet(() -> {
                 logger.debug("Getting default Cassandra Container for image: {}", metadata.image());
@@ -374,7 +374,7 @@ class TestcontainersCassandraExtension implements
             if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
                 tryMigrateIfRequired(metadata, cqlConnection);
             }
-            injectSqlConnection(cqlConnection, context);
+            injectConnection(cqlConnection, context);
         }
     }
 
@@ -387,7 +387,7 @@ class TestcontainersCassandraExtension implements
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
                 tryMigrateIfRequired(metadata, externalConnection);
             }
-            injectSqlConnection(externalConnection, context);
+            injectConnection(externalConnection, context);
             return;
         }
 
@@ -407,7 +407,7 @@ class TestcontainersCassandraExtension implements
                 tryMigrateIfRequired(metadata, cqlConnection);
             }
 
-            injectSqlConnection(cqlConnection, context);
+            injectConnection(cqlConnection, context);
             storage.put(CassandraConnection.class, cqlConnection);
             storage.put(ContainerMode.PER_METHOD, new ExtensionContainerImpl(container, cqlConnection));
         } else {
@@ -415,7 +415,7 @@ class TestcontainersCassandraExtension implements
             if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
                 tryMigrateIfRequired(metadata, cqlConnection);
             }
-            injectSqlConnection(cqlConnection, context);
+            injectConnection(cqlConnection, context);
         }
     }
 

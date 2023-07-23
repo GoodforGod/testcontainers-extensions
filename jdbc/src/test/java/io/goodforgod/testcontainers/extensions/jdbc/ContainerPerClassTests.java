@@ -7,7 +7,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ContainerPerClassTests {
 
     @ContainerJdbcConnection

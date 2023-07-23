@@ -13,7 +13,6 @@ import org.junit.jupiter.api.*;
                 drop = Migration.Mode.PER_METHOD,
                 migrations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SimplePerMethodMigrationTests {
 
     @Order(1)

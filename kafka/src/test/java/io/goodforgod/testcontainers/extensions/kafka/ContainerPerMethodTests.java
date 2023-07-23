@@ -7,7 +7,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersKafka(mode = ContainerMode.PER_METHOD, image = "confluentinc/cp-kafka:7.4.1")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ContainerPerMethodTests {
 
     @ContainerKafkaConnection

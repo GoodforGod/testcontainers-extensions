@@ -101,10 +101,10 @@ public interface CassandraConnection {
             throws E;
 
     /**
-     * @param tableNameWithKeyspace example: mykeyspace.mytable
+     * @param table example: mykeyspace.mytable
      * @return SELECT COUNT(*) from specified table
      */
-    long count(@NotNull String tableNameWithKeyspace);
+    long count(@NotNull String table);
 
     /**
      * Asserts that SELECT COUNT(*) in specified table counts 0 rows

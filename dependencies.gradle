@@ -41,8 +41,9 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-mysql", "mysql", "mysql-connector-java").version("8.0.33")
             library("driver-oracle", "com.oracle.database.jdbc", "ojdbc8").version("21.5.0.0")
             library("driver-cassandra", "com.datastax.oss", "java-driver-core").version("4.17.0")
+            library("driver-redis", "redis.clients", "jedis").version("4.4.3")
+            library("driver-kafka", "org.apache.kafka", "kafka-clients").versionRef("kafka")
 
-            library("kafka-client", "org.apache.kafka", "kafka-clients").versionRef("kafka")
             library("json", "org.json", "json").version("20230618")
         }
     }
