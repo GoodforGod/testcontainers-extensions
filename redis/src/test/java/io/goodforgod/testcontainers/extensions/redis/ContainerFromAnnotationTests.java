@@ -1,0 +1,36 @@
+package io.goodforgod.testcontainers.extensions.redis;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import io.goodforgod.testcontainers.extensions.ContainerMode;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
+
+@TestcontainersRedis(mode = ContainerMode.PER_METHOD, image = "redis:7.0-alpine")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class ContainerFromAnnotationTests {
+
+    @ContainerRedis
+    private static final RedisContainer container = new RedisContainer(DockerImageName.parse("redis:7.0-alpine"))
+            .withUser("my")
+            .withPassword("my")
+            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class)))
+            .withNetwork(Network.SHARED);
+
+    @Test
+    void checkParams(@ContainerRedisConnection RedisConnection connection) {
+        assertEquals("my", connection.params().username());
+        assertEquals("my", connection.params().password());
+    }
+
+    @Test
+    void checkParamsAgain(@ContainerRedisConnection RedisConnection connection) {
+        assertEquals("my", connection.params().username());
+        assertEquals("my", connection.params().password());
+    }
+}
