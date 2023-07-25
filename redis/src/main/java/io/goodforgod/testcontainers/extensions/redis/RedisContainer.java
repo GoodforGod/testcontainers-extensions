@@ -13,20 +13,16 @@ public final class RedisContainer extends GenericContainer<RedisContainer> {
     private static final String DEFAULT_PASSWORD = "redis";
     private static final int DEFAULT_DATABASE = 0;
 
+    public RedisContainer(String dockerImageName) {
+        this(DockerImageName.parse(dockerImageName));
+    }
+
     public RedisContainer(DockerImageName dockerImageName) {
         super(dockerImageName);
-    }
-
-    public RedisContainer(String dockerImageName) {
-        super(dockerImageName);
-    }
-
-    @Override
-    protected void configure() {
         withExposedPorts(PORT);
         withCommand("redis-server", "--requirepass " + DEFAULT_PASSWORD);
         waitingFor(Wait.forListeningPort());
-        withStartupTimeout(Duration.ofSeconds(5));
+        withStartupTimeout(Duration.ofSeconds(30));
     }
 
     public String getUser() {

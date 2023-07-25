@@ -320,7 +320,7 @@ class TestcontainersCassandraExtension implements
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
@@ -379,7 +379,7 @@ class TestcontainersCassandraExtension implements
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
@@ -420,7 +420,7 @@ class TestcontainersCassandraExtension implements
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
+    public void afterEach(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
@@ -458,7 +458,7 @@ class TestcontainersCassandraExtension implements
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();

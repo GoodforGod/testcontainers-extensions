@@ -85,12 +85,12 @@ subprojects {
         testLogging {
             events("passed", "skipped", "failed")
             exceptionFormat("full")
-            showStandardStreams(false)
+            showStandardStreams(true)
         }
 
         reports {
             html.required = false
-            junitXml.required = false
+            junitXml.required = true
         }
     }
 

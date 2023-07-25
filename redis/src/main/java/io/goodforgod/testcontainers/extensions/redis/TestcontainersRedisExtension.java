@@ -33,7 +33,7 @@ class TestcontainersRedisExtension implements
     private static final String EXTERNAL_TEST_REDIS_PASSWORD = "EXTERNAL_TEST_REDIS_PASSWORD";
     private static final String EXTERNAL_TEST_REDIS_HOST = "EXTERNAL_TEST_REDIS_HOST";
     private static final String EXTERNAL_TEST_REDIS_PORT = "EXTERNAL_TEST_REDIS_PORT";
-    private static final String EXTERNAL_TEST_REDIS_DATABASE = "EXTERNAL_TEST_REDIS_DATABASE ";
+    private static final String EXTERNAL_TEST_REDIS_DATABASE = "EXTERNAL_TEST_REDIS_DATABASE";
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersRedisExtension.class);
@@ -225,7 +225,7 @@ class TestcontainersRedisExtension implements
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
@@ -276,7 +276,7 @@ class TestcontainersRedisExtension implements
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
@@ -310,7 +310,7 @@ class TestcontainersRedisExtension implements
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
+    public void afterEach(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
@@ -334,7 +334,7 @@ class TestcontainersRedisExtension implements
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         var metadata = getMetadata(context);
 
         var externalConnection = getConnectionExternalCached();
