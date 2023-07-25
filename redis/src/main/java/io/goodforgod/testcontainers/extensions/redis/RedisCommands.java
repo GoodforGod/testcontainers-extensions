@@ -15,4 +15,6 @@ public interface RedisCommands extends
         ClusterCommands,
         ModuleCommands,
         GenericControlCommands,
-        SentinelCommands {}
+        SentinelCommands {
+
+}

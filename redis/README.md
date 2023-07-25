@@ -117,9 +117,9 @@ class ExampleTests {
 
     @Test
     void test(@ContainerRedisConnection RedisConnection connection) {
-        connection.commands().sadd("11", "1");
-        connection.commands().sadd("12", "2");
-        assertEquals(2, connection.countPrefix("1"));
+        connection.commands().set("11", "1");
+        connection.commands().set("12", "2");
+        assertEquals(2, connection.countPrefix(RedisKey.of("1")));
     }
 }
 ```

@@ -1,7 +1,9 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -137,51 +139,69 @@ final class RedisConnectionImpl implements RedisConnection {
         jedis.flushAll(FlushMode.SYNC);
     }
 
-    private List<String> getValuesByPrefix(@NotNull String keyPrefix) {
-        final Set<String> keys = jedis.keys(keyPrefix + "*");
+    private List<RedisValue> getValuesByKeys(@NotNull Collection<RedisKey> keys) {
         if (keys.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return jedis.mget(keys.toArray(String[]::new));
+        final byte[][] keysAsBytes = keys.stream()
+                .map(RedisKey::asBytes)
+                .toArray(byte[][]::new);
+
+        return jedis.mget(keysAsBytes).stream()
+                .filter(Objects::nonNull)
+                .map(RedisValueImpl::new)
+                .collect(Collectors.toList());
+    }
+
+    private List<RedisValue> getValuesByPrefix(RedisKey keyPrefix) {
+        final byte[] prefix = (keyPrefix.asString() + "*").getBytes(StandardCharsets.UTF_8);
+        final List<RedisKey> keys = jedis.keys(prefix).stream()
+                .filter(Objects::nonNull)
+                .map(RedisKey::of)
+                .collect(Collectors.toList());
+
+        return getValuesByKeys(keys);
     }
 
     @Override
-    public int countPrefix(@NotNull String keyPrefix) {
+    public int countPrefix(@NotNull RedisKey keyPrefix) {
         return getValuesByPrefix(keyPrefix).size();
     }
 
     @Override
-    public int count(@NotNull String... keys) {
-        return jedis.mget(keys).size();
+    public int count(@NotNull RedisKey... keys) {
+        return count(List.of(keys));
     }
 
     @Override
-    public int count(@NotNull Collection<String> keys) {
-        return count(keys.toArray(String[]::new));
+    public int count(@NotNull Collection<RedisKey> keys) {
+        return Math.toIntExact(getValuesByKeys(keys).stream()
+                .filter(Objects::nonNull)
+                .count());
     }
 
     @Override
-    public void assertCountsPrefixNone(@NotNull String keyPrefix) {
+    public void assertCountsPrefixNone(@NotNull RedisKey keyPrefix) {
         assertCountsPrefixEquals(0, keyPrefix);
     }
 
     @Override
-    public void assertCountsNone(@NotNull String... keys) {
-        final List<String> keyToValue = jedis.mget(keys);
-        final long count = keyToValue.size();
+    public void assertCountsNone(@NotNull RedisKey... keys) {
+        assertCountsNone(Arrays.asList(keys));
+    }
+
+    @Override
+    public void assertCountsNone(@NotNull Collection<RedisKey> keys) {
+        final List<RedisValue> values = getValuesByKeys(keys);
+        final long count = values.size();
         Assertions.assertEquals(0, count, String.format("Expected to count 0 for keys %s but found %s",
-                Arrays.toString(keys), count));
+                keys, count));
     }
 
     @Override
-    public void assertCountsNone(@NotNull Collection<String> keys) {
-        assertCountsNone(keys.toArray(String[]::new));
-    }
-
-    @Override
-    public List<String> assertCountsPrefixAtLeast(long expectedAtLeast, @NotNull String keyPrefix) {
-        final List<String> keyToValue = getValuesByPrefix(keyPrefix);
+    public List<RedisValue> assertCountsPrefixAtLeast(long expectedAtLeast, @NotNull RedisKey keyPrefix) {
+        final List<RedisValue> keyToValue = getValuesByPrefix(keyPrefix);
         final long count = keyToValue.size();
         if (count < expectedAtLeast) {
             Assertions.assertEquals(expectedAtLeast, count,
@@ -193,8 +213,8 @@ final class RedisConnectionImpl implements RedisConnection {
     }
 
     @Override
-    public List<String> assertCountsPrefixEquals(long expected, @NotNull String keyPrefix) {
-        final List<String> keyToValue = getValuesByPrefix(keyPrefix);
+    public List<RedisValue> assertCountsPrefixEquals(long expected, @NotNull RedisKey keyPrefix) {
+        final List<RedisValue> keyToValue = getValuesByPrefix(keyPrefix);
         final long count = keyToValue.size();
         Assertions.assertEquals(expected, count, String.format("Expected to count for '%s' prefix %s values but received %s",
                 keyPrefix, expected, count));
@@ -202,35 +222,35 @@ final class RedisConnectionImpl implements RedisConnection {
     }
 
     @Override
-    public List<String> assertCountsAtLeast(long expectedAtLeast, @NotNull String... keys) {
-        final List<String> values = jedis.mget(keys);
+    public List<RedisValue> assertCountsAtLeast(long expectedAtLeast, @NotNull RedisKey... keys) {
+        return assertCountsAtLeast(expectedAtLeast, List.of(keys));
+    }
+
+    @Override
+    public List<RedisValue> assertCountsAtLeast(long expectedAtLeast, @NotNull Collection<RedisKey> keys) {
+        final List<RedisValue> values = getValuesByKeys(keys);
         final long count = values.size();
         if (count < expectedAtLeast) {
             Assertions.assertEquals(expectedAtLeast, count,
                     String.format("Expected to count at least %s values but received %s for keys %s",
-                            expectedAtLeast, count, Arrays.toString(keys)));
+                            expectedAtLeast, count, keys));
         }
 
         return values;
     }
 
     @Override
-    public List<String> assertCountsEquals(long expected, @NotNull String... keys) {
-        final List<String> values = jedis.mget(keys);
+    public List<RedisValue> assertCountsEquals(long expected, @NotNull RedisKey... keys) {
+        return assertCountsEquals(expected, List.of(keys));
+    }
+
+    @Override
+    public List<RedisValue> assertCountsEquals(long expected, @NotNull Collection<RedisKey> keys) {
+        final List<RedisValue> values = getValuesByKeys(keys);
         final long count = values.size();
         Assertions.assertEquals(expected, count, String.format("Expected to count %s values but received %s for keys %s",
-                expected, count, Arrays.toString(keys)));
+                expected, count, keys));
         return values;
-    }
-
-    @Override
-    public List<String> assertCountsAtLeast(long expectedAtLeast, @NotNull Collection<String> keys) {
-        return assertCountsAtLeast(expectedAtLeast, keys.toArray(String[]::new));
-    }
-
-    @Override
-    public List<String> assertCountsEquals(long expected, @NotNull Collection<String> keys) {
-        return assertCountsEquals(expected, keys.toArray(String[]::new));
     }
 
     @Override

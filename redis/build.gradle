@@ -3,9 +3,9 @@ dependencies {
 
     api project(":common")
     api libs.testcontainers.core
-    
-    implementation libs.slf4j.api
+    api libs.json
 
+    implementation libs.slf4j.api
     implementation libs.junit.launcher
     implementation libs.junit.api
 
