@@ -18,3 +18,4 @@ Makes testing with Testcontainers even easier.
 - [MariaDB](mariadb)
 - [MySQL](mysql)
 - [Cockroachdb](cockroachdb)
+- [Redis](redis)
