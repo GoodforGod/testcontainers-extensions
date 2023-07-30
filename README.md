@@ -18,4 +18,5 @@ Makes testing & asserts with Testcontainers even easier.
 - [MariaDB](mariadb)
 - [MySQL](mysql)
 - [Cockroachdb](cockroachdb)
+- [Cassandra](cassandra)
 - [Redis](redis)
