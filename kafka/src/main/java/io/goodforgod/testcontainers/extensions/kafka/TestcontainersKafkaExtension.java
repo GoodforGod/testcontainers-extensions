@@ -87,6 +87,11 @@ final class TestcontainersKafkaExtension implements
         public void stop() {
             container.stop();
         }
+
+        @Override
+        public String toString() {
+            return container.getDockerImageName();
+        }
     }
 
     static List<ExtensionContainer> getSharedContainers() {
@@ -161,7 +166,7 @@ final class TestcontainersKafkaExtension implements
                 .withEnv("AUTO_CREATE_TOPICS", "true")
                 .withNetworkAliases(alias)
                 .withNetwork(Network.SHARED)
-                .withKraft()
+                .withEmbeddedZookeeper()
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
                 .withStartupTimeout(Duration.ofMinutes(3));
     }
@@ -251,7 +256,7 @@ final class TestcontainersKafkaExtension implements
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         var metadata = getMetadata(context);
         var storage = context.getStore(NAMESPACE);
         storage.put(KafkaConnectionPool.class, new KafkaConnectionPool());
@@ -272,9 +277,10 @@ final class TestcontainersKafkaExtension implements
                     return getDefaultContainer(metadata);
                 });
 
-                logger.debug("Starting in mode '{}' Kafka Container: {}", metadata.runMode(), container);
+                logger.debug("Starting in mode '{}' Kafka Container: {}", metadata.runMode(), container.getDockerImageName());
                 container.withReuse(true).start();
-                logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(), container);
+                logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
+                        container.getDockerImageName());
                 return new ExtensionContainerImpl(container, getPropertiesForContainer(container));
             });
 
@@ -286,9 +292,10 @@ final class TestcontainersKafkaExtension implements
                 return getDefaultContainer(metadata);
             });
 
-            logger.debug("Starting in mode '{}' Kafka Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' Kafka Container: {}", metadata.runMode(), container.getDockerImageName());
             container.start();
-            logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(), container);
+            logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
+                    container.getDockerImageName());
             var extensionContainer = new ExtensionContainerImpl(container, getPropertiesForContainer(container));
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
             injectKafkaConnection(extensionContainer.properties, context);
@@ -296,9 +303,15 @@ final class TestcontainersKafkaExtension implements
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) {
         var metadata = getMetadata(context);
         var storage = context.getStore(NAMESPACE);
+
+        var externalProperties = getPropertiesExternalCached();
+        if (externalProperties != null) {
+            injectKafkaConnection(externalProperties, context);
+            return;
+        }
 
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var container = getContainerFromField(context).orElseGet(() -> {
@@ -306,29 +319,37 @@ final class TestcontainersKafkaExtension implements
                 return getDefaultContainer(metadata);
             });
 
-            logger.debug("Starting in mode '{}' Kafka Container: {}", metadata.runMode(), container);
+            logger.debug("Starting in mode '{}' Kafka Container: {}", metadata.runMode(), container.getDockerImageName());
             container.start();
-            logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(), container);
+            logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
+                    container.getDockerImageName());
 
             final ExtensionContainerImpl extensionContainer = new ExtensionContainerImpl(container,
                     getPropertiesForContainer(container));
             storage.put(ContainerMode.PER_METHOD, extensionContainer);
             injectKafkaConnection(extensionContainer.properties, context);
+        } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
+            var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
+            injectKafkaConnection(extensionContainer.properties, context);
+        } else if (metadata.runMode() == ContainerMode.PER_RUN) {
+            var extensionContainer = storage.get(ContainerMode.PER_RUN, ExtensionContainerImpl.class);
+            injectKafkaConnection(extensionContainer.properties, context);
         }
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
+    public void afterEach(ExtensionContext context) {
         var metadata = getMetadata(context);
         var storage = context.getStore(NAMESPACE);
 
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' Kafka Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' Kafka Container: {}", metadata.runMode(),
+                        extensionContainer.container.getDockerImageName());
                 extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
-                        extensionContainer.container);
+                        extensionContainer.container.getDockerImageName());
             }
         }
 
@@ -337,17 +358,18 @@ final class TestcontainersKafkaExtension implements
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         var metadata = getMetadata(context);
         var storage = context.getStore(NAMESPACE);
 
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
             if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' Kafka Container: {}", metadata.runMode(), extensionContainer.container);
+                logger.debug("Stopping in mode '{}' Kafka Container: {}", metadata.runMode(),
+                        extensionContainer.container.getDockerImageName());
                 extensionContainer.stop();
                 logger.debug("Stopped successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
-                        extensionContainer.container);
+                        extensionContainer.container.getDockerImageName());
             }
         }
 

@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17' ]
-    name: Java ${{ matrix.java }} Pull Request setup
+        java: [ '11', '17' ]
+    name: Pull Request against Java ${{ matrix.java }}
 
     steps:
       - uses: actions/checkout@v3
@@ -23,17 +23,17 @@ jobs:
           distribution: 'adopt'
 
       - name: Code Style
-        run: ./gradlew spotlessCheck
+        run: './gradlew spotlessCheck'
 
       - name: Build
-        run: ./gradlew classes
+        run: './gradlew classes'
 
       - name: Test
-        run: ./gradlew test jacocoTestReport testCodeCoverageReport
+        run: './gradlew test jacocoTestReport testCodeCoverageReport'
 
       - name: SonarQube
         if: matrix.java == '17'
-        run: ./gradlew sonar
+        run: './gradlew sonar'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

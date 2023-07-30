@@ -7,7 +7,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersCockroachdb(mode = ContainerMode.PER_CLASS, image = "cockroachdb/cockroach:latest-v23.1")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CockroachdbContainerPerClassTests {
 
     @ContainerCockroachdbConnection

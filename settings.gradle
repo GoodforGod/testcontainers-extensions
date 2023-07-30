@@ -16,4 +16,6 @@ include "mysql"
 include "oracle"
 include "cockroachdb"
 include "kafka"
+include "cassandra"
+include "redis"
 

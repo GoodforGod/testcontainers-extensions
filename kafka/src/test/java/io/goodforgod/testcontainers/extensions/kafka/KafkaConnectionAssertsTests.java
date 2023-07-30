@@ -6,11 +6,9 @@ import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.time.Duration;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.opentest4j.AssertionFailedError;
 
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.4.1")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class KafkaConnectionAssertsTests {
 
     @ContainerKafkaConnection

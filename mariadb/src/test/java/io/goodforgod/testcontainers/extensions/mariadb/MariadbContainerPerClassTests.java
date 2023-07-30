@@ -10,7 +10,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersMariadb(mode = ContainerMode.PER_CLASS, image = "mariadb:11.0-jammy")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MariadbContainerPerClassTests {
 
     @ContainerMariadbConnection

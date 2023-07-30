@@ -30,6 +30,8 @@ dependencies {
     jacocoAggregation project(":mariadb")
     jacocoAggregation project(":cockroachdb")
     jacocoAggregation project(":kafka")
+    jacocoAggregation project(":cassandra")
+    jacocoAggregation project(":redis")
 }
 
 reporting {
@@ -88,7 +90,7 @@ subprojects {
 
         reports {
             html.required = false
-            junitXml.required = false
+            junitXml.required = true
         }
     }
 

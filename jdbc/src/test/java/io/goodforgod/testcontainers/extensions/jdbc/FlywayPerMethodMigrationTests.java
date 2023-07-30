@@ -12,7 +12,6 @@ import org.junit.jupiter.api.*;
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FlywayPerMethodMigrationTests {
 
     @Order(1)

@@ -10,7 +10,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersMysql(mode = ContainerMode.PER_CLASS, image = "mysql:8.0-debian")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MysqlContainerPerClassTests {
 
     @ContainerMysqlConnection

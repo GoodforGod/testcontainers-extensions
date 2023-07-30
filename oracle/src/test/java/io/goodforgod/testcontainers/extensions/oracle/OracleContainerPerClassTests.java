@@ -10,7 +10,6 @@ import org.junit.jupiter.api.*;
 
 @TestcontainersOracle(mode = ContainerMode.PER_CLASS, image = "gvenzl/oracle-xe:18.4.0-faststart")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OracleContainerPerClassTests {
 
     @ContainerOracleConnection

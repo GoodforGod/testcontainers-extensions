@@ -2,7 +2,7 @@
 
 [![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-oracle/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-oracle)
-[![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Java%20CI/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A%22Java+CI%22)
+[![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A%22Java+CI%22)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.3.0"
+testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.4.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.3.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-oracle</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -161,7 +161,7 @@ Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/oracle-184127602.html)
 - [Liquibase](https://www.liquibase.com/databases/oracle-database)
 
-Given engine is [Flyway](https://documentation.red-gate.com/fd/oracle-184127602.html) and migration file named `V1__flyway.sql` is in resource folder on default path `db/migration`:
+Given engine is [Flyway](https://documentation.red-gate.com/fd/oracle-184127602.html) and migration file named `V1__flyway.sql` is in resource directory on default path `db/migration`:
 ```sql
 CREATE TABLE IF NOT EXISTS users
 (

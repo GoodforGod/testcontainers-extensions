@@ -6,7 +6,7 @@ package io.goodforgod.testcontainers.extensions;
 public enum ContainerMode {
     /**
      * Specified container with same image will run ONCE per test execution and shared across all test
-     * classes (if image is same or will create container per image)
+     * classes (image must be same across annotations or will create container per image)
      */
     PER_RUN,
     /**
