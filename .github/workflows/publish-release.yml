@@ -1,11 +1,11 @@
-name: Publish Release
+name: Release
 
 on:
   release:
     types: [ published ]
 
 jobs:
-  publish-release:
+  build:
     runs-on: ubuntu-latest
     name: Publish Release
 
