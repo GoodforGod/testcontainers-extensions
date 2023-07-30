@@ -50,6 +50,25 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.0"
 </dependency>
 ```
 
+### Kafka Client
+[Kafka Client](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients) must be on classpath, if it is somehow not on your classpath already,
+don't forget to add:
+
+**Gradle**
+```groovy
+testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.0"
+```
+
+**Maven**
+```xml
+<dependency>
+    <groupId>org.apache.kafka</groupId>
+    <artifactId>kafka-clients</artifactId>
+    <version>3.5.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
 ## Content
 - [Container](#container)
   - [Preconfigured container](#preconfigured-container)
