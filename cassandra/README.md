@@ -53,6 +53,7 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 ## Content
 - [Container](#container)
   - [Preconfigured container](#preconfigured-container)
+  - [Container Old Driver](#container-old-driver)
 - [Connection](#connection)
   - [External Connection](#external-connection)
 - [Migration](#migration)
@@ -101,6 +102,13 @@ class ExampleTests {
     }
 }
 ```
+
+## Container Old Driver
+
+[Testcontainers Cassandra module](https://java.testcontainers.org/modules/databases/cassandra/) leaks old driver as transitive dependency and uses it in its deprecated APIs.
+
+Library excludes [com.datastax.cassandra:cassandra-driver-core](https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core/3.10.0)
+old driver from dependency leaking due to lots of vulnerabilities, if you require it add such dependency manually yourself.
 
 ## Connection
 
