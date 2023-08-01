@@ -110,13 +110,14 @@ Example:
 class ExampleTests {
 
     @ContainerKafka
-    private static final KafkaContainer container = new KafkaContainer()
+    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.1"))
           .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
           .withNetwork(Network.SHARED);
 
     @Test
     void checkParams(@ContainerKafkaConnection KafkaConnection connection) {
-      assertNotNull(connection.properties());
+        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().properties());
     }
 }
 ```
