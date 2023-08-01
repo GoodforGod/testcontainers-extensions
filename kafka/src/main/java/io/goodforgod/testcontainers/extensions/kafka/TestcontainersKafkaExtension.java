@@ -77,10 +77,12 @@ final class TestcontainersKafkaExtension implements
 
         private final KafkaContainer container;
         private final Properties properties;
+        private final Properties propertiesInNetwork;
 
-        ExtensionContainerImpl(KafkaContainer container, Properties properties) {
+        ExtensionContainerImpl(KafkaContainer container) {
             this.container = container;
-            this.properties = properties;
+            this.properties = getPropertiesForContainer(container);
+            this.propertiesInNetwork = getPropertiesForContainerInNetwork(container);
         }
 
         @Override
@@ -178,9 +180,30 @@ final class TestcontainersKafkaExtension implements
     }
 
     @NotNull
-    private Properties getPropertiesForContainer(@NotNull KafkaContainer container) {
+    private static Properties getPropertiesForContainer(@NotNull KafkaContainer container) {
         final Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
+        return properties;
+    }
+
+    @Nullable
+    private static Properties getPropertiesForContainerInNetwork(@NotNull KafkaContainer container) {
+        final Properties properties = new Properties();
+
+        final String alias = container.getNetworkAliases().stream()
+                .filter(a -> a.startsWith("kafka"))
+                .findFirst()
+                .or(() -> (container.getNetworkAliases().isEmpty())
+                        ? Optional.empty()
+                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+                .orElse(null);
+
+        if (alias == null) {
+            return null;
+        }
+
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                String.format("PLAINTEXT://%s:%s", alias, KafkaContainer.KAFKA_PORT));
         return properties;
     }
 
@@ -220,7 +243,9 @@ final class TestcontainersKafkaExtension implements
         return findMetadata(context).orElseThrow(() -> new ExtensionConfigurationException("Extension annotation not found"));
     }
 
-    private void injectKafkaConnection(Properties containerProperties, ExtensionContext context) {
+    private void injectKafkaConnection(Properties containerProperties,
+                                       @Nullable Properties containerPropertiesInNetwork,
+                                       ExtensionContext context) {
         var annotationProducer = getAnnotationConnection();
         var connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
                 f -> !f.isSynthetic()
@@ -242,7 +267,17 @@ final class TestcontainersKafkaExtension implements
                     Arrays.stream(annotation.properties())
                             .forEach(property -> fieldProperties.put(property.name(), property.value()));
 
-                    var kafkaConnection = new KafkaConnectionImpl(fieldProperties);
+                    final Properties networkProperties;
+                    if (containerPropertiesInNetwork == null) {
+                        networkProperties = null;
+                    } else {
+                        networkProperties = new Properties();
+                        networkProperties.putAll(containerPropertiesInNetwork);
+                        Arrays.stream(annotation.properties())
+                                .forEach(property -> containerPropertiesInNetwork.put(property.name(), property.value()));
+                    }
+
+                    var kafkaConnection = new KafkaConnectionImpl(fieldProperties, networkProperties);
                     pool.add(kafkaConnection);
 
                     field.setAccessible(true);
@@ -263,7 +298,7 @@ final class TestcontainersKafkaExtension implements
 
         var externalProperties = getPropertiesExternalCached();
         if (externalProperties != null) {
-            injectKafkaConnection(externalProperties, context);
+            injectKafkaConnection(externalProperties, null, context);
             return;
         }
 
@@ -281,11 +316,11 @@ final class TestcontainersKafkaExtension implements
                 container.withReuse(true).start();
                 logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
                         container.getDockerImageName());
-                return new ExtensionContainerImpl(container, getPropertiesForContainer(container));
+                return new ExtensionContainerImpl(container);
             });
 
             storage.put(ContainerMode.PER_RUN, extensionContainer);
-            injectKafkaConnection(extensionContainer.properties, context);
+            injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var container = getContainerFromField(context).orElseGet(() -> {
                 logger.debug("Getting default Kafka Container for image: {}", metadata.image());
@@ -296,9 +331,9 @@ final class TestcontainersKafkaExtension implements
             container.start();
             logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
                     container.getDockerImageName());
-            var extensionContainer = new ExtensionContainerImpl(container, getPropertiesForContainer(container));
+            var extensionContainer = new ExtensionContainerImpl(container);
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
-            injectKafkaConnection(extensionContainer.properties, context);
+            injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         }
     }
 
@@ -309,7 +344,7 @@ final class TestcontainersKafkaExtension implements
 
         var externalProperties = getPropertiesExternalCached();
         if (externalProperties != null) {
-            injectKafkaConnection(externalProperties, context);
+            injectKafkaConnection(externalProperties, null, context);
             return;
         }
 
@@ -324,16 +359,15 @@ final class TestcontainersKafkaExtension implements
             logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
                     container.getDockerImageName());
 
-            final ExtensionContainerImpl extensionContainer = new ExtensionContainerImpl(container,
-                    getPropertiesForContainer(container));
+            final ExtensionContainerImpl extensionContainer = new ExtensionContainerImpl(container);
             storage.put(ContainerMode.PER_METHOD, extensionContainer);
-            injectKafkaConnection(extensionContainer.properties, context);
+            injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
-            injectKafkaConnection(extensionContainer.properties, context);
+            injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         } else if (metadata.runMode() == ContainerMode.PER_RUN) {
             var extensionContainer = storage.get(ContainerMode.PER_RUN, ExtensionContainerImpl.class);
-            injectKafkaConnection(extensionContainer.properties, context);
+            injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         }
     }
 
@@ -406,6 +440,7 @@ final class TestcontainersKafkaExtension implements
 
         final ContainerKafkaConnection annotation = parameterContext.getParameter().getAnnotation(ContainerKafkaConnection.class);
         var parameterProperties = new Properties();
+        Properties parameterPropertiesInNetwork = null;
 
         var externalProperties = getPropertiesExternalCached();
         if (externalProperties != null) {
@@ -413,19 +448,28 @@ final class TestcontainersKafkaExtension implements
         } else if (metadata.runMode() == ContainerMode.PER_METHOD) {
             var extensionContainer = storage.get(ContainerMode.PER_METHOD, ExtensionContainerImpl.class);
             parameterProperties.putAll(extensionContainer.properties);
+            parameterPropertiesInNetwork = new Properties();
+            parameterPropertiesInNetwork.putAll(extensionContainer.propertiesInNetwork);
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
             var extensionContainer = storage.get(ContainerMode.PER_CLASS, ExtensionContainerImpl.class);
             parameterProperties.putAll(extensionContainer.properties);
+            parameterPropertiesInNetwork = new Properties();
+            parameterPropertiesInNetwork.putAll(extensionContainer.propertiesInNetwork);
         } else {
             var extensionContainer = storage.get(ContainerMode.PER_RUN, ExtensionContainerImpl.class);
             parameterProperties.putAll(extensionContainer.properties);
+            parameterPropertiesInNetwork = new Properties();
+            parameterPropertiesInNetwork.putAll(extensionContainer.propertiesInNetwork);
         }
 
         for (ContainerKafkaConnection.Property property : annotation.properties()) {
             parameterProperties.put(property.name(), property.value());
+            if (parameterPropertiesInNetwork != null) {
+                parameterPropertiesInNetwork.put(property.name(), property.value());
+            }
         }
 
-        var kafkaConnection = new KafkaConnectionImpl(parameterProperties);
+        var kafkaConnection = new KafkaConnectionImpl(parameterProperties, parameterPropertiesInNetwork);
         pool.add(kafkaConnection);
         return kafkaConnection;
     }

@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.0"
+testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.1"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-kafka</artifactId>
-    <version>0.4.0</version>
+    <version>0.4.1</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -110,13 +110,14 @@ Example:
 class ExampleTests {
 
     @ContainerKafka
-    private static final KafkaContainer container = new KafkaContainer()
+    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.1"))
           .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
           .withNetwork(Network.SHARED);
 
     @Test
     void checkParams(@ContainerKafkaConnection KafkaConnection connection) {
-      assertNotNull(connection.properties());
+        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().properties());
     }
 }
 ```

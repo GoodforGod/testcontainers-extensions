@@ -2,7 +2,9 @@ dependencies {
     compileOnly libs.driver.cassandra
 
     api project(":common")
-    api libs.testcontainers.cassandra
+    api(libs.testcontainers.cassandra) {
+        exclude group: "com.datastax.cassandra"
+    }
     
     implementation libs.slf4j.api
 

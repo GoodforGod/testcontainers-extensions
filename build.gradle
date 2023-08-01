@@ -72,14 +72,6 @@ subprojects {
         testImplementation libs.junit.params
     }
 
-    sonarqube {
-        properties {
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.organization", "goodforgod"
-            property "sonar.projectKey", "GoodforGod_testcontainers-extensions-${project.name}"
-        }
-    }
-
     test {
         useJUnitPlatform()
         testLogging {

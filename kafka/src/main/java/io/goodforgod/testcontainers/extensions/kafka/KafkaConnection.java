@@ -17,7 +17,50 @@ import org.opentest4j.AssertionFailedError;
  * Consumer functionality
  * <a href="https://docs.confluent.io/platform/current/clients/consumer.html">Kafka Consumer</a>
  */
-interface KafkaConnection {
+public interface KafkaConnection {
+
+    /**
+     * Kafka connection parameters
+     */
+    interface Params {
+
+        @NotNull
+        String boostrapServers();
+
+        /**
+         * @return all kafka connection properties used for {@link Consumer} or Producer
+         */
+        @NotNull
+        Properties properties();
+    }
+
+    @NotNull
+    Params params();
+
+    /**
+     * @return connection parameters inside docker network, can be useful when one container require
+     *             params to connect to Cassandra Database container inside docker network
+     */
+    @NotNull
+    Optional<Params> paramsInNetwork();
+
+    void send(@NotNull String topic, @NotNull Event... events);
+
+    /**
+     * @param topic  to send events
+     * @param events to send in specified topic
+     */
+    void send(@NotNull String topic, @NotNull List<Event> events);
+
+    @NotNull
+    Consumer subscribe(@NotNull String... topics);
+
+    /**
+     * @param topics to subscribe
+     * @return consumer that is subscribed to specified topics {@link Consumer}
+     */
+    @NotNull
+    Consumer subscribe(@NotNull List<String> topics);
 
     /**
      * Kafka Consumer that is capable of testing/asserting specified topics
@@ -125,28 +168,4 @@ interface KafkaConnection {
          */
         boolean checkReceivedEqualsInTime(int expected, @NotNull Duration timeToWait);
     }
-
-    /**
-     * @return all kafka connection properties used for {@link Consumer} or Producer
-     */
-    @NotNull
-    Properties properties();
-
-    void send(@NotNull String topic, @NotNull Event... events);
-
-    /**
-     * @param topic  to send events
-     * @param events to send in specified topic
-     */
-    void send(@NotNull String topic, @NotNull List<Event> events);
-
-    @NotNull
-    Consumer subscribe(@NotNull String... topics);
-
-    /**
-     * @param topics to subscribe
-     * @return consumer that is subscribed to specified topics {@link Consumer}
-     */
-    @NotNull
-    Consumer subscribe(@NotNull List<String> topics);
 }
