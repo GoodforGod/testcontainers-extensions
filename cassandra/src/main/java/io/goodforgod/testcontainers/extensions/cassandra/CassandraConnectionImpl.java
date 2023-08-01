@@ -3,7 +3,6 @@ package io.goodforgod.testcontainers.extensions.cassandra;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
-import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
@@ -78,19 +77,12 @@ final class CassandraConnectionImpl implements CassandraConnection {
 
     private final Params params;
     private final Params network;
-    private final DriverConfigLoader config;
-    private final CqlSession connection;
+
+    private volatile CqlSession connection;
 
     CassandraConnectionImpl(Params params, Params network) {
         this.params = params;
         this.network = network;
-        this.config = new DefaultProgrammaticDriverConfigLoaderBuilder()
-                .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(3))
-                .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(3))
-                .withDuration(DefaultDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(3))
-                .build();
-
-        this.connection = open();
     }
 
     static CassandraConnection forContainer(String host,
@@ -136,8 +128,22 @@ final class CassandraConnectionImpl implements CassandraConnection {
     }
 
     @NotNull
+    private CqlSession connection() {
+        if (connection == null) {
+            connection = open();
+        }
+        return connection;
+    }
+
+    @NotNull
     private CqlSession open() {
         logger.debug("Opening CQL connection...");
+
+        var config = new DefaultProgrammaticDriverConfigLoaderBuilder()
+                .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(3))
+                .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(3))
+                .withDuration(DefaultDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(3))
+                .build();
 
         var sessionBuilder = new CqlSessionBuilder()
                 .withCodecRegistry(new DefaultCodecRegistry("default-code-registry"))
@@ -156,8 +162,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     public void execute(@Language("CQL") @NotNull String cql) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
-            connection.execute(boundStatement).wasApplied();
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            connection().execute(boundStatement).wasApplied();
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
         }
@@ -225,8 +231,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
-            var row = connection.execute(boundStatement).one();
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var row = connection().execute(boundStatement).one();
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))
                     : Optional.empty();
@@ -241,8 +247,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
-            var rows = connection.execute(boundStatement).all();
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var rows = connection().execute(boundStatement).all();
             final List<T> result = new ArrayList<>(rows.size());
             for (Row row : rows) {
                 result.add(extractor.apply(row));
@@ -262,8 +268,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private void assertQuery(@Language("CQL") String cql, QueryAssert consumer) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
-            var rows = connection.execute(boundStatement);
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var rows = connection().execute(boundStatement);
             consumer.accept(rows);
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -304,8 +310,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private boolean checkQuery(@Language("CQL") String cql, QueryChecker checker) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection.prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
-            var rows = connection.execute(boundStatement);
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var rows = connection().execute(boundStatement);
             return checker.apply(rows);
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -354,6 +360,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     }
 
     void close() {
-        connection.close();
+        if (connection != null) {
+            connection.close();
+        }
     }
 }

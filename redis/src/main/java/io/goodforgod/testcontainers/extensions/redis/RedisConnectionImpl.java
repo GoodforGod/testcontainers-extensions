@@ -69,27 +69,12 @@ final class RedisConnectionImpl implements RedisConnection {
 
     private final Params params;
     private final Params network;
-    private final RedisCommandsImpl jedis;
+
+    private volatile RedisCommandsImpl jedis;
 
     RedisConnectionImpl(Params params, Params network) {
         this.params = params;
         this.network = network;
-
-        var config = DefaultJedisClientConfig.builder()
-                .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
-                .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
-                .clientName("testcontainers-extensions-redis")
-                .database(Protocol.DEFAULT_DATABASE);
-
-        if (params().username() != null) {
-            config.user(params.username());
-        }
-
-        if (params().password() != null) {
-            config.password(params().password());
-        }
-
-        this.jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
     }
 
     static RedisConnection forContainer(String host,
@@ -130,13 +115,36 @@ final class RedisConnectionImpl implements RedisConnection {
     }
 
     @NotNull
-    public RedisCommands commands() {
+    private RedisCommands connection() {
+        if (jedis == null) {
+            var config = DefaultJedisClientConfig.builder()
+                    .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                    .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                    .clientName("testcontainers-extensions-redis")
+                    .database(Protocol.DEFAULT_DATABASE);
+
+            if (params().username() != null) {
+                config.user(params.username());
+            }
+
+            if (params().password() != null) {
+                config.password(params().password());
+            }
+
+            jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
+        }
+
         return jedis;
+    }
+
+    @NotNull
+    public RedisCommands commands() {
+        return connection();
     }
 
     @Override
     public void deleteAll() {
-        jedis.flushAll(FlushMode.SYNC);
+        connection().flushAll(FlushMode.SYNC);
     }
 
     private List<RedisValue> getValuesByKeys(@NotNull Collection<RedisKey> keys) {
@@ -148,7 +156,8 @@ final class RedisConnectionImpl implements RedisConnection {
                 .map(RedisKey::asBytes)
                 .toArray(byte[][]::new);
 
-        return jedis.mget(keysAsBytes).stream()
+        logger.debug("Looking for keys: {}", keys);
+        return connection().mget(keysAsBytes).stream()
                 .filter(Objects::nonNull)
                 .map(RedisValueImpl::new)
                 .collect(Collectors.toList());
@@ -156,7 +165,7 @@ final class RedisConnectionImpl implements RedisConnection {
 
     private List<RedisValue> getValuesByPrefix(RedisKey keyPrefix) {
         final byte[] prefix = (keyPrefix.asString() + "*").getBytes(StandardCharsets.UTF_8);
-        final List<RedisKey> keys = jedis.keys(prefix).stream()
+        final List<RedisKey> keys = connection().keys(prefix).stream()
                 .filter(Objects::nonNull)
                 .map(RedisKey::of)
                 .collect(Collectors.toList());
@@ -274,6 +283,8 @@ final class RedisConnectionImpl implements RedisConnection {
     }
 
     void close() {
-        jedis.close();
+        if (jedis != null) {
+            jedis.close();
+        }
     }
 }
