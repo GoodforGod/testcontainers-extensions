@@ -17,7 +17,7 @@ import org.opentest4j.AssertionFailedError;
  * Consumer functionality
  * <a href="https://docs.confluent.io/platform/current/clients/consumer.html">Kafka Consumer</a>
  */
-interface KafkaConnection {
+public interface KafkaConnection {
 
     /**
      * Kafka Consumer that is capable of testing/asserting specified topics

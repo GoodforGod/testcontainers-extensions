@@ -117,21 +117,25 @@ final class RedisConnectionImpl implements RedisConnection {
     @NotNull
     private RedisCommands connection() {
         if (jedis == null) {
-            var config = DefaultJedisClientConfig.builder()
-                    .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
-                    .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
-                    .clientName("testcontainers-extensions-redis")
-                    .database(Protocol.DEFAULT_DATABASE);
+            try {
+                var config = DefaultJedisClientConfig.builder()
+                        .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                        .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                        .clientName("testcontainers-extensions-redis")
+                        .database(Protocol.DEFAULT_DATABASE);
 
-            if (params().username() != null) {
-                config.user(params.username());
+                if (params().username() != null) {
+                    config.user(params.username());
+                }
+
+                if (params().password() != null) {
+                    config.password(params().password());
+                }
+
+                jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
+            } catch (Exception e) {
+                throw new RedisConnectionException(e);
             }
-
-            if (params().password() != null) {
-                config.password(params().password());
-            }
-
-            jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
         }
 
         return jedis;
@@ -144,7 +148,13 @@ final class RedisConnectionImpl implements RedisConnection {
 
     @Override
     public void deleteAll() {
-        connection().flushAll(FlushMode.SYNC);
+        try {
+            connection().flushAll(FlushMode.SYNC);
+        } catch (RedisConnectionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RedisConnectionException(e);
+        }
     }
 
     private List<RedisValue> getValuesByKeys(@NotNull Collection<RedisKey> keys) {
@@ -156,21 +166,33 @@ final class RedisConnectionImpl implements RedisConnection {
                 .map(RedisKey::asBytes)
                 .toArray(byte[][]::new);
 
-        logger.debug("Looking for keys: {}", keys);
-        return connection().mget(keysAsBytes).stream()
-                .filter(Objects::nonNull)
-                .map(RedisValueImpl::new)
-                .collect(Collectors.toList());
+        try {
+            logger.debug("Looking for keys: {}", keys);
+            return connection().mget(keysAsBytes).stream()
+                    .filter(Objects::nonNull)
+                    .map(RedisValueImpl::new)
+                    .collect(Collectors.toList());
+        } catch (RedisConnectionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RedisConnectionException(e);
+        }
     }
 
     private List<RedisValue> getValuesByPrefix(RedisKey keyPrefix) {
-        final byte[] prefix = (keyPrefix.asString() + "*").getBytes(StandardCharsets.UTF_8);
-        final List<RedisKey> keys = connection().keys(prefix).stream()
-                .filter(Objects::nonNull)
-                .map(RedisKey::of)
-                .collect(Collectors.toList());
+        try {
+            final byte[] prefix = (keyPrefix.asString() + "*").getBytes(StandardCharsets.UTF_8);
+            final List<RedisKey> keys = connection().keys(prefix).stream()
+                    .filter(Objects::nonNull)
+                    .map(RedisKey::of)
+                    .collect(Collectors.toList());
 
-        return getValuesByKeys(keys);
+            return getValuesByKeys(keys);
+        } catch (RedisConnectionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RedisConnectionException(e);
+        }
     }
 
     @Override

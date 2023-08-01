@@ -236,7 +236,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))
                     : Optional.empty();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new CassandraConnectionException(e);
         }
     }
@@ -254,7 +254,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
                 result.add(extractor.apply(row));
             }
             return result;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new CassandraConnectionException(e);
         }
     }

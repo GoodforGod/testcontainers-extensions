@@ -301,11 +301,15 @@ final class KafkaConnectionImpl implements KafkaConnection {
     @Override
     public void send(@NotNull String topic, @NotNull List<Event> events) {
         if (isClosed) {
-            throw new KafkaException("Can't subscribed cause was closed");
+            throw new KafkaConnectionException("Can't subscribed cause was closed");
         }
 
         if (this.producer == null) {
-            this.producer = getProducer(properties);
+            try {
+                this.producer = getProducer(properties);
+            } catch (Exception e) {
+                throw new KafkaConnectionException("Can't create Kafka Producer", e);
+            }
         }
 
         createTopicsIfNeeded(List.of(topic));
@@ -328,7 +332,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
                 logger.info("Kafka Producer sent with offset '{}' with partition '{}' with timestamp '{}' event: {}",
                         result.offset(), result.partition(), result.timestamp(), event);
             } catch (Exception e) {
-                throw new KafkaException("Kafka Producer sent event failed: " + event, e);
+                throw new KafkaConnectionException("Kafka Producer sent event failed: " + event, e);
             }
         }
     }
@@ -341,15 +345,19 @@ final class KafkaConnectionImpl implements KafkaConnection {
     @Override
     public @NotNull Consumer subscribe(@NotNull List<String> topics) {
         if (isClosed) {
-            throw new KafkaException("Can't subscribed cause was closed");
+            throw new KafkaConnectionException("Can't subscribed cause was closed");
         }
 
         createTopicsIfNeeded(topics);
 
-        var kafkaConsumer = getConsumer(properties);
-        var consumer = new ConsumerImpl(kafkaConsumer, topics);
-        consumers.add(consumer);
-        return consumer;
+        try {
+            var kafkaConsumer = getConsumer(properties);
+            var consumer = new ConsumerImpl(kafkaConsumer, topics);
+            consumers.add(consumer);
+            return consumer;
+        } catch (Exception e) {
+            throw new KafkaConnectionException("Can't create Kafka Consumer", e);
+        }
     }
 
     private static KafkaProducer<byte[], byte[]> getProducer(Properties properties) {
@@ -399,7 +407,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
                 logger.trace("Required topics already exist: {}", topics);
             }
         } catch (Exception e) {
-            throw new KafkaException("Kafka Admin operation failed for topics: " + topics, e);
+            throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
         }
     }
 
