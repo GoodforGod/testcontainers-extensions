@@ -15,6 +15,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -457,6 +458,14 @@ final class KafkaConnectionImpl implements KafkaConnection {
                 logger.info("Created topics: {}", topics);
             } else {
                 logger.trace("Required topics already exist: {}", topics);
+            }
+        } catch (TopicExistsException e) {
+            logger.trace("Required topics already exist: {}", topics);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof TopicExistsException) {
+                logger.trace("Required topics already exist: {}", topics);
+            } else {
+                throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
             }
         } catch (Exception e) {
             throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
