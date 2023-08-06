@@ -26,4 +26,9 @@ public @interface TestcontainersKafka {
      * @return when to start container
      */
     ContainerMode mode() default ContainerMode.PER_METHOD;
+
+    /**
+     * @return topics to set up after container started
+     */
+    String[] topics() default {};
 }

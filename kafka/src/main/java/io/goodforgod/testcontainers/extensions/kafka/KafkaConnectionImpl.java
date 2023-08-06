@@ -354,7 +354,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
     @Override
     public void send(@NotNull String topic, @NotNull List<Event> events) {
         if (isClosed) {
-            throw new KafkaConnectionException("Can't subscribed cause was closed");
+            throw new KafkaConnectionException("Can't send cause was closed");
         }
 
         if (this.producer == null) {
@@ -365,7 +365,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
             }
         }
 
-        createTopicsIfNeeded(List.of(topic));
+        createTopicsIfNeeded(params.properties(), List.of(topic));
 
         for (Event event : events) {
             final byte[] key = (event.key() == null)
@@ -380,8 +380,8 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
             try {
                 logger.trace("Kafka Producer sending event: {}", event);
-                var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers)).get(5,
-                        TimeUnit.SECONDS);
+                var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers))
+                        .get(5, TimeUnit.SECONDS);
                 logger.info("Kafka Producer sent with offset '{}' with partition '{}' with timestamp '{}' event: {}",
                         result.offset(), result.partition(), result.timestamp(), event);
             } catch (Exception e) {
@@ -401,7 +401,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
             throw new KafkaConnectionException("Can't subscribed cause was closed");
         }
 
-        createTopicsIfNeeded(topics);
+        createTopicsIfNeeded(params().properties(), topics);
 
         try {
             var kafkaConsumer = getConsumer(params.properties());
@@ -439,9 +439,9 @@ final class KafkaConnectionImpl implements KafkaConnection {
         return Admin.create(adminProperties);
     }
 
-    private void createTopicsIfNeeded(@NotNull List<String> topics) {
+    static void createTopicsIfNeeded(@NotNull Properties properties, @NotNull List<String> topics) {
         try {
-            var admin = getAdmin(params.properties());
+            var admin = getAdmin(properties);
             logger.trace("Looking for existing topics...");
             var existingTopics = admin.listTopics().names().get(5, TimeUnit.SECONDS);
             logger.trace("Found existing topics: {}", existingTopics);

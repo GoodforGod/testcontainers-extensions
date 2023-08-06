@@ -176,7 +176,7 @@ final class TestcontainersKafkaExtension implements
     @NotNull
     private Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersKafka.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode()));
+                .map(a -> new ContainerMetadata(a.image(), a.mode(), List.of(a.topics())));
     }
 
     @NotNull
@@ -298,6 +298,10 @@ final class TestcontainersKafkaExtension implements
 
         var externalProperties = getPropertiesExternalCached();
         if (externalProperties != null) {
+            if (!metadata.topics().isEmpty()) {
+                KafkaConnectionImpl.createTopicsIfNeeded(externalProperties, metadata.topics());
+            }
+
             injectKafkaConnection(externalProperties, null, context);
             return;
         }
@@ -316,7 +320,13 @@ final class TestcontainersKafkaExtension implements
                 container.withReuse(true).start();
                 logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
                         container.getDockerImageName());
-                return new ExtensionContainerImpl(container);
+                var extCont = new ExtensionContainerImpl(container);
+
+                if (!metadata.topics().isEmpty()) {
+                    KafkaConnectionImpl.createTopicsIfNeeded(extCont.properties, metadata.topics());
+                }
+
+                return extCont;
             });
 
             storage.put(ContainerMode.PER_RUN, extensionContainer);
@@ -332,6 +342,11 @@ final class TestcontainersKafkaExtension implements
             logger.debug("Started successfully in mode '{}' Kafka Container: {}", metadata.runMode(),
                     container.getDockerImageName());
             var extensionContainer = new ExtensionContainerImpl(container);
+
+            if (!metadata.topics().isEmpty()) {
+                KafkaConnectionImpl.createTopicsIfNeeded(extensionContainer.properties, metadata.topics());
+            }
+
             storage.put(ContainerMode.PER_CLASS, extensionContainer);
             injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         }
@@ -360,6 +375,10 @@ final class TestcontainersKafkaExtension implements
                     container.getDockerImageName());
 
             final ExtensionContainerImpl extensionContainer = new ExtensionContainerImpl(container);
+            if (!metadata.topics().isEmpty()) {
+                KafkaConnectionImpl.createTopicsIfNeeded(extensionContainer.properties, metadata.topics());
+            }
+
             storage.put(ContainerMode.PER_METHOD, extensionContainer);
             injectKafkaConnection(extensionContainer.properties, extensionContainer.propertiesInNetwork, context);
         } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
