@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.*;
 
-@TestcontainersKafka(mode = ContainerMode.PER_RUN, image = "confluentinc/cp-kafka:7.4.1")
+@TestcontainersKafka(mode = ContainerMode.PER_RUN, image = "confluentinc/cp-kafka:7.4.1", topics = { "my-topic" })
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ContainerPerRunSecondTests {
 
