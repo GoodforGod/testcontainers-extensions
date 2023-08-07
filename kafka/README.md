@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.1"
+testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.2"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.1"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-kafka</artifactId>
-    <version>0.4.1</version>
+    <version>0.4.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -72,9 +72,11 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.0"
 ## Content
 - [Container](#container)
   - [Preconfigured container](#preconfigured-container)
+  - [Setup topics](#setup-topics)
 - [Connection](#connection)
   - [Producer](#producer)
   - [Consumer](#consumer)
+  - [Properties](#properties)
   - [External Connection](#external-connection)
 
 ## Container
@@ -119,6 +121,19 @@ class ExampleTests {
         assertNotNull(connection.params().boostrapServers());
         assertNotNull(connection.params().properties());
     }
+}
+```
+
+### Setup topics
+
+It is possible configure topics for creation right after Kafka container started, such topics will be created if not exist.
+This can be useful in tests before tested application started and connected to Kafka, especially with Consumers.
+
+Example:
+```java
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, topics = {"my-topic"})
+class ExampleTests {
+
 }
 ```
 
@@ -169,6 +184,20 @@ class ExampleTests {
         // then
         consumer.assertReceivedAtLeast(2, Duration.ofSeconds(5));
     }
+}
+```
+
+### Properties
+
+It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
+
+```java
+```java
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.4.1")
+class ExampleTests {
+
+    @ContainerKafkaConnection(properties = { @ContainerKafkaConnection.Property(name = "enable.auto.commit", value = "true") })
+    private KafkaConnection connection;
 }
 ```
 
