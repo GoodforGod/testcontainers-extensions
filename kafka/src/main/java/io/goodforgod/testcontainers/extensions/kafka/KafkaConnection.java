@@ -1,9 +1,7 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
@@ -13,9 +11,9 @@ import org.opentest4j.AssertionFailedError;
  * <p>
  * Provides:
  * Producer functionality
- * <a href="https://docs.confluent.io/platform/current/clients/producer.html">Kafka Producer</a>
+ * <a href="https://docs.confluent.io/platform/current/clients/producer.html">KafkaProducer</a>
  * Consumer functionality
- * <a href="https://docs.confluent.io/platform/current/clients/consumer.html">Kafka Consumer</a>
+ * <a href="https://docs.confluent.io/platform/current/clients/consumer.html">KafkaConsumer</a>
  */
 public interface KafkaConnection {
 
@@ -60,10 +58,10 @@ public interface KafkaConnection {
      * @return consumer that is subscribed to specified topics {@link Consumer}
      */
     @NotNull
-    Consumer subscribe(@NotNull List<String> topics);
+    Consumer subscribe(@NotNull Set<String> topics);
 
     /**
-     * Kafka Consumer that is capable of testing/asserting specified topics
+     * KafkaConsumer that is capable of testing/asserting specified topics
      */
     interface Consumer {
 

@@ -13,6 +13,9 @@ import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersCockroachdbExtension extends AbstractTestcontainersJdbcExtension<CockroachContainer> {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(TestcontainersCockroachdbExtension.class);
+
     private static final String PROTOCOL = "postgresql";
     private static final int PORT = 26257;
 
@@ -38,26 +41,35 @@ final class TestcontainersCockroachdbExtension extends AbstractTestcontainersJdb
         return ContainerCockroachdbConnection.class;
     }
 
-    @NotNull
     @Override
-    protected CockroachContainer getDefaultContainer(@NotNull ContainerMetadata metadata) {
+    protected CockroachContainer getContainerDefault(JdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("cockroachdb/cockroach"));
 
         var alias = "cockroachdb-" + System.currentTimeMillis();
-        return new CockroachContainer(dockerImage)
+        var container = new CockroachContainer(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
-                .withNetwork(Network.SHARED)
                 .withStartupTimeout(Duration.ofMinutes(5));
+
+        if (metadata.useNetworkShared()) {
+            container.withNetwork(Network.SHARED);
+        }
+
+        return container;
+    }
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
     }
 
     @NotNull
-    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersCockroachdb.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
+                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull

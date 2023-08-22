@@ -73,6 +73,7 @@ subprojects {
     }
 
     test {
+        failFast(false)
         useJUnitPlatform()
         testLogging {
             events("passed", "skipped", "failed")
@@ -132,14 +133,6 @@ nexusPublishing {
 subprojects {
     apply plugin: "maven-publish"
     apply plugin: "org.sonarqube"
-
-    sonarqube {
-        properties {
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.organization", "goodforgod"
-            property "sonar.projectKey", "GoodforGod_$artifactRootId"
-        }
-    }
 
     publishing {
         publications {

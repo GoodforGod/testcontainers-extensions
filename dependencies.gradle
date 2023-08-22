@@ -7,8 +7,8 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("junit-api", "5.9.3")
             version("junit-platform", "1.9.3")
             version("testcontainers", "1.17.6")
-            version("flyway", "9.20.0")
-            version("liquibase", "4.23.0")
+            version("flyway", "9.20.1")
+            version("liquibase", "4.23.1")
 
             library("slf4j-api", "org.slf4j", "slf4j-api").versionRef("slf4j")
             library("slf4j-jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
@@ -18,7 +18,6 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("junit-engine", "org.junit.jupiter", "junit-jupiter-engine").versionRef("junit-api")
             library("junit-launcher", "org.junit.platform", "junit-platform-launcher").versionRef("junit-platform")
 
-            library("testcontainers-core", "org.testcontainers", "testcontainers").versionRef("testcontainers")
             library("testcontainers-core", "org.testcontainers", "testcontainers").versionRef("testcontainers")
             library("testcontainers-junit", "org.testcontainers", "junit-jupiter").versionRef("testcontainers")
             library("testcontainers-jdbc", "org.testcontainers", "jdbc").versionRef("testcontainers")
@@ -41,7 +40,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-mysql", "mysql", "mysql-connector-java").version("8.0.33")
             library("driver-oracle", "com.oracle.database.jdbc", "ojdbc8").version("21.5.0.0")
             library("driver-cassandra", "com.datastax.oss", "java-driver-core").version("4.17.0")
-            library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.5.0")
+            library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.5.1")
             library("driver-redis", "redis.clients", "jedis").version("4.4.3")
 
             library("json", "org.json", "json").version("20230618")

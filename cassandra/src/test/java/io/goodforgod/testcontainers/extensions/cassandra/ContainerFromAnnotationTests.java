@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.CassandraContainer;
-import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -19,8 +18,7 @@ class ContainerFromAnnotationTests {
     @ContainerCassandra
     private static final CassandraContainer<?> container = new CassandraContainer<>(DockerImageName.parse("cassandra:4.1"))
             .withEnv("CASSANDRA_DC", "mydc")
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class)))
-            .withNetwork(Network.SHARED);
+            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class)));
 
     @Test
     void checkParams(@ContainerCassandraConnection CassandraConnection connection) {

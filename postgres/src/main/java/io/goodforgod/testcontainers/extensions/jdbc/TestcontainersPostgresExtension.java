@@ -13,6 +13,9 @@ import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(TestcontainersPostgresExtension.class);
+
     private static final String PROTOCOL = "postgresql";
 
     private static final String EXTERNAL_TEST_POSTGRES_JDBC_URL = "EXTERNAL_TEST_POSTGRES_JDBC_URL";
@@ -38,14 +41,13 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
         return ContainerPostgresConnection.class;
     }
 
-    @NotNull
     @Override
-    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+    protected PostgreSQLContainer<?> getContainerDefault(JdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
         var alias = "postgres-" + System.currentTimeMillis();
-        return new PostgreSQLContainer<>(dockerImage)
+        var container = new PostgreSQLContainer<>(dockerImage)
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword("postgres")
@@ -53,14 +55,24 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
-                .withNetwork(Network.SHARED)
                 .withStartupTimeout(Duration.ofMinutes(5));
+
+        if (metadata.useNetworkShared()) {
+            container.withNetwork(Network.SHARED);
+        }
+
+        return container;
+    }
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
     }
 
     @NotNull
-    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersPostgres.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
+                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull

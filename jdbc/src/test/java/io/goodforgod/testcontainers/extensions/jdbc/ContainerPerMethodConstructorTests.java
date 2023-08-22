@@ -5,14 +5,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.*;
 
-@TestcontainersJdbc(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
+@TestcontainersJdbc(mode = ContainerMode.PER_METHOD, image = "postgres:15.1-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class ContainerPerClassTests {
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
+class ContainerPerMethodConstructorTests {
 
-    @ContainerJdbcConnection
-    private JdbcConnection sameConnection;
+    private final JdbcConnection diffPerMethod;
 
     private static JdbcConnection firstConnection;
+
+    ContainerPerMethodConstructorTests(@ContainerJdbcConnection JdbcConnection diffPerMethod) {
+        this.diffPerMethod = diffPerMethod;
+        assertNotNull(diffPerMethod);
+    }
 
     @Order(1)
     @Test
@@ -20,9 +25,9 @@ class ContainerPerClassTests {
         assertNull(firstConnection);
         assertNotNull(connection);
         assertNotNull(connection.params().jdbcUrl());
-        assertNotNull(sameConnection);
-        assertEquals(sameConnection, connection);
         firstConnection = connection;
+        assertNotNull(diffPerMethod);
+        assertEquals(diffPerMethod, connection);
     }
 
     @Order(2)
@@ -30,9 +35,10 @@ class ContainerPerClassTests {
     void secondConnection(@ContainerJdbcConnection JdbcConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.params().jdbcUrl());
+        assertNotNull(diffPerMethod);
+        assertEquals(diffPerMethod, connection);
+
         assertNotNull(firstConnection);
-        assertNotNull(sameConnection);
-        assertEquals(sameConnection, connection);
-        assertEquals(firstConnection, connection);
+        assertNotEquals(firstConnection, connection);
     }
 }

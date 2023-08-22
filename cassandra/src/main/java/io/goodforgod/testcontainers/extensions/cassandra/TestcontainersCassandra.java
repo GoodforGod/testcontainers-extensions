@@ -18,6 +18,12 @@ import org.testcontainers.containers.CassandraContainer;
 public @interface TestcontainersCassandra {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return Cassandra image
      */
     String image() default "cassandra:4.1";

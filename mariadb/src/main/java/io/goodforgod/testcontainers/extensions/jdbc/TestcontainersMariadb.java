@@ -18,6 +18,12 @@ import org.testcontainers.containers.MariaDBContainer;
 public @interface TestcontainersMariadb {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return MariaDB image
      */
     String image() default "mariadb:11.0-jammy";

@@ -18,6 +18,12 @@ import org.testcontainers.containers.OracleContainer;
 public @interface TestcontainersOracle {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return Oracle image
      */
     String image() default "gvenzl/oracle-xe:18.4.0-faststart";

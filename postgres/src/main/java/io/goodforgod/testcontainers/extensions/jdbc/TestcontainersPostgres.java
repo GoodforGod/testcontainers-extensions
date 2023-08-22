@@ -18,6 +18,12 @@ import org.testcontainers.containers.PostgreSQLContainer;
 public @interface TestcontainersPostgres {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return Postgres image
      */
     String image() default "postgres:15.3-alpine";

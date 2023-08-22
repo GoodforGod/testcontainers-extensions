@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.2"
+testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.5.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.4.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-kafka</artifactId>
-    <version>0.4.2</version>
+    <version>0.5.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -37,7 +37,7 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.0"
+testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.1"
 ```
 
 **Maven**
@@ -124,14 +124,23 @@ class ExampleTests {
 }
 ```
 
-### Setup topics
+### Topics
 
-It is possible configure topics for creation right after Kafka container started, such topics will be created if not exist.
+It is possible configure topics for creation right after Kafka container started (or before test class started if ContainerMode is PER_RUN), such topics will be created if not exist.
 This can be useful in tests before tested application started and connected to Kafka, especially with Consumers.
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, topics = {"my-topic"})
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, topics = @Topics("my-topic"))
+class ExampleTests {
+
+}
+```
+
+It is also possible to reset topics if needed per test class or per test method:
+```java
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, 
+                     topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
 
 }

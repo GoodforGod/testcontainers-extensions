@@ -7,7 +7,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
@@ -22,8 +21,7 @@ class ContainerFromAnnotationTests {
             .withDatabaseName(CUSTOM)
             .withUsername(CUSTOM)
             .withPassword(CUSTOM)
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class)))
-            .withNetwork(Network.SHARED);
+            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class)));
 
     @Test
     void checkParams(@ContainerJdbcConnection JdbcConnection connection) {

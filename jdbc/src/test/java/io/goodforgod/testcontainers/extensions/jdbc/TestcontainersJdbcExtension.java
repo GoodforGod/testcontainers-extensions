@@ -5,12 +5,19 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
+
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(TestcontainersJdbcExtension.class);
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -28,8 +35,8 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
         return ContainerJdbcConnection.class;
     }
 
-    @NotNull
-    protected PostgreSQLContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+    @Override
+    protected PostgreSQLContainer<?> getContainerDefault(JdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
@@ -41,14 +48,13 @@ final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtens
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
-                .withNetworkAliases(alias)
-                .withNetwork(Network.SHARED);
+                .withNetworkAliases(alias);
     }
 
     @NotNull
-    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersJdbc.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
+                .map(a -> new JdbcMetadata(false, a.image(), a.mode(), a.migration()));
     }
 
     @NotNull

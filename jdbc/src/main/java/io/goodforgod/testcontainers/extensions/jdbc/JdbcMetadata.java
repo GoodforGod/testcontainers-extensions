@@ -1,26 +1,35 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.ContainerMetadata;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 
 @Internal
-final class ContainerMetadata {
+final class JdbcMetadata implements ContainerMetadata {
 
+    private final boolean network;
     private final String image;
     private final ContainerMode runMode;
     private final Migration migration;
 
-    ContainerMetadata(String image, ContainerMode runMode, Migration migration) {
+    JdbcMetadata(boolean network, String image, ContainerMode runMode, Migration migration) {
+        this.network = network;
         this.image = image;
         this.runMode = runMode;
         this.migration = migration;
     }
 
-    String image() {
+    @Override
+    public boolean useNetworkShared() {
+        return network;
+    }
+
+    public @NotNull String image() {
         return image;
     }
 
-    ContainerMode runMode() {
+    public @NotNull ContainerMode runMode() {
         return runMode;
     }
 
