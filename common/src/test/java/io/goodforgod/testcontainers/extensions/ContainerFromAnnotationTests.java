@@ -9,7 +9,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
-@TestcontainersRedis(mode = ContainerMode.PER_METHOD, image = "redis:7.2-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ContainerFromAnnotationTests {
 
@@ -20,10 +20,12 @@ class ContainerFromAnnotationTests {
     @Test
     void checkParams(@ContainerRedisConnection RedisConnection connection) {
         assertTrue(container.isRunning());
+        connection.deleteAll();
     }
 
     @Test
     void checkParamsAgain(@ContainerRedisConnection RedisConnection connection) {
         assertTrue(container.isRunning());
+        connection.deleteAll();
     }
 }

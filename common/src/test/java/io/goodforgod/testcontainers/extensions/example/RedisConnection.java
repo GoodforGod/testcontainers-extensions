@@ -41,4 +41,6 @@ public interface RedisConnection {
      */
     @NotNull
     Optional<Params> paramsInNetwork();
+
+    void deleteAll();
 }

@@ -78,6 +78,8 @@ class ExampleTests {
 }
 ```
 
+**That's all** you need.
+
 It is possible to customize image with annotation `image` parameter.
 
 ### Manual Container

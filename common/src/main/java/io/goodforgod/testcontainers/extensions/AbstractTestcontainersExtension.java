@@ -325,6 +325,9 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                     extensionContainer.stop();
                     logger.info("Stopped in mode '{}' container: {}",
                             metadata.runMode(), extensionContainer.container().getDockerImageName());
+
+                    storage.remove(getConnectionType());
+                    storage.remove(metadata.runMode());
                 }
             }
         }

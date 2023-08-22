@@ -1,10 +1,14 @@
 package io.goodforgod.testcontainers.extensions.example;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.args.FlushMode;
 
 final class RedisConnectionImpl implements RedisConnection {
 
@@ -62,10 +66,9 @@ final class RedisConnectionImpl implements RedisConnection {
         }
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisConnection.class);
-
     private final Params params;
     private final Params network;
+    private volatile Jedis jedis;
 
     RedisConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -90,15 +93,6 @@ final class RedisConnectionImpl implements RedisConnection {
         return new RedisConnectionImpl(params, network);
     }
 
-    static RedisConnection forExternal(String host,
-                                       int port,
-                                       int database,
-                                       String username,
-                                       String password) {
-        var params = new ParamsImpl(host, port, username, password, database);
-        return new RedisConnectionImpl(params, null);
-    }
-
     @Override
     public @NotNull Params params() {
         return params;
@@ -107,6 +101,34 @@ final class RedisConnectionImpl implements RedisConnection {
     @Override
     public @NotNull Optional<Params> paramsInNetwork() {
         return Optional.ofNullable(network);
+    }
+
+    @NotNull
+    private Jedis connection() {
+        if (jedis == null) {
+            var config = DefaultJedisClientConfig.builder()
+                    .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                    .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                    .clientName("testcontainers-extensions-redis")
+                    .database(Protocol.DEFAULT_DATABASE);
+
+            if (params().username() != null) {
+                config.user(params.username());
+            }
+
+            if (params().password() != null) {
+                config.password(params().password());
+            }
+
+            jedis = new Jedis(new HostAndPort(params().host(), params().port()), config.build());
+        }
+
+        return jedis;
+    }
+
+    @Override
+    public void deleteAll() {
+        connection().flushAll(FlushMode.SYNC);
     }
 
     @Override
