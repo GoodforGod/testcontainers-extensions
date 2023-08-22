@@ -2,7 +2,6 @@ package io.goodforgod.testcontainers.extensions.redis;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
 import java.lang.annotation.Annotation;
-import java.time.Duration;
 import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.extension.*;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -52,9 +50,7 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
-                .withNetworkAliases(alias)
-                .withStartupTimeout(Duration.ofMinutes(5))
-                .waitingFor(Wait.forListeningPort());
+                .withNetworkAliases(alias);
 
         if (metadata.useNetworkShared()) {
             container.withNetwork(Network.SHARED);

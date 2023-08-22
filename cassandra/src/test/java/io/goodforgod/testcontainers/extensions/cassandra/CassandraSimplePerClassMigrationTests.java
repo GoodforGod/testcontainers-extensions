@@ -1,6 +1,6 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.*;
@@ -9,11 +9,11 @@ import org.junit.jupiter.api.*;
         image = "cassandra:4.1",
         migration = @Migration(
                 engine = Migration.Engines.SCRIPTS,
-                apply = Migration.Mode.PER_METHOD,
-                drop = Migration.Mode.PER_METHOD,
+                apply = Migration.Mode.PER_CLASS,
+                drop = Migration.Mode.PER_CLASS,
                 migrations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class SimplePerMethodMigrationTests {
+class CassandraSimplePerClassMigrationTests {
 
     @Order(1)
     @Test
@@ -24,7 +24,7 @@ class SimplePerMethodMigrationTests {
     @Order(2)
     @Test
     void secondRun(@ContainerCassandraConnection CassandraConnection connection) {
-        var usersFound = connection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(1));
-        assertTrue(usersFound.isEmpty());
+        var usersFound = connection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0)).orElse(null);
+        assertEquals(1, usersFound);
     }
 }

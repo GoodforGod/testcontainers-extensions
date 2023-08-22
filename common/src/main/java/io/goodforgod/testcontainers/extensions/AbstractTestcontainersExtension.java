@@ -303,13 +303,10 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public void beforeEach(ExtensionContext context) {
         setupBeforeEach(context);
 
-        var metadata = getMetadata(context);
-        if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            var storage = getStorage(context);
-            var connection = storage.get(getConnectionType(), getConnectionType());
-            if (connection != null) {
-                injectConnection(connection, context);
-            }
+        var storage = getStorage(context);
+        var connection = storage.get(getConnectionType(), getConnectionType());
+        if (connection != null) {
+            injectConnection(connection, context);
         }
     }
 
@@ -328,9 +325,6 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                     extensionContainer.stop();
                     logger.info("Stopped in mode '{}' container: {}",
                             metadata.runMode(), extensionContainer.container().getDockerImageName());
-
-                    storage.remove(getConnectionType());
-                    storage.remove(metadata.runMode());
                 }
             }
         }
@@ -354,8 +348,5 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                 }
             }
         }
-
-        storage.remove(getConnectionType());
-        storage.remove(metadata.runMode());
     }
 }

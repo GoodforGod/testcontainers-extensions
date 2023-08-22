@@ -25,7 +25,7 @@ public final class RedisContainer extends GenericContainer<RedisContainer> {
         dockerImageName.assertCompatibleWith(IMAGE);
         withExposedPorts(PORT);
         withCommand("redis-server", "--requirepass " + DEFAULT_PASSWORD);
-        waitingFor(Wait.forListeningPort());
+        waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
         withStartupTimeout(Duration.ofSeconds(30));
     }
 

@@ -15,7 +15,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_METHOD, image = "postgres:15.2-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class ContainerFromAnnotationTests {
+class JdbcContainerFromAnnotationTests {
 
     private static final String CUSTOM = "user";
 
