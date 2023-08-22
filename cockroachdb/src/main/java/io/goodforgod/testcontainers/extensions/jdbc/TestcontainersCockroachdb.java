@@ -18,6 +18,12 @@ import org.testcontainers.containers.CockroachContainer;
 public @interface TestcontainersCockroachdb {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return Cockroachdb image
      */
     String image() default "cockroachdb/cockroach:latest-v23.1";

@@ -14,6 +14,9 @@ import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExtension<MySQLContainer<?>> {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(TestcontainersMysqlExtension.class);
+
     private static final String PROTOCOL = "mysql";
     private static final String DATABASE_NAME = "test";
 
@@ -40,13 +43,13 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
         return ContainerMysqlConnection.class;
     }
 
-    @NotNull
-    protected MySQLContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+    @Override
+    protected MySQLContainer<?> getContainerDefault(JdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(MySQLContainer.NAME));
 
         var alias = "mysql-" + System.currentTimeMillis();
-        return new MySQLContainer<>(dockerImage)
+        var container = new MySQLContainer<>(dockerImage)
                 .withDatabaseName(DATABASE_NAME)
                 .withUsername("mysql")
                 .withPassword("mysql")
@@ -54,15 +57,25 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
-                .withNetwork(Network.SHARED)
                 .waitingFor(Wait.forHealthcheck())
                 .withStartupTimeout(Duration.ofMinutes(5));
+
+        if (metadata.useNetworkShared()) {
+            container.withNetwork(Network.SHARED);
+        }
+
+        return container;
+    }
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
     }
 
     @NotNull
-    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersMysql.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
+                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull

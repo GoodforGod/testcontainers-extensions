@@ -14,6 +14,9 @@ import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExtension<MariaDBContainer<?>> {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(TestcontainersMariadbExtension.class);
+
     private static final String PROTOCOL = "mariadb";
     private static final String DATABASE_NAME = "mariadb";
     private static final Integer MARIADB_PORT = 3306;
@@ -41,14 +44,13 @@ final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExt
         return ContainerMariadbConnection.class;
     }
 
-    @NotNull
     @Override
-    protected MariaDBContainer<?> getDefaultContainer(@NotNull ContainerMetadata metadata) {
+    protected MariaDBContainer<?> getContainerDefault(JdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(MariaDBContainer.NAME));
 
         var alias = "mariadb-" + System.currentTimeMillis();
-        return new MariaDBContainer<>(dockerImage)
+        var container = new MariaDBContainer<>(dockerImage)
                 .withDatabaseName(DATABASE_NAME)
                 .withUsername("mariadb")
                 .withPassword("mariadb")
@@ -56,15 +58,25 @@ final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExt
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
-                .withNetwork(Network.SHARED)
                 .waitingFor(Wait.forHealthcheck())
                 .withStartupTimeout(Duration.ofMinutes(5));
+
+        if (metadata.useNetworkShared()) {
+            container.withNetwork(Network.SHARED);
+        }
+
+        return container;
+    }
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
     }
 
     @NotNull
-    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersMariadb.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
+                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull

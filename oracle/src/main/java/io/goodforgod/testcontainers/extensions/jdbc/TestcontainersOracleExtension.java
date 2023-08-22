@@ -13,6 +13,9 @@ import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExtension<OracleContainer> {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(TestcontainersOracleExtension.class);
+
     private static final String PROTOCOL = "oracle:thin";
     private static final int ORACLE_PORT = 1521;
 
@@ -38,28 +41,37 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
         return ContainerOracleConnection.class;
     }
 
-    @NotNull
     @Override
-    protected OracleContainer getDefaultContainer(@NotNull ContainerMetadata metadata) {
+    protected OracleContainer getContainerDefault(JdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("gvenzl/oracle-xe"));
 
         var alias = "oracle-" + System.currentTimeMillis();
-        return new OracleContainer(dockerImage)
+        var container = new OracleContainer(dockerImage)
                 .withPassword("test")
                 .withDatabaseName("oracle")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", alias))
                 .withNetworkAliases(alias)
-                .withNetwork(Network.SHARED)
                 .withStartupTimeout(Duration.ofMinutes(5));
+
+        if (metadata.useNetworkShared()) {
+            container.withNetwork(Network.SHARED);
+        }
+
+        return container;
+    }
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
     }
 
     @NotNull
-    protected Optional<ContainerMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersOracle.class, context)
-                .map(a -> new ContainerMetadata(a.image(), a.mode(), a.migration()));
+                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull

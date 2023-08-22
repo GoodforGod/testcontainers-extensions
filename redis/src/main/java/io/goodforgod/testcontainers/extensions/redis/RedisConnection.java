@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,9 @@ public interface RedisConnection {
      * Redis connection parameters
      */
     interface Params {
+
+        @NotNull
+        URI uri();
 
         @NotNull
         String host();

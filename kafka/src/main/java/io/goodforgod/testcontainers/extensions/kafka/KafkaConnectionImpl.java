@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.WakeupException;
@@ -35,17 +36,17 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     private static final class ParamsImpl implements Params {
 
-        private final String boostrapServers;
+        private final String bootstrapServers;
         private final Properties properties;
 
         private ParamsImpl(Properties properties) {
-            this.boostrapServers = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+            this.bootstrapServers = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
             this.properties = properties;
         }
 
         @Override
-        public @NotNull String boostrapServers() {
-            return boostrapServers;
+        public @NotNull String bootstrapServers() {
+            return bootstrapServers;
         }
 
         @Override
@@ -60,17 +61,17 @@ final class KafkaConnectionImpl implements KafkaConnection {
             if (o == null || getClass() != o.getClass())
                 return false;
             ParamsImpl params = (ParamsImpl) o;
-            return Objects.equals(boostrapServers, params.boostrapServers) && Objects.equals(properties, params.properties);
+            return Objects.equals(bootstrapServers, params.bootstrapServers) && Objects.equals(properties, params.properties);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(boostrapServers, properties);
+            return Objects.hash(bootstrapServers, properties);
         }
 
         @Override
         public String toString() {
-            return boostrapServers;
+            return bootstrapServers;
         }
     }
 
@@ -101,10 +102,10 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
         private final KafkaConsumer<byte[], byte[]> consumer;
         private final BlockingQueue<ConsumerRecord<byte[], byte[]>> messageQueue = new LinkedBlockingDeque<>();
-        private final List<String> topics;
+        private final Set<String> topics;
         private final String groupId;
 
-        ConsumerImpl(KafkaConsumer<byte[], byte[]> consumer, List<String> topics) {
+        ConsumerImpl(KafkaConsumer<byte[], byte[]> consumer, Set<String> topics) {
             this.groupId = consumer.groupMetadata().groupId();
             this.consumer = consumer;
             this.topics = topics;
@@ -117,7 +118,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
                 @Override
                 public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-                    logger.info("Kafka Consumer '{}' partitions assigned: {}", groupId, partitions);
+                    logger.info("KafkaConsumer '{}' partitions assigned: {}", groupId, partitions);
                     wait.set(false);
                 }
             });
@@ -134,14 +135,14 @@ final class KafkaConnectionImpl implements KafkaConnection {
         }
 
         private void launch() {
-            logger.info("Kafka Consumer '{}' started consuming events from topics: {}", groupId, topics);
+            logger.info("KafkaConsumer '{}' started consuming events from topics: {}", groupId, topics);
             while (isActive.get()) {
                 try {
                     poll(Duration.ofMillis(50));
                 } catch (WakeupException ignore) {
                     // do nothing
                 } catch (Exception e) {
-                    logger.error("Kafka Consumer '{}' for {} topics got unhandled exception", groupId, topics, e);
+                    logger.error("KafkaConsumer '{}' for {} topics got unhandled exception", groupId, topics, e);
                     consumer.close(Duration.ofMinutes(3));
                     break;
                 }
@@ -151,9 +152,9 @@ final class KafkaConnectionImpl implements KafkaConnection {
         private void poll(Duration maxPollTimeout) {
             var records = consumer.poll(maxPollTimeout);
             if (!records.isEmpty()) {
-                logger.info("Kafka Consumer '{}' polled '{}' records from topics: {}", groupId, records.count(), topics);
+                logger.info("KafkaConsumer '{}' polled '{}' records from topics: {}", groupId, records.count(), topics);
             } else {
-                logger.trace("Kafka Consumer '{}' polled '{}' records...", groupId, records.count());
+                logger.trace("KafkaConsumer '{}' polled '{}' records...", groupId, records.count());
             }
 
             for (var record : records) {
@@ -317,7 +318,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
         void close() {
             if (isActive.compareAndSet(true, false)) {
-                logger.debug("Stopping Kafka Consumer '{}' for {} topics...", groupId, topics);
+                logger.debug("Stopping KafkaConsumer '{}' for {} topics...", groupId, topics);
                 final long started = System.nanoTime();
 
                 try {
@@ -329,7 +330,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
                     // do nothing
                 } finally {
                     reset();
-                    logger.info("Stopped Kafka Consumer '{}' for {} topics took {}", groupId, topics,
+                    logger.info("Stopped KafkaConsumer '{}' for {} topics took {}", groupId, topics,
                             Duration.ofNanos(System.nanoTime() - started));
                 }
             }
@@ -361,11 +362,11 @@ final class KafkaConnectionImpl implements KafkaConnection {
             try {
                 this.producer = getProducer(params.properties());
             } catch (Exception e) {
-                throw new KafkaConnectionException("Can't create Kafka Producer", e);
+                throw new KafkaConnectionException("Can't create KafkaProducer", e);
             }
         }
 
-        createTopicsIfNeeded(params.properties(), List.of(topic));
+        createTopicsIfNeeded(this, Set.of(topic));
 
         for (Event event : events) {
             final byte[] key = (event.key() == null)
@@ -379,29 +380,29 @@ final class KafkaConnectionImpl implements KafkaConnection {
                             .collect(Collectors.toList());
 
             try {
-                logger.trace("Kafka Producer sending event: {}", event);
+                logger.trace("KafkaProducer sending event: {}", event);
                 var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers))
                         .get(5, TimeUnit.SECONDS);
-                logger.info("Kafka Producer sent with offset '{}' with partition '{}' with timestamp '{}' event: {}",
+                logger.info("KafkaProducer sent with offset '{}' with partition '{}' with timestamp '{}' event: {}",
                         result.offset(), result.partition(), result.timestamp(), event);
             } catch (Exception e) {
-                throw new KafkaConnectionException("Kafka Producer sent event failed: " + event, e);
+                throw new KafkaConnectionException("KafkaProducer sent event failed: " + event, e);
             }
         }
     }
 
     @Override
     public @NotNull Consumer subscribe(@NotNull String... topics) {
-        return subscribe(Arrays.asList(topics));
+        return subscribe(new HashSet<>(Arrays.asList(topics)));
     }
 
     @Override
-    public @NotNull Consumer subscribe(@NotNull List<String> topics) {
+    public @NotNull Consumer subscribe(@NotNull Set<String> topics) {
         if (isClosed) {
             throw new KafkaConnectionException("Can't subscribed cause was closed");
         }
 
-        createTopicsIfNeeded(params().properties(), topics);
+        createTopicsIfNeeded(this, topics);
 
         try {
             var kafkaConsumer = getConsumer(params.properties());
@@ -409,7 +410,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
             consumers.add(consumer);
             return consumer;
         } catch (Exception e) {
-            throw new KafkaConnectionException("Can't create Kafka Consumer", e);
+            throw new KafkaConnectionException("Can't create KafkaConsumer", e);
         }
     }
 
@@ -439,11 +440,15 @@ final class KafkaConnectionImpl implements KafkaConnection {
         return Admin.create(adminProperties);
     }
 
-    static void createTopicsIfNeeded(@NotNull Properties properties, @NotNull List<String> topics) {
+    static void createTopicsIfNeeded(@NotNull KafkaConnection connection, @NotNull Set<String> topics) {
+        createTopicsIfNeeded(connection, topics, false);
+    }
+
+    static void createTopicsIfNeeded(@NotNull KafkaConnection connection, @NotNull Set<String> topics, boolean reset) {
         try {
-            var admin = getAdmin(properties);
+            var admin = getAdmin(connection.params().properties());
             logger.trace("Looking for existing topics...");
-            var existingTopics = admin.listTopics().names().get(5, TimeUnit.SECONDS);
+            var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
             logger.trace("Found existing topics: {}", existingTopics);
 
             var topicsToCreate = topics.stream()
@@ -451,11 +456,29 @@ final class KafkaConnectionImpl implements KafkaConnection {
                     .map(topic -> new NewTopic(topic, Optional.of(1), Optional.empty()))
                     .collect(Collectors.toSet());
 
+            var topicsToReset = existingTopics.stream()
+                    .filter(topics::contains)
+                    .collect(Collectors.toSet());
+
             if (!topicsToCreate.isEmpty()) {
                 logger.trace("Creating topics: {}", topics);
                 var result = admin.createTopics(topicsToCreate);
-                result.all().get(5, TimeUnit.SECONDS);
+                result.all().get(2, TimeUnit.MINUTES);
                 logger.info("Created topics: {}", topics);
+            } else if (reset && !topicsToReset.isEmpty()) {
+                logger.trace("Required topics already exist, but require reset: {}", topicsToReset);
+                var deleteTopicsResult = admin.deleteTopics(topicsToReset);
+                var deleteFutures = deleteTopicsResult.topicNameValues().values().toArray(KafkaFuture[]::new);
+                KafkaFuture.allOf(deleteFutures).get(2, TimeUnit.MINUTES);
+
+                var topicsToCreateAfterReset = topicsToReset.stream()
+                        .map(topic -> new NewTopic(topic, Optional.of(1), Optional.empty()))
+                        .collect(Collectors.toSet());
+                logger.trace("Deleted topics: {}", topicsToReset);
+
+                var result = admin.createTopics(topicsToCreateAfterReset);
+                result.all().get(2, TimeUnit.MINUTES);
+                logger.info("Recreated topics: {}", topicsToReset);
             } else {
                 logger.trace("Required topics already exist: {}", topics);
             }
@@ -517,6 +540,6 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     @Override
     public String toString() {
-        return params.boostrapServers();
+        return params.bootstrapServers();
     }
 }

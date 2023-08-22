@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -32,6 +33,13 @@ final class RedisConnectionImpl implements RedisConnection {
         }
 
         @Override
+        public @NotNull URI uri() {
+            return (username() == null && password() == null)
+                    ? URI.create(String.format("redis://%s:%s/%s", host(), port(), database()))
+                    : URI.create(String.format("redis://%s:%s@%s:%s/%s", username(), password(), host(), port(), database()));
+        }
+
+        @Override
         public @NotNull String host() {
             return host;
         }
@@ -58,10 +66,7 @@ final class RedisConnectionImpl implements RedisConnection {
 
         @Override
         public String toString() {
-            return "[host=" + host +
-                    ", port=" + port +
-                    ", username=" + username +
-                    ", password=" + password + ']';
+            return uri().toString();
         }
     }
 

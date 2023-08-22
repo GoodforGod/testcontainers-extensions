@@ -18,6 +18,12 @@ import org.testcontainers.containers.MySQLContainer;
 public @interface TestcontainersMysql {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return MySQL image
      */
     String image() default "mysql:8.0-debian";

@@ -11,14 +11,13 @@ Testcontainers Redis Extension with advanced testing capabilities.
 
 Features:
 - Container easy run *per method*, *per class*, *per execution*.
-- Container easy migration with scripts.
 - Container easy connection injection with asserts.
 
 ## Dependency :rocket:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.4.2"
+testImplementation "io.goodforgod:testcontainers-extensions-redis:0.5.0"
 ```
 
 **Maven**
@@ -26,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redis:0.4.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redis</artifactId>
-    <version>0.4.2</version>
+    <version>0.5.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -52,21 +51,21 @@ testImplementation "redis.clients:jedis:4.4.3"
 
 ## Content
 - [Container](#container)
-  - [Preconfigured container](#preconfigured-container)
+  - [Manual Container](#manual-container)
 - [Connection](#connection)
   - [External Connection](#external-connection)
 - [Migration](#migration)
 
 ## Container
 
-`@TestcontainersRedis` - provides container start in different modes per test class.
+`@TestcontainersRedis` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 - `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
 
-Simple example on how to start container per class:
+Simple example on how to start container per class, **no need to configure** container:
 ```java
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
@@ -78,11 +77,14 @@ class ExampleTests {
 }
 ```
 
+**That's all** you need.
+
 It is possible to customize image with annotation `image` parameter.
 
-### Preconfigured container
+### Manual Container
 
-Container instance can be used by extensions via `@ContainerRedis` annotation.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersRedis`,
+this can be done using `@ContainerRedis` annotation for container.
 
 Example:
 ```java

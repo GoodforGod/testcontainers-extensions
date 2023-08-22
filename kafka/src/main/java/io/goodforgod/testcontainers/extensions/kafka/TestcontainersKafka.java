@@ -18,6 +18,12 @@ import org.testcontainers.containers.KafkaContainer;
 public @interface TestcontainersKafka {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return Kafka image
      */
     String image() default "confluentinc/cp-kafka:7.4.1";
@@ -28,7 +34,7 @@ public @interface TestcontainersKafka {
     ContainerMode mode() default ContainerMode.PER_METHOD;
 
     /**
-     * @return topics to set up right after container started (depends on {@link ContainerMode})
+     * @return topics to set up right after container started
      */
-    String[] topics() default {};
+    Topics topics() default @Topics;
 }

@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.4.2"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.5.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.4.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.4.2</version>
+    <version>0.5.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -52,7 +52,7 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 
 ## Content
 - [Container](#container)
-  - [Preconfigured container](#preconfigured-container)
+  - [Manual Container](#manual-container)
   - [Container Old Driver](#container-old-driver)
 - [Connection](#connection)
   - [External Connection](#external-connection)
@@ -60,14 +60,14 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 
 ## Container
 
-`@TestcontainersCassandra` - provides container start in different modes per test class.
+`@TestcontainersCassandra` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 - `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
 
-Simple example on how to start container per class:
+Simple example on how to start container per class, **no need to configure** container:
 ```java
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
@@ -79,11 +79,14 @@ class ExampleTests {
 }
 ```
 
+**That's all** you need.
+
 It is possible to customize image with annotation `image` parameter.
 
-### Preconfigured container
+### Manual Container
 
-Container instance can be used by extensions via `@ContainerCassandra` annotation.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersCassandra`,
+this can be done using `@ContainerCassandra` annotation for container.
 
 Example:
 ```java

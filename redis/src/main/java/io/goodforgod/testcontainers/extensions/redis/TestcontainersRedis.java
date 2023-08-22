@@ -17,9 +17,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public @interface TestcontainersRedis {
 
     /**
+     * @return where nether to create default container with
+     *             {@link org.testcontainers.containers.Network#SHARED} network
+     */
+    boolean network() default false;
+
+    /**
      * @return Redis image
      */
-    String image() default "redis:7.0-alpine";
+    String image() default "redis:7.2-alpine";
 
     /**
      * @return when to start container
