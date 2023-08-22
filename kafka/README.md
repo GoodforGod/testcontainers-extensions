@@ -185,7 +185,6 @@ class ExampleTests {
 It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
 
 ```java
-```java
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.4.1")
 class ExampleTests {
 
