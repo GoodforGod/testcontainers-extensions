@@ -3,6 +3,9 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbc;
+import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;

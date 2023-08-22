@@ -3,8 +3,9 @@ dependencies {
 
     implementation libs.junit.api
     implementation libs.junit.launcher
-
     implementation libs.slf4j.api
+
+    testImplementation libs.driver.redis
 }
 
 publishing {

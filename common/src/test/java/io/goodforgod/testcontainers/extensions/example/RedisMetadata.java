@@ -1,10 +1,8 @@
-package io.goodforgod.testcontainers.extensions.redis;
+package io.goodforgod.testcontainers.extensions.example;
 
 import io.goodforgod.testcontainers.extensions.AbstractContainerMetadata;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import org.jetbrains.annotations.ApiStatus.Internal;
 
-@Internal
 final class RedisMetadata extends AbstractContainerMetadata {
 
     RedisMetadata(boolean network, String image, ContainerMode runMode) {

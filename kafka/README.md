@@ -11,8 +11,8 @@ Testcontainers Kafka Extension with advanced testing capabilities.
 
 Features:
 - Container easy run *per method*, *per class*, *per execution*.
-- Kafka Producer for easy testing.
-- Kafka Consumer for easy testing.
+- KafkaProducer for easy testing with asserts.
+- KafkaConsumer for easy testing with asserts.
 
 ## Dependency :rocket:
 
@@ -45,34 +45,15 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.1"
 <dependency>
     <groupId>org.apache.kafka</groupId>
     <artifactId>kafka-clients</artifactId>
-    <version>3.5.0</version>
-    <scope>test</scope>
-</dependency>
-```
-
-### Kafka Client
-[Kafka Client](https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients) must be on classpath, if it is somehow not on your classpath already,
-don't forget to add:
-
-**Gradle**
-```groovy
-testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.0"
-```
-
-**Maven**
-```xml
-<dependency>
-    <groupId>org.apache.kafka</groupId>
-    <artifactId>kafka-clients</artifactId>
-    <version>3.5.0</version>
+    <version>3.5.1</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ## Content
 - [Container](#container)
-  - [Preconfigured container](#preconfigured-container)
-  - [Setup topics](#setup-topics)
+  - [Manual Container](#manual-container)
+  - [Setup topics](#topics)
 - [Connection](#connection)
   - [Producer](#producer)
   - [Consumer](#consumer)
@@ -81,14 +62,14 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.0"
 
 ## Container
 
-`@TestcontainersKafka` - provides container start in different modes per test class.
+`@TestcontainersKafka` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 - `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
 
-Simple example on how to start container per class:
+Simple example on how to start container per class, **no need to configure** container:
 ```java
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
@@ -102,9 +83,10 @@ class ExampleTests {
 
 It is possible to customize image with annotation `image` parameter.
 
-### Preconfigured container
+### Manual Container
 
-Container instance can be used by extensions via `@ContainerKafka` annotation.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersKafka`,
+this can be done using `@ContainerKafka` annotation for container.
 
 Example:
 ```java

@@ -21,11 +21,11 @@ class ContainerFromAnnotationTests {
 
     @Test
     void checkParams(@ContainerKafkaConnection KafkaConnection connection) {
-        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().bootstrapServers());
         assertNotNull(connection.params().properties());
         assertTrue(connection.paramsInNetwork().isPresent());
-        assertNotNull(connection.paramsInNetwork().get().boostrapServers());
-        assertNotEquals(connection.params().boostrapServers(), connection.paramsInNetwork().get().boostrapServers());
+        assertNotNull(connection.paramsInNetwork().get().bootstrapServers());
+        assertNotEquals(connection.params().bootstrapServers(), connection.paramsInNetwork().get().bootstrapServers());
         assertNotNull(connection.paramsInNetwork().get().properties());
     }
 }

@@ -1,4 +1,4 @@
-package io.goodforgod.testcontainers.extensions.jdbc;
+package io.goodforgod.testcontainers.extensions.jdbc.example;
 
 import java.lang.annotation.*;
 import org.testcontainers.containers.JdbcDatabaseContainer;

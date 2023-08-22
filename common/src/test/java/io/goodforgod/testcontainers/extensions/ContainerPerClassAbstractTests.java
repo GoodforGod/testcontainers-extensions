@@ -1,37 +1,39 @@
-package io.goodforgod.testcontainers.extensions.jdbc;
+package io.goodforgod.testcontainers.extensions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.example.ContainerRedisConnection;
+import io.goodforgod.testcontainers.extensions.example.RedisConnection;
+import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@TestcontainersJdbc(mode = ContainerMode.PER_CLASS, image = "postgres:15.2-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
 abstract class ContainerPerClassAbstractTests {
 
-    @ContainerJdbcConnection
-    protected JdbcConnection sameConnectionParent;
+    @ContainerRedisConnection
+    protected RedisConnection sameConnectionParent;
 
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     public static class TestClassChild extends ContainerPerClassAbstractTests {
 
-        private final JdbcConnection sameConnectionChild;
+        private final RedisConnection sameConnectionChild;
 
-        private static JdbcConnection firstConnection;
+        private static RedisConnection firstConnection;
 
-        TestClassChild(@ContainerJdbcConnection JdbcConnection sameConnectionChild) {
+        TestClassChild(@ContainerRedisConnection RedisConnection sameConnectionChild) {
             this.sameConnectionChild = sameConnectionChild;
             assertNotNull(sameConnectionChild);
         }
 
         @Order(1)
         @Test
-        void firstConnection(@ContainerJdbcConnection JdbcConnection connection) {
+        void firstConnection(@ContainerRedisConnection RedisConnection connection) {
             assertNull(firstConnection);
             assertNotNull(connection);
-            assertNotNull(connection.params().jdbcUrl());
+            assertNotNull(connection.params().uri());
             assertNotNull(sameConnectionChild);
             assertEquals(sameConnectionChild, connection);
             assertEquals(sameConnectionChild, sameConnectionParent);
@@ -40,9 +42,9 @@ abstract class ContainerPerClassAbstractTests {
 
         @Order(2)
         @Test
-        void secondConnection(@ContainerJdbcConnection JdbcConnection connection) {
+        void secondConnection(@ContainerRedisConnection RedisConnection connection) {
             assertNotNull(connection);
-            assertNotNull(connection.params().jdbcUrl());
+            assertNotNull(connection.params().uri());
             assertNotNull(firstConnection);
             assertNotNull(sameConnectionChild);
             assertEquals(sameConnectionChild, connection);

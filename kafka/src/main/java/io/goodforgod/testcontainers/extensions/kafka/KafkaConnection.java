@@ -23,7 +23,7 @@ public interface KafkaConnection {
     interface Params {
 
         @NotNull
-        String boostrapServers();
+        String bootstrapServers();
 
         /**
          * @return all kafka connection properties used for {@link Consumer} or Producer

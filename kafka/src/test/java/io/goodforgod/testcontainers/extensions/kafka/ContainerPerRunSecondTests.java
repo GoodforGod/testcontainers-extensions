@@ -19,7 +19,7 @@ class ContainerPerRunSecondTests {
     @Test
     void firstConnection(@ContainerKafkaConnection KafkaConnection connection) {
         assertNotNull(connection);
-        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().bootstrapServers());
         assertNotNull(connection.params().properties());
         assertNotNull(sameConnection);
         assertEquals(sameConnection, connection);
@@ -37,7 +37,7 @@ class ContainerPerRunSecondTests {
     @Test
     void secondConnection(@ContainerKafkaConnection KafkaConnection connection) {
         assertNotNull(connection);
-        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().bootstrapServers());
         assertNotNull(connection.params().properties());
         assertNotNull(sameConnection);
         assertEquals(sameConnection, connection);

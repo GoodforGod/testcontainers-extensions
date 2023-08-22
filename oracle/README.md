@@ -55,21 +55,21 @@ Extension tested against image `gvenzl/oracle-xe:18.4.0-faststart` and driver `c
 
 ## Content
 - [Container](#container)
-  - [Preconfigured container](#preconfigured-container)
+  - [Manual Container](#manual-container)
 - [Connection](#connection)
   - [External Connection](#external-connection)
 - [Migration](#migration)
 
 ## Container
 
-`@TestcontainersOracle` - provides container start in different modes per test class.
+`@TestcontainersOracle` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 - `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
 
-Simple example on how to start container per class:
+Simple example on how to start container per class, **no need to configure** container:
 ```java
 @TestcontainersOracle(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
@@ -83,9 +83,10 @@ class ExampleTests {
 
 It is possible to customize image with annotation `image` parameter.
 
-### Preconfigured container
+### Manual Container
 
-Container instance can be used by extensions via `@ContainerOracle` annotation.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersOracle`,
+this can be done using `@ContainerOracle` annotation for container.
 
 Example:
 ```java

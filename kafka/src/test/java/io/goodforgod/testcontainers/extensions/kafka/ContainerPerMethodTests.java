@@ -19,7 +19,7 @@ class ContainerPerMethodTests {
     void firstConnection(@ContainerKafkaConnection KafkaConnection connection) {
         assertNull(firstConnection);
         assertNotNull(connection);
-        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().bootstrapServers());
         assertNotNull(connection.params().properties());
         firstConnection = connection;
         assertNotNull(samePerMethodConnection);
@@ -30,7 +30,7 @@ class ContainerPerMethodTests {
     @Test
     void secondConnection(@ContainerKafkaConnection KafkaConnection connection) {
         assertNotNull(connection);
-        assertNotNull(connection.params().boostrapServers());
+        assertNotNull(connection.params().bootstrapServers());
         assertNotNull(connection.params().properties());
         assertNotNull(samePerMethodConnection);
         assertEquals(samePerMethodConnection, connection);

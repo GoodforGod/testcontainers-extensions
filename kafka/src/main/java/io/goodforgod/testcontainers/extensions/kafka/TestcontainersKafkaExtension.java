@@ -116,7 +116,7 @@ final class TestcontainersKafkaExtension extends
                 .map(alias -> {
                     final Properties props = new Properties();
                     props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                            String.format("PLAINTEXT://%s:%s", alias, KafkaContainer.KAFKA_PORT));
+                            String.format("%s:%s", alias, "9092"));
                     return props;
                 })
                 .orElse(null);

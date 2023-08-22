@@ -1,5 +1,8 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbc;
+import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
 import java.lang.annotation.Annotation;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -9,10 +12,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
+public final class ExampleTestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
-            .create(TestcontainersJdbcExtension.class);
+            .create(ExampleTestcontainersJdbcExtension.class);
 
     @Override
     protected ExtensionContext.Namespace getNamespace() {

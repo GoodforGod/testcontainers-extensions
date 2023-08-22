@@ -3,6 +3,8 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
 import org.junit.jupiter.api.*;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_CLASS,

@@ -289,10 +289,13 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public void beforeAll(ExtensionContext context) {
         setupBeforeAll(context);
 
-        var storage = getStorage(context);
-        var connection = storage.get(getConnectionType(), getConnectionType());
-        if (connection != null) {
-            injectConnection(connection, context);
+        var metadata = getMetadata(context);
+        if (metadata.runMode() == ContainerMode.PER_RUN || metadata.runMode() == ContainerMode.PER_CLASS) {
+            var storage = getStorage(context);
+            var connection = storage.get(getConnectionType(), getConnectionType());
+            if (connection != null) {
+                injectConnection(connection, context);
+            }
         }
     }
 
@@ -300,10 +303,13 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public void beforeEach(ExtensionContext context) {
         setupBeforeEach(context);
 
-        var storage = getStorage(context);
-        var connection = storage.get(getConnectionType(), getConnectionType());
-        if (connection != null) {
-            injectConnection(connection, context);
+        var metadata = getMetadata(context);
+        if (metadata.runMode() == ContainerMode.PER_METHOD) {
+            var storage = getStorage(context);
+            var connection = storage.get(getConnectionType(), getConnectionType());
+            if (connection != null) {
+                injectConnection(connection, context);
+            }
         }
     }
 

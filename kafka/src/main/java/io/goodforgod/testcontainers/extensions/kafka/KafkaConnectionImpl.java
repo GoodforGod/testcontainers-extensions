@@ -36,17 +36,17 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     private static final class ParamsImpl implements Params {
 
-        private final String boostrapServers;
+        private final String bootstrapServers;
         private final Properties properties;
 
         private ParamsImpl(Properties properties) {
-            this.boostrapServers = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+            this.bootstrapServers = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
             this.properties = properties;
         }
 
         @Override
-        public @NotNull String boostrapServers() {
-            return boostrapServers;
+        public @NotNull String bootstrapServers() {
+            return bootstrapServers;
         }
 
         @Override
@@ -61,17 +61,17 @@ final class KafkaConnectionImpl implements KafkaConnection {
             if (o == null || getClass() != o.getClass())
                 return false;
             ParamsImpl params = (ParamsImpl) o;
-            return Objects.equals(boostrapServers, params.boostrapServers) && Objects.equals(properties, params.properties);
+            return Objects.equals(bootstrapServers, params.bootstrapServers) && Objects.equals(properties, params.properties);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(boostrapServers, properties);
+            return Objects.hash(bootstrapServers, properties);
         }
 
         @Override
         public String toString() {
-            return boostrapServers;
+            return bootstrapServers;
         }
     }
 
@@ -540,6 +540,6 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     @Override
     public String toString() {
-        return params.boostrapServers();
+        return params.bootstrapServers();
     }
 }
