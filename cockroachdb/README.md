@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.5.0"
+testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.6.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.5.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cockroachdb</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -82,6 +82,23 @@ class ExampleTests {
 
 It is possible to customize image with annotation `image` parameter.
 
+Image also can be provided from environment variable:
+```java
+@TestcontainersCockroachdb(image = "${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}")
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+Image syntax:
+1) Image can have static value: `cockroachdb/cockroach:latest-v23.1`
+2) Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
+3) Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}`
+
 ### Manual Container
 
 When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersCockroachdb`,
@@ -93,19 +110,50 @@ Example:
 class ExampleTests {
 
     @ContainerCockroachdb
-    private static final MariaDBContainer<?> container = new MariaDBContainer<>()
-            .withDatabaseName("user")
-            .withUsername("user")
-            .withPassword("user");
+    private static final CockroachContainer container = new CockroachContainer(dockerImage);
     
     @Test
     void test(@ContainerCockroachdbConnection JdbcConnection connection) {
-        assertEquals("user", connection.params().database());
-        assertEquals("user", connection.params().username());
-        assertEquals("user", connection.params().password());
+        // do something
     }
 }
 ```
+
+### Network
+
+In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
+```java
+@TestcontainersCockroachdb(network = @Network(shared = true))
+class ExampleTests {
+
+  @Test
+  void test() {
+    // test
+  }
+}
+```
+
+`Default alias` will be created by default, even if nothing was specified (depends on implementation).
+
+You can provide also custom alias for container.
+Alias can be extracted from environment variable also or default value can be provided if environment is missing.
+
+In case specified environment variable is missing `default alias` will be created:
+```java
+@TestcontainersCockroachdb(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+Image syntax:
+1) Image can have static value: `my-alias`
+2) Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
+3) Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
 ## Connection
 
@@ -114,7 +162,7 @@ class ExampleTests {
 
 Example:
 ```java
-@TestcontainersCockroachdb(mode = ContainerMode.PER_CLASS, image = "mariadb:11.0-jammy")
+@TestcontainersCockroachdb(mode = ContainerMode.PER_CLASS, image = "cockroachdb/cockroach:latest-v23.1")
 class ExampleTests {
 
     @ContainerCockroachdbConnection

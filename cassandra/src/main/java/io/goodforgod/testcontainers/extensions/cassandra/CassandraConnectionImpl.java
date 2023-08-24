@@ -140,9 +140,9 @@ final class CassandraConnectionImpl implements CassandraConnection {
         logger.debug("Opening CQL connection...");
 
         var config = new DefaultProgrammaticDriverConfigLoaderBuilder()
-                .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(3))
-                .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(3))
-                .withDuration(DefaultDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(3))
+                .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(5))
+                .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(5))
+                .withDuration(DefaultDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(5))
                 .build();
 
         var sessionBuilder = new CqlSessionBuilder()
@@ -162,7 +162,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
     public void execute(@Language("CQL") @NotNull String cql) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
             connection().execute(boundStatement).wasApplied();
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -231,7 +231,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
             var row = connection().execute(boundStatement).one();
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))
@@ -247,7 +247,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
             var rows = connection().execute(boundStatement).all();
             final List<T> result = new ArrayList<>(rows.size());
             for (Row row : rows) {
@@ -268,7 +268,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private void assertQuery(@Language("CQL") String cql, QueryAssert consumer) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
             var rows = connection().execute(boundStatement);
             consumer.accept(rows);
         } catch (Exception e) {
@@ -310,7 +310,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private boolean checkQuery(@Language("CQL") String cql, QueryChecker checker) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(3));
+            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
             var rows = connection().execute(boundStatement);
             return checker.apply(rows);
         } catch (Exception e) {

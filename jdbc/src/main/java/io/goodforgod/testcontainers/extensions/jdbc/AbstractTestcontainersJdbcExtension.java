@@ -3,6 +3,7 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import liquibase.Contexts;
@@ -18,8 +19,9 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 @Internal
-abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabaseContainer<?>> extends
-        AbstractTestcontainersExtension<JdbcConnection, Container, JdbcMetadata> {
+abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabaseContainer<?>, Metadata extends JdbcMetadata>
+        extends
+        AbstractTestcontainersExtension<JdbcConnection, Container, Metadata> {
 
     private static volatile boolean isLiquibaseActivated = false;
 
@@ -35,6 +37,9 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
 
         return Flyway.configure()
                 .loggers("slf4j")
+                .connectRetries(5)
+                .connectRetriesInterval(1)
+                .encoding(StandardCharsets.UTF_8)
                 .dataSource(connection.params().jdbcUrl(), connection.params().username(), connection.params().password())
                 .locations(migrationLocations.toArray(String[]::new))
                 .cleanDisabled(false)
@@ -107,31 +112,44 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
         prepareLiquibase(connection, locations, (liquibase, writer) -> liquibase.dropAll());
     }
 
-    private void tryMigrateIfRequired(JdbcMetadata annotation, JdbcConnection jdbcConnection) {
-        if (annotation.migration().engine() == Migration.Engines.FLYWAY) {
-            logger.debug("Starting schema migration for engine '{}' for connection: {}",
-                    annotation.migration().engine(), jdbcConnection);
-            migrateFlyway(jdbcConnection, Arrays.asList(annotation.migration().migrations()));
-            logger.debug("Finished schema migration for engine '{}' for connection: {}",
-                    annotation.migration().engine(), jdbcConnection);
-        } else if (annotation.migration().engine() == Migration.Engines.LIQUIBASE) {
-            logger.debug("Starting schema migration for engine '{}' for connection: {}",
-                    annotation.migration().engine(), jdbcConnection);
-            migrateLiquibase(jdbcConnection, Arrays.asList(annotation.migration().migrations()));
-            logger.debug("Finished schema migration for engine '{}' for connection: {}",
-                    annotation.migration().engine(), jdbcConnection);
+    private void tryMigrateIfRequired(JdbcMetadata metadata, JdbcConnection jdbcConnection) {
+        try {
+            tryMigrateIfRequiredOnce(metadata, jdbcConnection);
+        } catch (Exception e) {
+            try {
+                Thread.sleep(250);
+                tryMigrateIfRequiredOnce(metadata, jdbcConnection);
+            } catch (InterruptedException ex) {
+                throw new IllegalStateException(ex);
+            }
         }
     }
 
-    private void tryDropIfRequired(JdbcMetadata annotation, JdbcConnection jdbcConnection) {
-        if (annotation.migration().engine() == Migration.Engines.FLYWAY) {
-            logger.debug("Starting schema dropping for engine '{}' for connection: {}", annotation.migration().engine(),
+    private void tryMigrateIfRequiredOnce(JdbcMetadata metadata, JdbcConnection jdbcConnection) {
+        if (metadata.migration().engine() == Migration.Engines.FLYWAY) {
+            logger.debug("Starting schema migration for engine '{}' for connection: {}",
+                    metadata.migration().engine(), jdbcConnection);
+            migrateFlyway(jdbcConnection, Arrays.asList(metadata.migration().migrations()));
+            logger.debug("Finished schema migration for engine '{}' for connection: {}",
+                    metadata.migration().engine(), jdbcConnection);
+        } else if (metadata.migration().engine() == Migration.Engines.LIQUIBASE) {
+            logger.debug("Starting schema migration for engine '{}' for connection: {}",
+                    metadata.migration().engine(), jdbcConnection);
+            migrateLiquibase(jdbcConnection, Arrays.asList(metadata.migration().migrations()));
+            logger.debug("Finished schema migration for engine '{}' for connection: {}",
+                    metadata.migration().engine(), jdbcConnection);
+        }
+    }
+
+    private void tryDropIfRequired(JdbcMetadata metadata, JdbcConnection jdbcConnection) {
+        if (metadata.migration().engine() == Migration.Engines.FLYWAY) {
+            logger.debug("Starting schema dropping for engine '{}' for connection: {}", metadata.migration().engine(),
                     jdbcConnection);
-            dropFlyway(jdbcConnection, Arrays.asList(annotation.migration().migrations()));
-        } else if (annotation.migration().engine() == Migration.Engines.LIQUIBASE) {
-            logger.debug("Starting schema dropping for engine '{}' for connection: {}", annotation.migration().engine(),
+            dropFlyway(jdbcConnection, Arrays.asList(metadata.migration().migrations()));
+        } else if (metadata.migration().engine() == Migration.Engines.LIQUIBASE) {
+            logger.debug("Starting schema dropping for engine '{}' for connection: {}", metadata.migration().engine(),
                     jdbcConnection);
-            dropLiquibase(jdbcConnection, Arrays.asList(annotation.migration().migrations()));
+            dropLiquibase(jdbcConnection, Arrays.asList(metadata.migration().migrations()));
         }
     }
 

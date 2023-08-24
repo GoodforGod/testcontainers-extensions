@@ -39,16 +39,15 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("redis"));
 
-        var alias = "redis-" + System.currentTimeMillis();
         var container = new RedisContainer(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", alias))
-                .withNetworkAliases(alias)
-                .withStartupTimeout(Duration.ofMinutes(5))
-                .waitingFor(Wait.forListeningPort());
+                        .withMdc("alias", metadata.networkAlias()))
+                .withNetworkAliases(metadata.networkAlias())
+                .waitingFor(Wait.forListeningPort())
+                .withStartupTimeout(Duration.ofMinutes(5));
 
-        if (metadata.useNetworkShared()) {
+        if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
 
@@ -63,17 +62,19 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
     @NotNull
     protected Optional<RedisMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersRedis.class, context)
-                .map(a -> new RedisMetadata(a.network(), a.image(), a.mode()));
+                .map(a -> new RedisMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode()));
     }
 
     @NotNull
-    protected RedisConnection getConnectionForContainer(@NotNull RedisContainer container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.startsWith("redis"))
-                .findFirst()
-                .or(() -> (container.getNetworkAliases().isEmpty())
-                        ? Optional.empty()
-                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+    protected RedisConnection getConnectionForContainer(@NotNull RedisMetadata metadata, @NotNull RedisContainer container) {
+        final String alias = Optional.ofNullable(metadata.networkAlias())
+                .filter(a -> !a.isBlank())
+                .or(() -> container.getNetworkAliases().stream()
+                        .filter(a -> a.startsWith("redis"))
+                        .findFirst()
+                        .or(() -> (container.getNetworkAliases().isEmpty())
+                                ? Optional.empty()
+                                : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1))))
                 .orElse(null);
 
         return RedisConnectionImpl.forContainer(container.getHost(),

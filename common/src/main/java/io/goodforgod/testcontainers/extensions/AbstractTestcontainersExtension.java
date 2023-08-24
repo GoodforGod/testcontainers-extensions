@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -14,6 +15,7 @@ import org.junit.platform.commons.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 
 @Internal
 public abstract class AbstractTestcontainersExtension<Connection, Container extends GenericContainer<?>, Metadata extends ContainerMetadata>
@@ -24,7 +26,40 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         AfterEachCallback,
         ParameterResolver {
 
-    static final Map<String, Map<String, ExtensionContainer<?, ?>>> CLASS_TO_SHARED_CONTAINERS = new ConcurrentHashMap<>();
+    static final class SharedKey {
+
+        private final String image;
+        private final boolean network;
+        private final String alias;
+
+        SharedKey(String image, boolean network, String alias) {
+            this.image = image;
+            this.network = network;
+            this.alias = alias;
+        }
+
+        public String image() {
+            return image;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            SharedKey sharedKey = (SharedKey) o;
+            return network == sharedKey.network && Objects.equals(image, sharedKey.image)
+                    && Objects.equals(alias, sharedKey.alias);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(image, network, alias);
+        }
+    }
+
+    static final Map<String, Map<SharedKey, ExtensionContainer<?, ?>>> CLASS_TO_SHARED_CONTAINERS = new ConcurrentHashMap<>();
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -44,7 +79,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     protected abstract Container getContainerDefault(Metadata metadata);
 
-    protected abstract Connection getConnectionForContainer(Container container);
+    protected abstract Connection getConnectionForContainer(Metadata metadata, Container container);
 
     protected abstract ExtensionContext.Namespace getNamespace();
 
@@ -212,11 +247,27 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                 var storageConnection = storage.get(getConnectionType(), getConnectionType());
                 if (storageConnection == null) {
                     var containerFromField = getContainerFromField(context);
-                    var imageToLook = containerFromField.map(GenericContainer::getDockerImageName).orElseGet(metadata::image);
+                    var imageShared = containerFromField
+                            .map(GenericContainer::getDockerImageName)
+                            .orElseGet(metadata::image);
 
-                    var sharedContainerMap = CLASS_TO_SHARED_CONTAINERS.computeIfAbsent(getClass().getSimpleName(),
+                    var networkShared = containerFromField.filter(c -> c.getNetwork() != null)
+                            .map(c -> c.getNetwork() == Network.SHARED)
+                            .orElse(metadata.networkShared());
+
+                    var networkAlias = containerFromField.map(c -> c.getNetworkAliases())
+                            .filter(a -> !a.isEmpty())
+                            .map(a -> a.stream()
+                                    .filter(alias -> alias.equals(metadata.networkAlias()))
+                                    .findFirst()
+                                    .orElse(a.get(0)))
+                            .orElse(metadata.networkAlias());
+
+                    var sharedContainerMap = CLASS_TO_SHARED_CONTAINERS.computeIfAbsent(getClass().getCanonicalName(),
                             k -> new ConcurrentHashMap<>());
-                    var extensionContainer = sharedContainerMap.computeIfAbsent(imageToLook, k -> {
+
+                    var sharedKey = new SharedKey(imageShared, networkShared, networkAlias);
+                    var extensionContainer = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
                         var container = containerFromField.orElseGet(() -> {
                             logger.debug("Getting default container for image: {}", metadata.image());
                             return getContainerDefault(metadata);
@@ -226,7 +277,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                         container.withReuse(true).start();
                         logger.info("Started in mode '{}' container: {}", metadata.runMode(),
                                 container.getDockerImageName());
-                        var connection = getConnectionForContainer(container);
+                        var connection = getConnectionForContainer(metadata, container);
                         return new ExtensionContainerImpl<>(container, connection);
                     });
 
@@ -245,7 +296,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                     logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
                     container.start();
                     logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                    var connection = getConnectionForContainer(container);
+                    var connection = getConnectionForContainer(metadata, container);
                     var extensionContainer = new ExtensionContainerImpl<>(container, connection);
                     storage.put(metadata.runMode(), extensionContainer);
                     storage.put(getConnectionType(), connection);
@@ -273,7 +324,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                     logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
                     container.start();
                     logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                    var connection = getConnectionForContainer(container);
+                    var connection = getConnectionForContainer(metadata, container);
                     var extensionContainer = new ExtensionContainerImpl<>(container, connection);
                     storage.put(metadata.runMode(), extensionContainer);
                     storage.put(getConnectionType(), connection);

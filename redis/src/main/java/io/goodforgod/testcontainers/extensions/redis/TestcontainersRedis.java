@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.Network;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,13 +18,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public @interface TestcontainersRedis {
 
     /**
-     * @return where nether to create default container with
-     *             {@link org.testcontainers.containers.Network#SHARED} network
-     */
-    boolean network() default false;
-
-    /**
+     * @see TestcontainersRedisExtension#getContainerDefault(RedisMetadata)
      * @return Redis image
+     *             <p>
+     *             1) Image can have static value: "redis:7.2-alpine"
+     *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
+     *             3) Image environment variable can have default value if empty using syntax:
+     *             "${MY_IMAGE_ENV|redis:7.2-alpine}"
+     *             <p>
      */
     String image() default "redis:7.2-alpine";
 
@@ -31,4 +33,9 @@ public @interface TestcontainersRedis {
      * @return when to start container
      */
     ContainerMode mode() default ContainerMode.PER_METHOD;
+
+    /**
+     * @return container network details
+     */
+    Network network() default @Network(shared = false);
 }

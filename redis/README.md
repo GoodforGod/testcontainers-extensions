@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.5.0"
+testImplementation "io.goodforgod:testcontainers-extensions-redis:0.6.0"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redis:0.5.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redis</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -81,6 +81,23 @@ class ExampleTests {
 
 It is possible to customize image with annotation `image` parameter.
 
+Image also can be provided from environment variable:
+```java
+@TestcontainersRedis(image = "${MY_IMAGE_ENV|redis:7.2-alpine}")
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+Image syntax:
+1) Image can have static value: `redis:7.2-alpine`
+2) Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
+3) Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redis:7.2-alpine}`
+
 ### Manual Container
 
 When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersRedis`,
@@ -104,6 +121,42 @@ class ExampleTests {
 }
 ```
 
+### Network
+
+In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
+```java
+@TestcontainersRedis(network = @Network(shared = true))
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+`Default alias` will be created by default, even if nothing was specified (depends on implementation).
+
+You can provide also custom alias for container.
+Alias can be extracted from environment variable also or default value can be provided if environment is missing.
+
+In case specified environment variable is missing `default alias` will be created:
+```java
+@TestcontainersRedis(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+Image syntax:
+1) Image can have static value: `my-alias`
+2) Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
+3) Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
+
 ## Connection
 
 `RedisConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerRedisConnection` annotation.
@@ -111,7 +164,7 @@ class ExampleTests {
 
 Example:
 ```java
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.0-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
 class ExampleTests {
 
     @ContainerRedisConnection

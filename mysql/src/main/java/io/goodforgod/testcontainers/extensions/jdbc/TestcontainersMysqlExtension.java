@@ -12,7 +12,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExtension<MySQLContainer<?>> {
+final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExtension<MySQLContainer<?>, MysqlMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersMysqlExtension.class);
@@ -44,23 +44,22 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
     }
 
     @Override
-    protected MySQLContainer<?> getContainerDefault(JdbcMetadata metadata) {
+    protected MySQLContainer<?> getContainerDefault(MysqlMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(MySQLContainer.NAME));
 
-        var alias = "mysql-" + System.currentTimeMillis();
         var container = new MySQLContainer<>(dockerImage)
                 .withDatabaseName(DATABASE_NAME)
                 .withUsername("mysql")
                 .withPassword("mysql")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MySQLContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", alias))
-                .withNetworkAliases(alias)
-                .waitingFor(Wait.forHealthcheck())
+                        .withMdc("alias", metadata.networkAlias()))
+                .withNetworkAliases(metadata.networkAlias())
+                .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
-        if (metadata.useNetworkShared()) {
+        if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
 
@@ -73,16 +72,14 @@ final class TestcontainersMysqlExtension extends AbstractTestcontainersJdbcExten
     }
 
     @NotNull
-    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<MysqlMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersMysql.class, context)
-                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
+                .map(a -> new MysqlMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(@NotNull MySQLContainer<?> container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.startsWith("mysql"))
-                .findFirst()
+    protected JdbcConnection getConnectionForContainer(MysqlMetadata metadata, @NotNull MySQLContainer<?> container) {
+        final String alias = Optional.ofNullable(metadata.networkAlias())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
