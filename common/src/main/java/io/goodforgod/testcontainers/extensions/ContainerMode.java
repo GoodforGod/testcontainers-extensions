@@ -9,7 +9,8 @@ public enum ContainerMode {
      * Specified container with same image will run ONCE per test execution and shared across all test
      * classes
      * <p>
-     * Container image & Container network & Container network alias must be same across annotations or
+     * Container image and Container network and Container network alias must be same across annotations
+     * or
      * will create container per image
      */
     PER_RUN,
