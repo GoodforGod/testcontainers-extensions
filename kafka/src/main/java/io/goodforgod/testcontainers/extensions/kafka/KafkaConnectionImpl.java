@@ -143,7 +143,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
                     // do nothing
                 } catch (Exception e) {
                     logger.error("KafkaConsumer '{}' for {} topics got unhandled exception", groupId, topics, e);
-                    consumer.close(Duration.ofMinutes(3));
+                    consumer.close(Duration.ofMinutes(5));
                     break;
                 }
             }
@@ -325,7 +325,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
                     executor.shutdownNow();
                     consumer.wakeup();
                     executor.awaitTermination(1, TimeUnit.MINUTES);
-                    consumer.close(Duration.ofMinutes(3));
+                    consumer.close(Duration.ofMinutes(5));
                 } catch (Exception e) {
                     // do nothing
                 } finally {
@@ -497,7 +497,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     void clear() {
         if (producer != null) {
-            producer.close(Duration.ofMinutes(3));
+            producer.close(Duration.ofMinutes(5));
             producer = null;
         }
 
@@ -515,7 +515,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
         if (!isClosed) {
             isClosed = true;
             if (producer != null) {
-                producer.close(Duration.ofMinutes(3));
+                producer.close(Duration.ofMinutes(5));
                 producer = null;
             }
 

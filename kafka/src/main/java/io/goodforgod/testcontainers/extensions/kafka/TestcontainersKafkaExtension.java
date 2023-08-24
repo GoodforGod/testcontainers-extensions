@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -86,16 +87,18 @@ final class TestcontainersKafkaExtension extends
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("confluentinc/cp-kafka"));
 
-        var alias = "kafka-" + System.currentTimeMillis();
         var container = new KafkaContainer(dockerImage)
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class))
+                        .withMdc("image", metadata.image())
+                        .withMdc("alias", metadata.networkAlias()))
                 .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
                 .withEnv("AUTO_CREATE_TOPICS", "true")
-                .withNetworkAliases(alias)
                 .withEmbeddedZookeeper()
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
-                .withStartupTimeout(Duration.ofMinutes(3));
+                .withNetworkAliases(metadata.networkAlias())
+                .waitingFor(Wait.forListeningPort())
+                .withStartupTimeout(Duration.ofMinutes(5));
 
-        if (metadata.useNetworkShared()) {
+        if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
 
@@ -103,13 +106,12 @@ final class TestcontainersKafkaExtension extends
     }
 
     @Override
-    protected KafkaConnection getConnectionForContainer(KafkaContainer container) {
+    protected KafkaConnection getConnectionForContainer(KafkaMetadata metadata, KafkaContainer container) {
         final Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
 
-        final Properties networkProperties = container.getNetworkAliases().stream()
-                .filter(a -> a.startsWith("kafka"))
-                .findFirst()
+        final Properties networkProperties = Optional.ofNullable(metadata.networkAlias())
+                .filter(a -> !a.isBlank())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
@@ -132,7 +134,8 @@ final class TestcontainersKafkaExtension extends
     @NotNull
     protected Optional<KafkaMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersKafka.class, context)
-                .map(a -> new KafkaMetadata(a.network(), a.image(), a.mode(), Set.of(a.topics().value()), a.topics().reset()));
+                .map(a -> new KafkaMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(),
+                        Set.of(a.topics().value()), a.topics().reset()));
     }
 
     @NotNull

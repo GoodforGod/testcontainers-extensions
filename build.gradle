@@ -85,6 +85,11 @@ subprojects {
             html.required = false
             junitXml.required = true
         }
+
+        environment([
+                "MY_ALIAS_ENV": "my_alias_env",
+                "MY_IMAGE_ENV": "redis:7.2-alpine",
+        ])
     }
 
     spotless {

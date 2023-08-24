@@ -12,11 +12,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.CassandraContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -42,15 +43,15 @@ class TestcontainersCassandraExtension extends
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("cassandra"));
 
-        var alias = "cassandra-" + System.currentTimeMillis();
         var container = new CassandraContainer<>(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", alias))
-                .withNetworkAliases(alias)
+                        .withMdc("alias", metadata.networkAlias()))
+                .withNetworkAliases(metadata.networkAlias())
+                .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
-        if (metadata.useNetworkShared()) {
+        if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
 
@@ -78,14 +79,14 @@ class TestcontainersCassandraExtension extends
     @NotNull
     protected Optional<CassandraMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersCassandra.class, context)
-                .map(a -> new CassandraMetadata(a.network(), a.image(), a.mode(), a.migration()));
+                .map(a -> new CassandraMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    protected CassandraConnection getConnectionForContainer(@NotNull CassandraContainer<?> container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.startsWith("cassandra"))
-                .findFirst()
+    protected CassandraConnection getConnectionForContainer(CassandraMetadata metadata,
+                                                            @NotNull CassandraContainer<?> container) {
+        final String alias = Optional.ofNullable(metadata.networkAlias())
+                .filter(a -> !a.isBlank())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))

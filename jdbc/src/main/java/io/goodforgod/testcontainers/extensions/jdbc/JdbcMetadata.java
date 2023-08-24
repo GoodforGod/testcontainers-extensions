@@ -5,12 +5,12 @@ import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 @Internal
-final class JdbcMetadata extends AbstractContainerMetadata {
+abstract class JdbcMetadata extends AbstractContainerMetadata {
 
     private final Migration migration;
 
-    JdbcMetadata(boolean network, String image, ContainerMode runMode, Migration migration) {
-        super(network, image, runMode);
+    JdbcMetadata(boolean network, String alias, String image, ContainerMode runMode, Migration migration) {
+        super(network, alias, image, runMode);
         this.migration = migration;
     }
 

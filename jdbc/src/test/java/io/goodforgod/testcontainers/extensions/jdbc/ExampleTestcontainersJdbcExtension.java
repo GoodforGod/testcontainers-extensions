@@ -12,7 +12,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-public final class ExampleTestcontainersJdbcExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
+public final class ExampleTestcontainersJdbcExtension extends
+        AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>, PostgresJdbcMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(ExampleTestcontainersJdbcExtension.class);
@@ -39,29 +40,28 @@ public final class ExampleTestcontainersJdbcExtension extends AbstractTestcontai
     }
 
     @Override
-    protected PostgreSQLContainer<?> getContainerDefault(JdbcMetadata metadata) {
+    protected PostgreSQLContainer<?> getContainerDefault(PostgresJdbcMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
-        var alias = "postgres-" + System.currentTimeMillis();
         return new PostgreSQLContainer<>(dockerImage)
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", alias))
-                .withNetworkAliases(alias);
+                        .withMdc("alias", metadata.networkAlias()))
+                .withNetworkAliases(metadata.networkAlias());
     }
 
     @NotNull
-    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<PostgresJdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersJdbc.class, context)
-                .map(a -> new JdbcMetadata(false, a.image(), a.mode(), a.migration()));
+                .map(a -> new PostgresJdbcMetadata(false, null, a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(@NotNull PostgreSQLContainer<?> container) {
+    protected JdbcConnection getConnectionForContainer(PostgresJdbcMetadata metadata, @NotNull PostgreSQLContainer<?> container) {
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
                 container.getHost(),
                 container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),

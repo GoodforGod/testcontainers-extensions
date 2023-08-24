@@ -11,7 +11,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>> {
+final class TestcontainersPostgresExtension extends
+        AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>, PostgresMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersPostgresExtension.class);
@@ -42,22 +43,21 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
     }
 
     @Override
-    protected PostgreSQLContainer<?> getContainerDefault(JdbcMetadata metadata) {
+    protected PostgreSQLContainer<?> getContainerDefault(PostgresMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
-        var alias = "postgres-" + System.currentTimeMillis();
         var container = new PostgreSQLContainer<>(dockerImage)
                 .withDatabaseName("postgres")
                 .withUsername("postgres")
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", alias))
-                .withNetworkAliases(alias)
+                        .withMdc("alias", metadata.networkAlias()))
+                .withNetworkAliases(metadata.networkAlias())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
-        if (metadata.useNetworkShared()) {
+        if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
 
@@ -70,16 +70,14 @@ final class TestcontainersPostgresExtension extends AbstractTestcontainersJdbcEx
     }
 
     @NotNull
-    protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<PostgresMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersPostgres.class, context)
-                .map(a -> new JdbcMetadata(a.network(), a.image(), a.mode(), a.migration()));
+                .map(a -> new PostgresMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(), a.migration()));
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(@NotNull PostgreSQLContainer<?> container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.startsWith("postgres"))
-                .findFirst()
+    protected JdbcConnection getConnectionForContainer(PostgresMetadata metadata, @NotNull PostgreSQLContainer<?> container) {
+        final String alias = Optional.ofNullable(metadata.networkAlias())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))

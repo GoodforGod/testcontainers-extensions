@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.5.0"
+testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.6.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-oracle:0.5.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-oracle</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -85,6 +85,23 @@ class ExampleTests {
 
 It is possible to customize image with annotation `image` parameter.
 
+Image also can be provided from environment variable:
+```java
+@TestcontainersOracle(image = "${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-faststart}")
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+Image syntax:
+1) Image can have static value: `gvenzl/oracle-xe:18.4.0-faststart`
+2) Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
+3) Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-faststart}`
+
 ### Manual Container
 
 When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersOracle`,
@@ -107,6 +124,42 @@ class ExampleTests {
     }
 }
 ```
+
+### Network
+
+In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
+```java
+@TestcontainersOracle(network = @Network(shared = true))
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+`Default alias` will be created by default, even if nothing was specified (depends on implementation).
+
+You can provide also custom alias for container.
+Alias can be extracted from environment variable also or default value can be provided if environment is missing.
+
+In case specified environment variable is missing `default alias` will be created:
+```java
+@TestcontainersOracle(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+class ExampleTests {
+
+    @Test
+    void test() {
+        // test
+    }
+}
+```
+
+Image syntax:
+1) Image can have static value: `my-alias`
+2) Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
+3) Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
 ## Connection
 
