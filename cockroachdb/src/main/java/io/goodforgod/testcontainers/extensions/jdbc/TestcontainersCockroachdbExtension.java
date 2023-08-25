@@ -50,8 +50,8 @@ final class TestcontainersCockroachdbExtension extends
         var container = new CockroachContainer(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias())
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
         if (metadata.networkShared()) {
@@ -74,7 +74,7 @@ final class TestcontainersCockroachdbExtension extends
 
     @NotNull
     protected JdbcConnection getConnectionForContainer(CockroachMetadata metadata, @NotNull CockroachContainer container) {
-        final String alias = Optional.ofNullable(metadata.networkAlias())
+        final String alias = Optional.ofNullable(metadata.networkAliasOrDefault())
                 .filter(a -> !a.isBlank())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()

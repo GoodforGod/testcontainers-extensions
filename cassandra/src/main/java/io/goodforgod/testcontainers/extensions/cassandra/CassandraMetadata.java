@@ -16,7 +16,7 @@ final class CassandraMetadata extends AbstractContainerMetadata {
     }
 
     @Override
-    protected @NotNull String networkAliasDefault() {
+    public @NotNull String networkAliasDefault() {
         return "cassandra-" + System.currentTimeMillis();
     }
 

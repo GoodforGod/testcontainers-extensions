@@ -12,7 +12,7 @@ final class PostgresMetadata extends JdbcMetadata {
     }
 
     @Override
-    protected @NotNull String networkAliasDefault() {
+    public @NotNull String networkAliasDefault() {
         return "postgres-" + System.currentTimeMillis();
     }
 }

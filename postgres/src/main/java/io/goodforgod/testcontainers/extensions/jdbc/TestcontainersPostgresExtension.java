@@ -53,8 +53,8 @@ final class TestcontainersPostgresExtension extends
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias())
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
         if (metadata.networkShared()) {
@@ -77,7 +77,7 @@ final class TestcontainersPostgresExtension extends
 
     @NotNull
     protected JdbcConnection getConnectionForContainer(PostgresMetadata metadata, @NotNull PostgreSQLContainer<?> container) {
-        final String alias = Optional.ofNullable(metadata.networkAlias())
+        final String alias = Optional.ofNullable(metadata.networkAliasOrDefault())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))

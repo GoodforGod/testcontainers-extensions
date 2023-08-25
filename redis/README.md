@@ -61,7 +61,7 @@ testImplementation "redis.clients:jedis:4.4.3"
 `@TestcontainersRedis` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
-- `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
+- `PER_RUN` - start container one time per *test execution*. (Containers must have same `image` and `network` to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
 

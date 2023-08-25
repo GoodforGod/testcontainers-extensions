@@ -11,7 +11,7 @@ final class RedisMetadata extends AbstractContainerMetadata {
     }
 
     @Override
-    protected @NotNull String networkAliasDefault() {
+    public @NotNull String networkAliasDefault() {
         return "redis-" + System.currentTimeMillis();
     }
 }

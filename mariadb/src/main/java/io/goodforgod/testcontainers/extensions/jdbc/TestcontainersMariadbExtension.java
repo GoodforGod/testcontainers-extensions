@@ -55,8 +55,8 @@ final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExt
                 .withPassword("mariadb")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MariaDBContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias())
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
@@ -80,7 +80,7 @@ final class TestcontainersMariadbExtension extends AbstractTestcontainersJdbcExt
 
     @NotNull
     protected JdbcConnection getConnectionForContainer(MariadbMetadata metadata, @NotNull MariaDBContainer<?> container) {
-        final String alias = Optional.ofNullable(metadata.networkAlias())
+        final String alias = Optional.ofNullable(metadata.networkAliasOrDefault())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
                         : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))

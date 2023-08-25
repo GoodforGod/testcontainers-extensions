@@ -90,11 +90,11 @@ final class TestcontainersKafkaExtension extends
         var container = new KafkaContainer(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
                 .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
                 .withEnv("AUTO_CREATE_TOPICS", "true")
                 .withEmbeddedZookeeper()
-                .withNetworkAliases(metadata.networkAlias())
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
@@ -110,7 +110,7 @@ final class TestcontainersKafkaExtension extends
         final Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
 
-        final Properties networkProperties = Optional.ofNullable(metadata.networkAlias())
+        final Properties networkProperties = Optional.ofNullable(metadata.networkAliasOrDefault())
                 .filter(a -> !a.isBlank())
                 .or(() -> (container.getNetworkAliases().isEmpty())
                         ? Optional.empty()
