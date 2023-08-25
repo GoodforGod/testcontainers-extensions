@@ -75,10 +75,10 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
 
     @NotNull
     protected RedisConnection getConnectionForContainer(RedisMetadata metadata, @NotNull RedisContainer container) {
-        final String alias = Optional.ofNullable(metadata.networkAliasOrDefault())
-                .or(() -> (container.getNetworkAliases().isEmpty())
-                        ? Optional.empty()
-                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+        final String alias = container.getNetworkAliases().stream()
+                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
+                .findFirst()
+                .or(() -> container.getNetworkAliases().stream().findFirst())
                 .orElse(null);
 
         return RedisConnectionImpl.forContainer(container.getHost(),

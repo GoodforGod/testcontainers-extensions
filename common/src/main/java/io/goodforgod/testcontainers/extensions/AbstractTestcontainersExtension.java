@@ -260,9 +260,15 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                             .map(c -> c.getNetwork() == Network.SHARED)
                             .orElse(metadata.networkShared());
 
-                    var networkAlias = metadata.networkAlias();
-                    var sharedKey = new SharedKey(imageShared, networkShared, networkAlias);
+                    var networkAlias = containerFromField.map(c -> c.getNetworkAliases())
+                            .filter(a -> !a.isEmpty())
+                            .map(a -> a.stream()
+                                    .filter(alias -> alias.equals(metadata.networkAlias()))
+                                    .findFirst()
+                                    .orElse(a.get(0)))
+                            .orElse(metadata.networkAlias());
 
+                    var sharedKey = new SharedKey(imageShared, networkShared, networkAlias);
                     var sharedContainerMap = CLASS_TO_SHARED_CONTAINERS.computeIfAbsent(getClass().getCanonicalName(),
                             k -> new ConcurrentHashMap<>());
 

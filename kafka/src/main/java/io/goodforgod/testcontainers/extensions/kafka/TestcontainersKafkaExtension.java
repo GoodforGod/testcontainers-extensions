@@ -110,11 +110,10 @@ final class TestcontainersKafkaExtension extends
         final Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
 
-        final Properties networkProperties = Optional.ofNullable(metadata.networkAliasOrDefault())
-                .filter(a -> !a.isBlank())
-                .or(() -> (container.getNetworkAliases().isEmpty())
-                        ? Optional.empty()
-                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+        final Properties networkProperties = container.getNetworkAliases().stream()
+                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
+                .findFirst()
+                .or(() -> container.getNetworkAliases().stream().findFirst())
                 .map(alias -> {
                     final Properties props = new Properties();
                     props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
