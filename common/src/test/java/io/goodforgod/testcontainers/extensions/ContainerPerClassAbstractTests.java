@@ -34,6 +34,10 @@ abstract class ContainerPerClassAbstractTests {
             assertNull(firstConnection);
             assertNotNull(connection);
             assertNotNull(connection.params().uri());
+            assertTrue(connection.paramsInNetwork().isPresent());
+            assertNotNull(connection.paramsInNetwork().get().uri());
+            assertNotNull(connection.paramsInNetwork().get().host());
+            assertFalse(connection.paramsInNetwork().get().host().isBlank());
             assertNotNull(sameConnectionChild);
             assertEquals(sameConnectionChild, connection);
             assertEquals(sameConnectionChild, sameConnectionParent);
@@ -45,6 +49,10 @@ abstract class ContainerPerClassAbstractTests {
         void secondConnection(@ContainerRedisConnection RedisConnection connection) {
             assertNotNull(connection);
             assertNotNull(connection.params().uri());
+            assertTrue(connection.paramsInNetwork().isPresent());
+            assertNotNull(connection.paramsInNetwork().get().uri());
+            assertNotNull(connection.paramsInNetwork().get().host());
+            assertFalse(connection.paramsInNetwork().get().host().isBlank());
             assertNotNull(firstConnection);
             assertNotNull(sameConnectionChild);
             assertEquals(sameConnectionChild, connection);

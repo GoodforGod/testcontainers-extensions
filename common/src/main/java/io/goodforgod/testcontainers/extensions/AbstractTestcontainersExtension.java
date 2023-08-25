@@ -57,6 +57,11 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         public int hashCode() {
             return Objects.hash(image, network, alias);
         }
+
+        @Override
+        public String toString() {
+            return "[image=" + image + ", alias=" + alias + ']';
+        }
     }
 
     static final Map<String, Map<SharedKey, ExtensionContainer<?, ?>>> CLASS_TO_SHARED_CONTAINERS = new ConcurrentHashMap<>();

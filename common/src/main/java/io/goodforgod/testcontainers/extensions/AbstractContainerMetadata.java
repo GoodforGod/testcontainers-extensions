@@ -16,9 +16,13 @@ public abstract class AbstractContainerMetadata implements ContainerMetadata {
     protected AbstractContainerMetadata(boolean network, String alias, String image, ContainerMode runMode) {
         this.network = network;
         this.runMode = runMode;
-        this.alias = Optional.ofNullable(getEnvValue("Alias", alias)).orElse(networkAliasDefault());
-        this.image = Optional.ofNullable(getEnvValue("Image", image)).orElseThrow(
-                () -> new IllegalArgumentException(getClass() + " expected image from '" + image + "' but received null"));
+        this.alias = Optional.ofNullable(getEnvValue("Alias", alias))
+                .filter(a -> !a.isBlank())
+                .orElse(networkAliasDefault());
+        this.image = Optional.ofNullable(getEnvValue("Image", image))
+                .filter(a -> !a.isBlank())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        getClass() + " expected image from '" + image + "' but received null"));
     }
 
     private static boolean isEnvironmentValue(String value) {
