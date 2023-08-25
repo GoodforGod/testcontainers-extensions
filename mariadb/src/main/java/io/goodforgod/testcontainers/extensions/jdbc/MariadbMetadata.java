@@ -12,7 +12,7 @@ final class MariadbMetadata extends JdbcMetadata {
     }
 
     @Override
-    protected @NotNull String networkAliasDefault() {
+    public @NotNull String networkAliasDefault() {
         return "mariadb-" + System.currentTimeMillis();
     }
 }

@@ -51,8 +51,8 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
                 .withDatabaseName("oracle")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias())
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
         if (metadata.networkShared()) {
@@ -75,10 +75,10 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
 
     @NotNull
     protected JdbcConnection getConnectionForContainer(OracleMetadata metadata, @NotNull OracleContainer container) {
-        final String alias = Optional.ofNullable(metadata.networkAlias())
-                .or(() -> (container.getNetworkAliases().isEmpty())
-                        ? Optional.empty()
-                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+        final String alias = container.getNetworkAliases().stream()
+                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
+                .findFirst()
+                .or(() -> container.getNetworkAliases().stream().findFirst())
                 .orElse(null);
 
         return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),

@@ -19,7 +19,7 @@ final class KafkaMetadata extends AbstractContainerMetadata {
     }
 
     @Override
-    protected @NotNull String networkAliasDefault() {
+    public @NotNull String networkAliasDefault() {
         return "kafka-" + System.currentTimeMillis();
     }
 

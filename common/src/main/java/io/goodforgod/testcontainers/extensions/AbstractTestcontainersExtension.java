@@ -57,6 +57,11 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         public int hashCode() {
             return Objects.hash(image, network, alias);
         }
+
+        @Override
+        public String toString() {
+            return "[image=" + image + ", alias=" + alias + ']';
+        }
     }
 
     static final Map<String, Map<SharedKey, ExtensionContainer<?, ?>>> CLASS_TO_SHARED_CONTAINERS = new ConcurrentHashMap<>();
@@ -263,10 +268,10 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                                     .orElse(a.get(0)))
                             .orElse(metadata.networkAlias());
 
+                    var sharedKey = new SharedKey(imageShared, networkShared, networkAlias);
                     var sharedContainerMap = CLASS_TO_SHARED_CONTAINERS.computeIfAbsent(getClass().getCanonicalName(),
                             k -> new ConcurrentHashMap<>());
 
-                    var sharedKey = new SharedKey(imageShared, networkShared, networkAlias);
                     var extensionContainer = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
                         var container = containerFromField.orElseGet(() -> {
                             logger.debug("Getting default container for image: {}", metadata.image());

@@ -46,8 +46,8 @@ class TestcontainersCassandraExtension extends
         var container = new CassandraContainer<>(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias())
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
@@ -85,11 +85,10 @@ class TestcontainersCassandraExtension extends
     @NotNull
     protected CassandraConnection getConnectionForContainer(CassandraMetadata metadata,
                                                             @NotNull CassandraContainer<?> container) {
-        final String alias = Optional.ofNullable(metadata.networkAlias())
-                .filter(a -> !a.isBlank())
-                .or(() -> (container.getNetworkAliases().isEmpty())
-                        ? Optional.empty()
-                        : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1)))
+        final String alias = container.getNetworkAliases().stream()
+                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
+                .findFirst()
+                .or(() -> container.getNetworkAliases().stream().findFirst())
                 .orElse(null);
 
         return CassandraConnectionImpl.forContainer(container.getHost(),

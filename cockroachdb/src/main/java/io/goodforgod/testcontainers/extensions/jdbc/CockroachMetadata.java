@@ -12,7 +12,7 @@ final class CockroachMetadata extends JdbcMetadata {
     }
 
     @Override
-    protected @NotNull String networkAliasDefault() {
+    public @NotNull String networkAliasDefault() {
         return "cockroachdb-" + System.currentTimeMillis();
     }
 }

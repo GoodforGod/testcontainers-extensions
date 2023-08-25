@@ -50,8 +50,8 @@ public final class ExampleTestcontainersJdbcExtension extends
                 .withPassword("postgres")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias());
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault());
     }
 
     @NotNull

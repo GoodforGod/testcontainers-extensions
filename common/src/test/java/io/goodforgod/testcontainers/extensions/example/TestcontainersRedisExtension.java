@@ -42,8 +42,8 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
         var container = new RedisContainer(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
                         .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAlias()))
-                .withNetworkAliases(metadata.networkAlias())
+                        .withMdc("alias", metadata.networkAliasOrDefault()))
+                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
@@ -67,7 +67,7 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
 
     @NotNull
     protected RedisConnection getConnectionForContainer(@NotNull RedisMetadata metadata, @NotNull RedisContainer container) {
-        final String alias = Optional.ofNullable(metadata.networkAlias())
+        final String alias = Optional.ofNullable(metadata.networkAliasOrDefault())
                 .filter(a -> !a.isBlank())
                 .or(() -> container.getNetworkAliases().stream()
                         .filter(a -> a.startsWith("redis"))

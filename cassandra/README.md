@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.6.0"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.6.1"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.6.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.6.0</version>
+    <version>0.6.1</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -63,7 +63,7 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 `@TestcontainersCassandra` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
-- `PER_RUN` - start container one time per *test execution*. (Containers should have same image to be reused between test classes)
+- `PER_RUN` - start container one time per *test execution*. (Containers must have same `image` and `network` to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
 
