@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.6.1"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.6.2"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.6.1"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.6.1</version>
+    <version>0.6.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -63,6 +63,7 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 `@TestcontainersCassandra` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
+
 - `PER_RUN` - start container one time per *test execution*. (Containers must have same `image` and `network` to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
@@ -96,9 +97,10 @@ class ExampleTests {
 ```
 
 Image syntax:
-1) Image can have static value: `cassandra:4.1`
-2) Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-3) Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cassandra:4.1}`
+
+- Image can have static value: `cassandra:4.1`
+- Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cassandra:4.1}`
 
 ### Manual Container
 
@@ -155,9 +157,10 @@ class ExampleTests {
 ```
 
 Image syntax:
-1) Image can have static value: `my-alias`
-2) Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
-3) Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
+
+- Image can have static value: `my-alias`
+- Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
+- Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
 ## Container Old Driver
 

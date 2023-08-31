@@ -47,10 +47,10 @@ class TestcontainersCassandraExtension extends
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", metadata.networkAliasOrDefault()))
-                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
+        container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }

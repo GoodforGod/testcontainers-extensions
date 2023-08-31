@@ -2,6 +2,8 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.lang.annotation.Annotation;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -52,9 +54,9 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
                         .withMdc("image", metadata.image())
                         .withMdc("alias", metadata.networkAliasOrDefault()))
-                .withNetworkAliases(metadata.networkAliasOrDefault())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
+        container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }

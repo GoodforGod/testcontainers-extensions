@@ -495,12 +495,14 @@ final class KafkaConnectionImpl implements KafkaConnection {
         }
     }
 
-    void clear() {
+    void clearProducer() {
         if (producer != null) {
             producer.close(Duration.ofMinutes(5));
             producer = null;
         }
+    }
 
+    void clearConsumer() {
         for (var consumer : consumers) {
             try {
                 consumer.close();
@@ -514,12 +516,8 @@ final class KafkaConnectionImpl implements KafkaConnection {
     void close() {
         if (!isClosed) {
             isClosed = true;
-            if (producer != null) {
-                producer.close(Duration.ofMinutes(5));
-                producer = null;
-            }
-
-            clear();
+            clearProducer();
+            clearConsumer();
         }
     }
 
