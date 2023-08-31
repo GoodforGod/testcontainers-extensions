@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.6.1"
+testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.6.2"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.6.1"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cockroachdb</artifactId>
-    <version>0.6.1</version>
+    <version>0.6.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -62,6 +62,7 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 `@TestcontainersCockroachdb` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
+
 - `PER_RUN` - start container one time per *test execution*. (Containers must have same `image` and `network` to be reused between test classes)
 - `PER_CLASS` - start new container each *test class*.
 - `PER_METHOD` - start new container each *test method*.
@@ -95,9 +96,10 @@ class ExampleTests {
 ```
 
 Image syntax:
-1) Image can have static value: `cockroachdb/cockroach:latest-v23.1`
-2) Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-3) Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}`
+
+- Image can have static value: `cockroachdb/cockroach:latest-v23.1`
+- Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}`
 
 ### Manual Container
 
@@ -151,9 +153,10 @@ class ExampleTests {
 ```
 
 Image syntax:
-1) Image can have static value: `my-alias`
-2) Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
-3) Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
+
+- Image can have static value: `my-alias`
+- Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
+- Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
 ## Connection
 

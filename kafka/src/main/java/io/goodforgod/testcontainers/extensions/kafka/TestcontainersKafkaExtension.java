@@ -39,10 +39,20 @@ final class TestcontainersKafkaExtension extends
             connections.add(connection);
         }
 
-        private void clear() {
+        private void clearProducer() {
             for (KafkaConnectionImpl connection : connections) {
                 try {
-                    connection.clear();
+                    connection.clearProducer();
+                } catch (Exception e) {
+                    // do nothing
+                }
+            }
+        }
+
+        private void clearConsumer() {
+            for (KafkaConnectionImpl connection : connections) {
+                try {
+                    connection.clearConsumer();
                 } catch (Exception e) {
                     // do nothing
                 }
@@ -94,10 +104,11 @@ final class TestcontainersKafkaExtension extends
                 .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
                 .withEnv("AUTO_CREATE_TOPICS", "true")
                 .withEmbeddedZookeeper()
-                .withNetworkAliases(metadata.networkAliasOrDefault())
+                .withExposedPorts(9092, 9093)
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
+        container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
@@ -244,18 +255,30 @@ final class TestcontainersKafkaExtension extends
 
     @Override
     public void afterEach(ExtensionContext context) {
+        var metadata = getMetadata(context);
         var storage = getStorage(context);
         var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
-        pool.clear();
+        if (metadata.runMode() == ContainerMode.PER_METHOD) {
+            pool.clearProducer();
+            pool.clearConsumer();
+        } else {
+            pool.clearConsumer();
+        }
 
         super.afterEach(context);
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
+        var metadata = getMetadata(context);
         var storage = getStorage(context);
         var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
-        pool.close();
+        if (metadata.runMode() == ContainerMode.PER_RUN) {
+            pool.clearProducer();
+            pool.clearConsumer();
+        } else {
+            pool.close();
+        }
 
         super.afterAll(context);
     }
