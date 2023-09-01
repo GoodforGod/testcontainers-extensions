@@ -1,7 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc.example;
 
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
-
 import java.lang.annotation.*;
 
 /**

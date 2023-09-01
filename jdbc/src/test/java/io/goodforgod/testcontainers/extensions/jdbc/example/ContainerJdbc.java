@@ -1,8 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc.example;
 
-import org.testcontainers.containers.JdbcDatabaseContainer;
-
 import java.lang.annotation.*;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
 /**
  * Indicates that already instantiated annotated field with type {@link JdbcDatabaseContainer}

@@ -1,5 +1,10 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import java.lang.annotation.Annotation;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
@@ -7,12 +12,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
-
-import java.lang.annotation.Annotation;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExtension<OracleContainer, OracleMetadata> {
 

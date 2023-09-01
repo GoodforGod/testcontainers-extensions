@@ -1,8 +1,7 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
-import org.testcontainers.containers.CassandraContainer;
-
 import java.lang.annotation.*;
+import org.testcontainers.containers.CassandraContainer;
 
 /**
  * Indicates that annotated field containers {@link CassandraContainer} instance

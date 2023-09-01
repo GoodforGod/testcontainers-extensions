@@ -1,10 +1,9 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import java.time.Duration;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
-
-import java.time.Duration;
 
 public final class RedisContainer extends GenericContainer<RedisContainer> {
 

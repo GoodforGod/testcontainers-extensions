@@ -1,11 +1,10 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Describes active Redis connection of currently running {@link RedisContainer}

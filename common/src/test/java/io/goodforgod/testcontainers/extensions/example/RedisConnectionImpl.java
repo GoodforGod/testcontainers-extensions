@@ -1,16 +1,15 @@
 package io.goodforgod.testcontainers.extensions.example;
 
+import java.net.URI;
+import java.time.Duration;
+import java.util.Objects;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.args.FlushMode;
-
-import java.net.URI;
-import java.time.Duration;
-import java.util.Objects;
-import java.util.Optional;
 
 final class RedisConnectionImpl implements RedisConnection {
 

@@ -1,13 +1,12 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Objects;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Objects;
 
 @Internal
 final class RedisValueImpl implements RedisValue {

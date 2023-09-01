@@ -1,5 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbc;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
@@ -10,8 +12,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_METHOD, image = "postgres:15.2-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

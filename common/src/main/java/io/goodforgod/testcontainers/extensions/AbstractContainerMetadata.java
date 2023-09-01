@@ -1,10 +1,9 @@
 package io.goodforgod.testcontainers.extensions;
 
+import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 @Internal
 public abstract class AbstractContainerMetadata implements ContainerMetadata {

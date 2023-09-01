@@ -2,11 +2,10 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.Network;
+import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.MySQLContainer;
-
-import java.lang.annotation.*;
 
 /**
  * Extension that is running {@link MySQLContainer} for tests in different modes with database

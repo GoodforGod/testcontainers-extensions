@@ -1,8 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import org.testcontainers.containers.OracleContainer;
-
 import java.lang.annotation.*;
+import org.testcontainers.containers.OracleContainer;
 
 /**
  * Indicates that annotated field containers {@link OracleContainer} instance

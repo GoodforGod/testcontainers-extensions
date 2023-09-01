@@ -1,5 +1,7 @@
 package io.goodforgod.testcontainers.extensions;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.goodforgod.testcontainers.extensions.example.ContainerRedisConnection;
 import io.goodforgod.testcontainers.extensions.example.RedisConnection;
 import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
@@ -7,8 +9,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
 abstract class ContainerPerClassAbstractTests {

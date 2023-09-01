@@ -1,8 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import org.testcontainers.containers.MariaDBContainer;
-
 import java.lang.annotation.*;
+import org.testcontainers.containers.MariaDBContainer;
 
 /**
  * Indicates that annotated field containers {@link MariaDBContainer} instance

@@ -1,5 +1,7 @@
 package io.goodforgod.testcontainers.extensions.oracle;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.ContainerOracleConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
@@ -9,8 +11,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestcontainersOracle(mode = ContainerMode.PER_CLASS,
         image = "gvenzl/oracle-xe:18.4.0-faststart",

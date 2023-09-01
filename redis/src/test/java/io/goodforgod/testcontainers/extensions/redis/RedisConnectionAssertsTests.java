@@ -1,13 +1,12 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.0-alpine")
 class RedisConnectionAssertsTests {

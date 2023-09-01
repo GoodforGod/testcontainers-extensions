@@ -1,12 +1,12 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS,
         image = "cassandra:4.1",

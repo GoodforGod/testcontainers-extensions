@@ -2,10 +2,9 @@ package io.goodforgod.testcontainers.extensions.example;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.Network;
+import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.lang.annotation.*;
 
 /**
  * Extension that is running {@link RedisContainer} for tests in different modes with database

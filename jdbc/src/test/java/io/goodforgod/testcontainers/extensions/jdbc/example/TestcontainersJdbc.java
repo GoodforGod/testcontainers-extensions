@@ -3,10 +3,9 @@ package io.goodforgod.testcontainers.extensions.jdbc.example;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.ExampleTestcontainersJdbcExtension;
 import io.goodforgod.testcontainers.extensions.jdbc.Migration;
+import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.lang.annotation.*;
 
 @Order(Order.DEFAULT - 100) // Run before other extensions
 @ExtendWith(ExampleTestcontainersJdbcExtension.class)

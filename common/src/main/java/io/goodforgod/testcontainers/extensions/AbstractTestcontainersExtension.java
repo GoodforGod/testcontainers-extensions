@@ -1,5 +1,12 @@
 package io.goodforgod.testcontainers.extensions;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.*;
@@ -9,14 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Internal
 public abstract class AbstractTestcontainersExtension<Connection, Container extends GenericContainer<?>, Metadata extends ContainerMetadata>
@@ -155,8 +154,8 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         }
 
         return ReflectionUtils.findFields(testClass.get(),
-                        f -> !f.isSynthetic() && f.getAnnotation(getContainerAnnotation()) != null,
-                        ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
+                f -> !f.isSynthetic() && f.getAnnotation(getContainerAnnotation()) != null,
+                ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
                 .findFirst()
                 .flatMap(field -> context.getTestInstance()
