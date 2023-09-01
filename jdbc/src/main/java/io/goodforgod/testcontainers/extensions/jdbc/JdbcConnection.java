@@ -1,13 +1,14 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import org.intellij.lang.annotations.Language;
+import org.jetbrains.annotations.NotNull;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import org.intellij.lang.annotations.Language;
-import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 
 /**
  * Describes active JDBC connection of currently running {@link JdbcDatabaseContainer}

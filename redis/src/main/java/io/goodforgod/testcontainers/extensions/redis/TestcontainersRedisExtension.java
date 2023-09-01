@@ -1,11 +1,6 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
-import java.lang.annotation.Annotation;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -14,6 +9,12 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+
+import java.lang.annotation.Annotation;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Internal
 class TestcontainersRedisExtension extends AbstractTestcontainersExtension<RedisConnection, RedisContainer, RedisMetadata> {

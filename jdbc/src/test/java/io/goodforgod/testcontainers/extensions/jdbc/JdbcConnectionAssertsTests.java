@@ -1,12 +1,12 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_CLASS,
         image = "postgres:15.2-alpine",

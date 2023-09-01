@@ -1,11 +1,14 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_CLASS,
         image = "postgres:15.1-alpine",

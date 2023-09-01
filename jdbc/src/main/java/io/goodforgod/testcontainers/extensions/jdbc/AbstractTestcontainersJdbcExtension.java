@@ -1,11 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
-import java.io.FileWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.*;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -14,9 +9,17 @@ import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.flywaydb.core.Flyway;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+
+import java.io.FileWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 @Internal
 abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabaseContainer<?>, Metadata extends JdbcMetadata>

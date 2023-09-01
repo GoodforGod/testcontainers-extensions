@@ -1,7 +1,8 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import java.lang.annotation.*;
 import org.testcontainers.containers.PostgreSQLContainer;
+
+import java.lang.annotation.*;
 
 /**
  * Indicates that annotated field containers {@link PostgreSQLContainer} instance

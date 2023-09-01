@@ -2,10 +2,11 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.Network;
-import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.PostgreSQLContainer;
+
+import java.lang.annotation.*;
 
 /**
  * Extension that is running {@link PostgreSQLContainer} for tests in different modes with database

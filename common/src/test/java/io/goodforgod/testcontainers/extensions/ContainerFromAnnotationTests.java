@@ -1,13 +1,13 @@
 package io.goodforgod.testcontainers.extensions;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import io.goodforgod.testcontainers.extensions.example.*;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestcontainersRedis(mode = ContainerMode.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)

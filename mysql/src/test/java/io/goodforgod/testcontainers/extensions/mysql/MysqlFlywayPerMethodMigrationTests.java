@@ -1,13 +1,16 @@
 package io.goodforgod.testcontainers.extensions.mysql;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.ContainerMysqlConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.Migration;
 import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersMysql;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestcontainersMysql(mode = ContainerMode.PER_CLASS,
         image = "mysql:8.0-debian",

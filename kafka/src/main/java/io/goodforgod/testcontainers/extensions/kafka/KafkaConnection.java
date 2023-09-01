@@ -1,7 +1,10 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;

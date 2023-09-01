@@ -3,11 +3,12 @@ package io.goodforgod.testcontainers.extensions.cassandra;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import java.util.List;
-import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.testcontainers.containers.CassandraContainer;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Describes active Cassandra connection of currently running {@link CassandraContainer}

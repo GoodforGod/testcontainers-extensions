@@ -1,12 +1,15 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.kafka.ContainerKafkaConnection.Property;
 import java.time.Duration;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS,
         image = "confluentinc/cp-kafka:7.4.1",

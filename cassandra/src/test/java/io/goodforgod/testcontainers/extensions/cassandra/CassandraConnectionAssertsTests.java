@@ -1,10 +1,10 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS,
         image = "cassandra:4.1",

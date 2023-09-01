@@ -3,14 +3,15 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbc;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
-import java.lang.annotation.Annotation;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
+
+import java.lang.annotation.Annotation;
+import java.util.Optional;
 
 public final class ExampleTestcontainersJdbcExtension extends
         AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>, PostgresJdbcMetadata> {
