@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.kafka;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.ExtensionContainer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -30,47 +31,6 @@ final class TestcontainersKafkaExtension extends
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersKafkaExtension.class);
-
-    private static final class KafkaConnectionPool {
-
-        private final List<KafkaConnectionImpl> connections = new ArrayList<>();
-
-        private void add(KafkaConnectionImpl connection) {
-            connections.add(connection);
-        }
-
-        private void clearProducer() {
-            for (KafkaConnectionImpl connection : connections) {
-                try {
-                    connection.clearProducer();
-                } catch (Exception e) {
-                    // do nothing
-                }
-            }
-        }
-
-        private void clearConsumer() {
-            for (KafkaConnectionImpl connection : connections) {
-                try {
-                    connection.clearConsumer();
-                } catch (Exception e) {
-                    // do nothing
-                }
-            }
-        }
-
-        private void close() {
-            for (KafkaConnectionImpl connection : connections) {
-                try {
-                    connection.close();
-                } catch (Exception e) {
-                    // do nothing
-                }
-            }
-
-            connections.clear();
-        }
-    }
 
     @Override
     protected Class<? extends Annotation> getContainerAnnotation() {
@@ -103,8 +63,12 @@ final class TestcontainersKafkaExtension extends
                         .withMdc("alias", metadata.networkAliasOrDefault()))
                 .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
                 .withEnv("AUTO_CREATE_TOPICS", "true")
+                .withEnv("KAFKA_LOG4J_LOGGERS",
+                        "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.network=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=INFO,kafka.log=ERROR,kafka.server=ERROR,state.change.logger=ERROR")
+                .withEnv("ZOOKEEPER_LOG4J_LOGGERS",
+                        "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,org.kafka.zookeeper.server=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR")
                 .withEmbeddedZookeeper()
-                .withExposedPorts(9092, 9093)
+                .withExposedPorts(9092, KafkaContainer.KAFKA_PORT)
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
@@ -178,8 +142,9 @@ final class TestcontainersKafkaExtension extends
 
         logger.debug("Starting @ContainerKafkaConnection field injection for container properties: {}", kafkaConnection);
 
-        var storage = context.getStore(NAMESPACE);
-        var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
+        var metadata = getMetadata(context);
+        var storage = getStorage(context);
+        var extensionContainer = storage.get(metadata.runMode(), KafkaExtensionContainer.class);
         context.getTestInstance().ifPresent(instance -> {
             for (Field field : connectionFields) {
                 try {
@@ -204,9 +169,8 @@ final class TestcontainersKafkaExtension extends
                         }
 
                         fieldKafkaConnection = new KafkaConnectionImpl(fieldProperties, fieldNetworkProperties);
+                        extensionContainer.pool().add(fieldKafkaConnection);
                     }
-
-                    pool.add(fieldKafkaConnection);
 
                     field.setAccessible(true);
                     field.set(instance, fieldKafkaConnection);
@@ -219,10 +183,13 @@ final class TestcontainersKafkaExtension extends
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) {
-        var storage = getStorage(context);
-        storage.put(KafkaConnectionPool.class, new KafkaConnectionPool());
+    protected ExtensionContainer<KafkaContainer, KafkaConnection> getExtensionContainer(KafkaContainer container,
+                                                                                        KafkaConnection connection) {
+        return new KafkaExtensionContainer(container, connection);
+    }
 
+    @Override
+    public void beforeAll(ExtensionContext context) {
         super.beforeAll(context);
 
         var metadata = getMetadata(context);
@@ -243,11 +210,10 @@ final class TestcontainersKafkaExtension extends
 
         var metadata = getMetadata(context);
         if (!metadata.topics().isEmpty()) {
+            var connectionCurrent = getConnectionCurrent(context);
             if (metadata.runMode() == ContainerMode.PER_METHOD) {
-                var connectionCurrent = getConnectionCurrent(context);
                 KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), false);
             } else if (metadata.reset() == Topics.Mode.PER_METHOD) {
-                var connectionCurrent = getConnectionCurrent(context);
                 KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), true);
             }
         }
@@ -257,12 +223,9 @@ final class TestcontainersKafkaExtension extends
     public void afterEach(ExtensionContext context) {
         var metadata = getMetadata(context);
         var storage = getStorage(context);
-        var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
-        if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            pool.clearProducer();
-            pool.clearConsumer();
-        } else {
-            pool.clearConsumer();
+        var extensionContainer = storage.get(metadata.runMode(), KafkaExtensionContainer.class);
+        if (metadata.runMode() != ContainerMode.PER_METHOD) {
+            extensionContainer.pool().clear();
         }
 
         super.afterEach(context);
@@ -270,16 +233,6 @@ final class TestcontainersKafkaExtension extends
 
     @Override
     public void afterAll(ExtensionContext context) {
-        var metadata = getMetadata(context);
-        var storage = getStorage(context);
-        var pool = storage.get(KafkaConnectionPool.class, KafkaConnectionPool.class);
-        if (metadata.runMode() == ContainerMode.PER_RUN) {
-            pool.clearProducer();
-            pool.clearConsumer();
-        } else {
-            pool.close();
-        }
-
         super.afterAll(context);
     }
 
@@ -297,6 +250,10 @@ final class TestcontainersKafkaExtension extends
                 : connection.paramsInNetwork().get().properties();
 
         final ContainerKafkaConnection annotation = parameterContext.getParameter().getAnnotation(ContainerKafkaConnection.class);
+        if (annotation.properties().length == 0) {
+            return connection;
+        }
+
         for (ContainerKafkaConnection.Property property : annotation.properties()) {
             properties.put(property.name(), property.value());
             if (networkProperties != null) {
@@ -304,6 +261,11 @@ final class TestcontainersKafkaExtension extends
             }
         }
 
-        return new KafkaConnectionImpl(properties, networkProperties);
+        var metadata = getMetadata(context);
+        var storage = getStorage(context);
+        var extensionContainer = storage.get(metadata.runMode(), KafkaExtensionContainer.class);
+        var paramConnection = new KafkaConnectionImpl(properties, networkProperties);
+        extensionContainer.pool().add(paramConnection);
+        return paramConnection;
     }
 }

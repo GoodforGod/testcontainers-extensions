@@ -1,12 +1,5 @@
 package io.goodforgod.testcontainers.extensions;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.*;
@@ -16,6 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Internal
 public abstract class AbstractTestcontainersExtension<Connection, Container extends GenericContainer<?>, Metadata extends ContainerMetadata>
@@ -60,7 +61,9 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
         @Override
         public String toString() {
-            return "[image=" + image + ", alias=" + alias + ']';
+            return (alias == null)
+                    ? "[image=" + image + ']'
+                    : "[image=" + image + ", alias=" + alias + ']';
         }
     }
 
@@ -87,6 +90,10 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     protected abstract Connection getConnectionForContainer(Metadata metadata, Container container);
 
     protected abstract ExtensionContext.Namespace getNamespace();
+
+    protected ExtensionContainer<Container, Connection> getExtensionContainer(Container container, Connection connection) {
+        return new ExtensionContainerImpl<>(container, connection);
+    }
 
     protected final ExtensionContext.Store getStorage(ExtensionContext context) {
         if (context.getParent().isPresent() && context.getParent().get().getParent().isPresent()) {
@@ -148,8 +155,8 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         }
 
         return ReflectionUtils.findFields(testClass.get(),
-                f -> !f.isSynthetic() && f.getAnnotation(getContainerAnnotation()) != null,
-                ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
+                        f -> !f.isSynthetic() && f.getAnnotation(getContainerAnnotation()) != null,
+                        ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
                 .findFirst()
                 .flatMap(field -> context.getTestInstance()
@@ -283,7 +290,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                         logger.info("Started in mode '{}' container: {}", metadata.runMode(),
                                 container.getDockerImageName());
                         var connection = getConnectionForContainer(metadata, container);
-                        return new ExtensionContainerImpl<>(container, connection);
+                        return getExtensionContainer(container, connection);
                     });
 
                     storage.put(metadata.runMode(), extensionContainer);
@@ -302,7 +309,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                     container.start();
                     logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
                     var connection = getConnectionForContainer(metadata, container);
-                    var extensionContainer = new ExtensionContainerImpl<>(container, connection);
+                    var extensionContainer = getExtensionContainer(container, connection);
                     storage.put(metadata.runMode(), extensionContainer);
                     storage.put(getConnectionType(), connection);
                 }
@@ -330,7 +337,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                     container.start();
                     logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
                     var connection = getConnectionForContainer(metadata, container);
-                    var extensionContainer = new ExtensionContainerImpl<>(container, connection);
+                    var extensionContainer = getExtensionContainer(container, connection);
                     storage.put(metadata.runMode(), extensionContainer);
                     storage.put(getConnectionType(), connection);
                 }

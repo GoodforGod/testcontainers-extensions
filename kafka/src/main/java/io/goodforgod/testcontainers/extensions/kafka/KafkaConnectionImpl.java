@@ -16,6 +16,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.header.Header;
@@ -139,7 +140,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
             while (isActive.get()) {
                 try {
                     poll(Duration.ofMillis(50));
-                } catch (WakeupException ignore) {
+                } catch (WakeupException | InterruptException ignore) {
                     // do nothing
                 } catch (Exception e) {
                     logger.error("KafkaConsumer '{}' for {} topics got unhandled exception", groupId, topics, e);
@@ -383,7 +384,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
                 logger.trace("KafkaProducer sending event: {}", event);
                 var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers))
                         .get(5, TimeUnit.SECONDS);
-                logger.info("KafkaProducer sent with offset '{}' with partition '{}' with timestamp '{}' event: {}",
+                logger.info("KafkaProducer sent event with offset '{}' with partition '{}' with timestamp '{}' event: {}",
                         result.offset(), result.partition(), result.timestamp(), event);
             } catch (Exception e) {
                 throw new KafkaConnectionException("KafkaProducer sent event failed: " + event, e);
@@ -424,7 +425,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     private static KafkaConsumer<byte[], byte[]> getConsumer(Properties properties) {
         final Properties consumerProperties = new Properties();
-        final String id = "testcontainers-" + UUID.randomUUID();
+        final String id = "testcontainers-kafka-" + UUID.randomUUID().toString().substring(0, 9);
         consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
@@ -445,8 +446,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
     }
 
     static void createTopicsIfNeeded(@NotNull KafkaConnection connection, @NotNull Set<String> topics, boolean reset) {
-        try {
-            var admin = getAdmin(connection.params().properties());
+        try (var admin = getAdmin(connection.params().properties())) {
             logger.trace("Looking for existing topics...");
             var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
             logger.trace("Found existing topics: {}", existingTopics);
@@ -495,14 +495,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
         }
     }
 
-    void clearProducer() {
-        if (producer != null) {
-            producer.close(Duration.ofMinutes(5));
-            producer = null;
-        }
-    }
-
-    void clearConsumer() {
+    void clear() {
         for (var consumer : consumers) {
             try {
                 consumer.close();
@@ -516,8 +509,17 @@ final class KafkaConnectionImpl implements KafkaConnection {
     void close() {
         if (!isClosed) {
             isClosed = true;
-            clearProducer();
-            clearConsumer();
+
+            clear();
+
+            if (producer != null) {
+                try {
+                    producer.close(Duration.ofMinutes(5));
+                    producer = null;
+                } catch (Exception e) {
+                    // do nothing
+                }
+            }
         }
     }
 

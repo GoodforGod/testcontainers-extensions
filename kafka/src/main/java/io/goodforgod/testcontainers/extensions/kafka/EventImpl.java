@@ -25,7 +25,9 @@ final class EventImpl implements Event {
 
         @Override
         public @NotNull String asString() {
-            return new String(key, StandardCharsets.UTF_8);
+            return (key == null)
+                    ? ""
+                    : new String(key, StandardCharsets.UTF_8);
         }
 
         @Override
@@ -64,7 +66,9 @@ final class EventImpl implements Event {
 
         @Override
         public @NotNull String asString() {
-            return new String(value, StandardCharsets.UTF_8);
+            return (value == null)
+                    ? ""
+                    : new String(value, StandardCharsets.UTF_8);
         }
 
         @Override
