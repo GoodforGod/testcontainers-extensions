@@ -255,7 +255,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
             var metadata = getMetadata(context);
             if (metadata.runMode() == ContainerMode.PER_RUN) {
                 var storage = getStorage(context);
-                var storageConnection = storage.get(getConnectionType(), getConnectionType());
+                var storageConnection = getConnectionCurrent(context);
                 if (storageConnection == null) {
                     var containerFromField = getContainerFromField(context);
                     var imageShared = containerFromField
@@ -353,8 +353,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
         var metadata = getMetadata(context);
         if (metadata.runMode() == ContainerMode.PER_RUN || metadata.runMode() == ContainerMode.PER_CLASS) {
-            var storage = getStorage(context);
-            var connection = storage.get(getConnectionType(), getConnectionType());
+            var connection = getConnectionCurrent(context);
             if (connection != null) {
                 injectConnection(connection, context);
             }
@@ -365,8 +364,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public void beforeEach(ExtensionContext context) {
         setupBeforeEach(context);
 
-        var storage = getStorage(context);
-        var connection = storage.get(getConnectionType(), getConnectionType());
+        var connection = getConnectionCurrent(context);
         if (connection != null) {
             injectConnection(connection, context);
         }

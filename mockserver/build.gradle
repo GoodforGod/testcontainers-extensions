@@ -1,0 +1,10 @@
+dependencies {
+    api project(":common")
+    api libs.testcontainers.mockserver
+    api libs.driver.mockserver
+    api libs.json
+
+    implementation libs.slf4j.api
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+}

@@ -1,13 +1,13 @@
-# Testcontainers Extensions Redis
+# Testcontainers Extensions MockServer
 
 [![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-redis/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-redis)
+[![Maven Central](https://maven-badges.herokuRpp.com/maven-central/io.goodforgod/testcontainers-extensions-mockserver/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-mockserver)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=CI+Master)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 
-Testcontainers Redis Extension with advanced testing capabilities.
+Testcontainers MockServer Extension with advanced testing capabilities.
 
 Features:
 - Container easy run *per method*, *per class*, *per execution*.
@@ -17,34 +17,15 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.7.0"
+testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.7.0"
 ```
 
 **Maven**
 ```xml
 <dependency>
     <groupId>io.goodforgod</groupId>
-    <artifactId>testcontainers-extensions-redis</artifactId>
+    <artifactId>testcontainers-extensions-mockserver</artifactId>
     <version>0.7.0</version>
-    <scope>test</scope>
-</dependency>
-```
-
-### Redis Driver
-[Redis Jedis Client](https://mvnrepository.com/artifact/redis.clients/jedis) must be on classpath, if it is somehow not on your classpath already,
-don't forget to add:
-
-**Gradle**
-```groovy
-testImplementation "redis.clients:jedis:4.4.3"
-```
-
-**Maven**
-```xml
-<dependency>
-    <groupId>redis.clients</groupId>
-    <artifactId>jedis</artifactId>
-    <version>4.4.3</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -58,7 +39,7 @@ testImplementation "redis.clients:jedis:4.4.3"
 
 ## Container
 
-`@TestcontainersRedis` - allow **automatically start container** with specified image in different modes without the need to configure it.
+`@TestcontainersMockserver` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 
@@ -68,11 +49,11 @@ Available containers modes:
 
 Simple example on how to start container per class, **no need to configure** container:
 ```java
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS)
+@TestcontainersMockserver(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
     @Test
-    void test(@ContainerRedisConnection RedisConnection connection) {
+    void test(@ContainerMockserverConnection MockserverConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -84,7 +65,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersRedis(image = "${MY_IMAGE_ENV|redis:7.2-alpine}")
+@TestcontainersMockserver(image = "${MY_IMAGE_ENV|mockserver/mockserver:5.15.0}")
 class ExampleTests {
 
     @Test
@@ -96,29 +77,29 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `redis:7.2-alpine`
+- Image can have static value: `mockserver/mockserver:5.15.0`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redis:7.2-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mockserver/mockserver:5.15.0}`
 
 ### Manual Container
 
-When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersRedis`,
-this can be done using `@ContainerRedis` annotation for container.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersMockserver`,
+this can be done using `@ContainerMockserver` annotation for container.
 
 Example:
 ```java
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS)
+@TestcontainersMockserver(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
-    @ContainerRedis
-    private static final RedisContainer container = new RedisContainer()
-            .withNetworkAliases("myredis")
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class)))
+    @ContainerMockserver
+    private static final MockServerContainer container = new MockServerContainer()
+            .withNetworkAliases("mymockserver")
+            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainer.class)))
             .withNetwork(Network.SHARED);
     
     @Test
-    void test(@ContainerRedisConnection RedisConnection connection) {
-        assertEquals("myredis", connection.paramsInNetwork().get().host());
+    void test(@ContainerMockserverConnection MockserverConnection connection) {
+        assertEquals("mymockserver", connection.paramsInNetwork().get().host());
     }
 }
 ```
@@ -127,7 +108,7 @@ class ExampleTests {
 
 In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
 ```java
-@TestcontainersRedis(network = @Network(shared = true))
+@TestcontainersMockserver(network = @Network(shared = true))
 class ExampleTests {
 
     @Test
@@ -144,7 +125,7 @@ Alias can be extracted from environment variable also or default value can be pr
 
 In case specified environment variable is missing `default alias` will be created:
 ```java
-@TestcontainersRedis(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+@TestcontainersMockserver(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
 class ExampleTests {
 
     @Test
@@ -162,37 +143,37 @@ Image syntax:
 
 ## Connection
 
-`RedisConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerRedisConnection` annotation.
-`RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+`MockserverConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerMockserverConnection` annotation.
+`MockserverConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
 ```java
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
+@TestcontainersMockserver(mode = ContainerMode.PER_CLASS, image = "mockserver/mockserver:5.15.0")
 class ExampleTests {
 
-    @ContainerRedisConnection
-    private RedisConnection connectionInField;
+    @ContainerMockserverConnection
+    private MockserverConnection connectionInField;
 
     @Test
-    void test(@ContainerRedisConnection RedisConnection connection) {
-        connection.commands().set("11", "1");
-        connection.commands().set("12", "2");
-        assertEquals(2, connection.countPrefix(RedisKey.of("1")));
+    void test(@ContainerMockserverConnection MockserverConnection connection) {
+        connection.client().when(HttpRequest.request()
+                        .withMethod("GET")
+                        .withPath("/get"))
+                .respond(HttpResponse.response()
+                        .withStatusCode(200)
+                        .withBody("OK"));
     }
 }
 ```
 
 ### External Connection
 
-In case you want to use some external Redis instance that is running in CI or other place for tests (due to docker limitations or other), 
-you can use special *environment variables* and extension will use them to propagate connection and no Redis containers will be running in such case.
+In case you want to use some external Mockserver instance that is running in CI or other place for tests (due to docker limitations or other), 
+you can use special *environment variables* and extension will use them to propagate connection and no Mockserver containers will be running in such case.
 
 Special environment variables:
-- `EXTERNAL_TEST_REDIS_USERNAME` - Redis instance username (optional).
-- `EXTERNAL_TEST_REDIS_PASSWORD` - Redis instance password (optional).
-- `EXTERNAL_TEST_REDIS_HOST` - Redis instance host.
-- `EXTERNAL_TEST_REDIS_PORT` - Redis instance port.
-- `EXTERNAL_TEST_REDIS_DATABASE` - Redis instance database (`0` by default).
+- `EXTERNAL_TEST_MOCKSERVER_HOST` - Mockserver instance host.
+- `EXTERNAL_TEST_MOCKSERVER_PORT` - Mockserver instance port.
 
 ## License
 
