@@ -11,6 +11,7 @@ import java.util.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -195,26 +196,39 @@ final class TestcontainersKafkaExtension extends
         var metadata = getMetadata(context);
         if (!metadata.topics().isEmpty()) {
             var connectionCurrent = getConnectionCurrent(context);
+            var storage = getStorage(context);
             if (metadata.runMode() == ContainerMode.PER_RUN) {
                 KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(),
-                        metadata.reset() == Topics.Mode.PER_CLASS);
+                        metadata.reset() != Topics.Mode.NONE);
+                storage.put(Topics.class, metadata.reset());
             } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
                 KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), false);
+                storage.put(Topics.class, metadata.reset());
             }
         }
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
+        var metadata = getMetadata(context);
+        if (metadata.runMode() == ContainerMode.PER_METHOD && metadata.reset() == Topics.Mode.PER_CLASS) {
+            throw new ExtensionConfigurationException(
+                    String.format("@%s can't apply migration in Topics.Mode.PER_CLASS mode when ContainerMode.PER_METHOD is used",
+                            getContainerAnnotation().getSimpleName()));
+        }
+
         super.beforeEach(context);
 
-        var metadata = getMetadata(context);
         if (!metadata.topics().isEmpty()) {
             var connectionCurrent = getConnectionCurrent(context);
             if (metadata.runMode() == ContainerMode.PER_METHOD) {
                 KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), false);
             } else if (metadata.reset() == Topics.Mode.PER_METHOD) {
-                KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), true);
+                var storage = getStorage(context);
+                var createdTopicsFlag = storage.get(Topics.class, Topics.Mode.class);
+                if (createdTopicsFlag == null) {
+                    KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), true);
+                }
             }
         }
     }
@@ -223,6 +237,7 @@ final class TestcontainersKafkaExtension extends
     public void afterEach(ExtensionContext context) {
         var metadata = getMetadata(context);
         var storage = getStorage(context);
+        storage.remove(Topics.class);
         var extensionContainer = storage.get(metadata.runMode(), KafkaExtensionContainer.class);
         if (metadata.runMode() != ContainerMode.PER_METHOD) {
             extensionContainer.pool().clear();

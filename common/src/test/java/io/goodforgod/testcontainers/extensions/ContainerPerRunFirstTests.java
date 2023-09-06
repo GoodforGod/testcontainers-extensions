@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@TestcontainersRedis(mode = ContainerMode.PER_RUN, image = "redis:7.2-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_RUN)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class ContainerPerRunFirstTests {
 

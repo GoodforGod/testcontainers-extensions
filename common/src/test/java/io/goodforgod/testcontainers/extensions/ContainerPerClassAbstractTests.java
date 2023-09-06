@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_CLASS)
 abstract class ContainerPerClassAbstractTests {
 
     @ContainerRedisConnection

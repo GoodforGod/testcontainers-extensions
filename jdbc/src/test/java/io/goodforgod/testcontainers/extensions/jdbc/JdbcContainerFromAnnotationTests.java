@@ -12,6 +12,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_METHOD, image = "postgres:15.2-alpine")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -20,11 +21,12 @@ class JdbcContainerFromAnnotationTests {
     private static final String CUSTOM = "user";
 
     @ContainerJdbc
-    private static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>()
-            .withDatabaseName(CUSTOM)
-            .withUsername(CUSTOM)
-            .withPassword(CUSTOM)
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class)));
+    private static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
+            DockerImageName.parse("postgres:15.2-alpine"))
+                    .withDatabaseName(CUSTOM)
+                    .withUsername(CUSTOM)
+                    .withPassword(CUSTOM)
+                    .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class)));
 
     @Test
     void checkParams(@ContainerJdbcConnection JdbcConnection connection) {

@@ -58,6 +58,8 @@ public interface CassandraConnection {
     Optional<Params> paramsInNetwork();
 
     /**
+     * NOTE: DO NOT CLOSE CONNECTION
+     *
      * @return new Cassandra connection
      */
     @NotNull
