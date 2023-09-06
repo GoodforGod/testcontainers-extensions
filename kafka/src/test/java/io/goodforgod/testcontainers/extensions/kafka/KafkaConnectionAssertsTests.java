@@ -81,7 +81,7 @@ class KafkaConnectionAssertsTests {
         var topic = "example";
         var consumer = connection.subscribe(topic);
         connection.send(topic, Event.builder().withValue("value").withHeader("1", "1").build());
-        var receivedEvent = consumer.assertReceivedAtLeast(Duration.ofSeconds(1));
+        var receivedEvent = consumer.assertReceivedAtLeast(1, Duration.ofSeconds(1));
         assertNotNull(receivedEvent.toString());
     }
 
@@ -89,7 +89,7 @@ class KafkaConnectionAssertsTests {
     void assertReceivedThrows() {
         var topic = "example";
         var consumer = connection.subscribe(topic);
-        assertThrows(AssertionFailedError.class, () -> consumer.assertReceivedAtLeast(Duration.ofSeconds(1)));
+        assertThrows(AssertionFailedError.class, () -> consumer.assertReceivedAtLeast(1, Duration.ofSeconds(1)));
     }
 
     @Test

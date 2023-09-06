@@ -33,6 +33,7 @@ dependencies {
     jacocoAggregation project(":kafka")
     jacocoAggregation project(":cassandra")
     jacocoAggregation project(":redis")
+    jacocoAggregation project(":mockserver")
 }
 
 reporting {

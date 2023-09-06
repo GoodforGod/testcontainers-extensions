@@ -256,12 +256,6 @@ final class KafkaConnectionImpl implements KafkaConnection {
         }
 
         @Override
-        public @NotNull ReceivedEvent assertReceivedAtLeast(@NotNull Duration timeout) {
-            var received = getReceived(timeout);
-            return received.orElseGet(() -> Assertions.fail("Expected to receive 1 event, but received 0 event"));
-        }
-
-        @Override
         public @NotNull List<ReceivedEvent> assertReceivedAtLeast(int expectedAtLeast, @NotNull Duration timeout) {
             final List<ReceivedEvent> received = getReceivedAtLeast(expectedAtLeast, timeout);
             if (received.size() < expectedAtLeast) {

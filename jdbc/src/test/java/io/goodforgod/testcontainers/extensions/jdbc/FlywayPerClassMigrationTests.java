@@ -19,11 +19,13 @@ class FlywayPerClassMigrationTests {
 
     @BeforeAll
     public static void setupAll(@ContainerJdbcConnection JdbcConnection paramConnection) {
+        paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
         assertNotNull(paramConnection);
     }
 
     @BeforeEach
     public void setupEach(@ContainerJdbcConnection JdbcConnection paramConnection) {
+        paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
         assertNotNull(paramConnection);
     }
 

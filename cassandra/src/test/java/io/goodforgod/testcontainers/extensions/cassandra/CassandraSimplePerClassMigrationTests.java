@@ -1,15 +1,12 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS,
-        image = "cassandra:4.1",
         migration = @Migration(
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_CLASS,
@@ -17,6 +14,18 @@ import org.junit.jupiter.api.TestMethodOrder;
                 migrations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CassandraSimplePerClassMigrationTests {
+
+    @BeforeAll
+    public static void setupAll(@ContainerCassandraConnection CassandraConnection paramConnection) {
+        paramConnection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        assertNotNull(paramConnection);
+    }
+
+    @BeforeEach
+    public void setupEach(@ContainerCassandraConnection CassandraConnection paramConnection) {
+        paramConnection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        assertNotNull(paramConnection);
+    }
 
     @Order(1)
     @Test

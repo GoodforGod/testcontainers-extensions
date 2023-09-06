@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS,
-        image = "cassandra:4.1",
         migration = @Migration(
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_METHOD,
