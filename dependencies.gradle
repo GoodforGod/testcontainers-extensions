@@ -28,6 +28,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-cockroach", "org.testcontainers", "cockroachdb").versionRef("testcontainers")
             library("testcontainers-kafka", "org.testcontainers", "kafka").versionRef("testcontainers")
             library("testcontainers-cassandra", "org.testcontainers", "cassandra").versionRef("testcontainers")
+            library("testcontainers-mockserver", "org.testcontainers", "mockserver").versionRef("testcontainers")
 
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-mysql", "org.flywaydb", "flyway-mysql").versionRef("flyway")
@@ -42,6 +43,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-cassandra", "com.datastax.oss", "java-driver-core").version("4.17.0")
             library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.5.1")
             library("driver-redis", "redis.clients", "jedis").version("4.4.3")
+            library("driver-mockserver", "org.mock-server", "mockserver-client-java").version("5.15.0")
 
             library("json", "org.json", "json").version("20230618")
         }

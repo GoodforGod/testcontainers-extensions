@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -62,14 +61,12 @@ final class TestcontainersKafkaExtension extends
                         .withMdc("image", metadata.image())
                         .withMdc("alias", metadata.networkAliasOrDefault()))
                 .withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false")
-                .withEnv("AUTO_CREATE_TOPICS", "true")
                 .withEnv("KAFKA_LOG4J_LOGGERS",
                         "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.network=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=INFO,kafka.log=ERROR,kafka.server=ERROR,state.change.logger=ERROR")
                 .withEnv("ZOOKEEPER_LOG4J_LOGGERS",
                         "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,org.kafka.zookeeper.server=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR")
                 .withEmbeddedZookeeper()
                 .withExposedPorts(9092, KafkaContainer.KAFKA_PORT)
-                .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
         container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));

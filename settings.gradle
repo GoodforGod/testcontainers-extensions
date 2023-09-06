@@ -18,4 +18,5 @@ include "cockroachdb"
 include "kafka"
 include "cassandra"
 include "redis"
+include "mockserver"
 
