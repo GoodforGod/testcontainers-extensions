@@ -8,7 +8,6 @@ import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.*;
 
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS,
-        image = "redis:7.2-alpine",
         network = @Network(shared = false, alias = "my_alias"))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

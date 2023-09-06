@@ -1,14 +1,12 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.example.TestcontainersJdbc;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 
 @TestcontainersJdbc(mode = ContainerMode.PER_CLASS,
         image = "postgres:15.2-alpine",
@@ -18,6 +16,18 @@ import org.junit.jupiter.api.TestMethodOrder;
                 drop = Migration.Mode.PER_CLASS))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class FlywayPerClassMigrationTests {
+
+    @BeforeAll
+    public static void setupAll(@ContainerJdbcConnection JdbcConnection paramConnection) {
+        paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
+        assertNotNull(paramConnection);
+    }
+
+    @BeforeEach
+    public void setupEach(@ContainerJdbcConnection JdbcConnection paramConnection) {
+        paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
+        assertNotNull(paramConnection);
+    }
 
     @Order(1)
     @Test

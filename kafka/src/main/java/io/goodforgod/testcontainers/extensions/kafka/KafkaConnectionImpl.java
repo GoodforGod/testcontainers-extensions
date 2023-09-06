@@ -256,12 +256,6 @@ final class KafkaConnectionImpl implements KafkaConnection {
         }
 
         @Override
-        public @NotNull ReceivedEvent assertReceivedAtLeast(@NotNull Duration timeout) {
-            var received = getReceived(timeout);
-            return received.orElseGet(() -> Assertions.fail("Expected to receive 1 event, but received 0 event"));
-        }
-
-        @Override
         public @NotNull List<ReceivedEvent> assertReceivedAtLeast(int expectedAtLeast, @NotNull Duration timeout) {
             final List<ReceivedEvent> received = getReceivedAtLeast(expectedAtLeast, timeout);
             if (received.size() < expectedAtLeast) {
@@ -425,7 +419,7 @@ final class KafkaConnectionImpl implements KafkaConnection {
 
     private static KafkaConsumer<byte[], byte[]> getConsumer(Properties properties) {
         final Properties consumerProperties = new Properties();
-        final String id = "testcontainers-kafka-" + UUID.randomUUID().toString().substring(0, 9);
+        final String id = "testcontainers-kafka-" + UUID.randomUUID().toString().substring(0, 8);
         consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");

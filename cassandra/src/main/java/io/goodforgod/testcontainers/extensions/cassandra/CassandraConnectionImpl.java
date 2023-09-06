@@ -124,19 +124,22 @@ final class CassandraConnectionImpl implements CassandraConnection {
 
     @NotNull
     public CqlSession get() {
-        return connection;
+        return connection();
     }
 
     @NotNull
     private CqlSession connection() {
         if (connection == null) {
-            connection = open();
+            connection = openConnection();
+        } else if (connection.isClosed()) {
+            connection = openConnection();
         }
+
         return connection;
     }
 
     @NotNull
-    private CqlSession open() {
+    private CqlSession openConnection() {
         logger.debug("Opening CQL connection...");
 
         var config = new DefaultProgrammaticDriverConfigLoaderBuilder()

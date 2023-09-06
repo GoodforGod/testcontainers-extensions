@@ -7,7 +7,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("junit-api", "5.9.3")
             version("junit-platform", "1.9.3")
             version("testcontainers", "1.17.6")
-            version("flyway", "9.20.1")
+            version("flyway", "9.21.2")
             version("liquibase", "4.23.1")
 
             library("slf4j-api", "org.slf4j", "slf4j-api").versionRef("slf4j")

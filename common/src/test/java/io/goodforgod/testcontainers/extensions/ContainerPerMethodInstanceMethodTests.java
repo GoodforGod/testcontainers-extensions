@@ -7,7 +7,7 @@ import io.goodforgod.testcontainers.extensions.example.RedisConnection;
 import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.*;
 
-@TestcontainersRedis(mode = ContainerMode.PER_METHOD, image = "redis:7.2-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_METHOD)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class ContainerPerMethodInstanceMethodTests {

@@ -102,9 +102,9 @@ class TestcontainersMockserverExtension extends
 
     @Override
     public void afterEach(ExtensionContext context) {
-        super.afterEach(context);
-
         var connection = getConnectionCurrent(context);
         connection.client().reset();
+
+        super.afterEach(context);
     }
 }
