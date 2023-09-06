@@ -43,6 +43,7 @@ final class MockserverConnectionImpl implements MockserverConnection {
 
     private final Params params;
     private final Params network;
+
     private final MockServerClient client;
 
     MockserverConnectionImpl(Params params, Params network) {
