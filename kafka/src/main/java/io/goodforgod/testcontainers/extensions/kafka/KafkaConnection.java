@@ -107,6 +107,18 @@ public interface KafkaConnection {
         }
 
         /**
+         * @param timeout to wait for new events
+         * @return try to receive N specified events as list in specified time
+         */
+        @NotNull
+        ReceivedEvent getReceivedAtLeastOne(@NotNull Duration timeout);
+
+        @NotNull
+        default ReceivedEvent getReceivedAtLeastOne() {
+            return getReceivedAtLeastOne(Duration.ofSeconds(15));
+        }
+
+        /**
          * @param timeout        to wait for new events
          * @param expectedEvents to receive
          * @return try to receive N specified events as list in specified time

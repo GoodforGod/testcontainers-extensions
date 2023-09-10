@@ -186,6 +186,11 @@ class KafkaConnectionImpl implements KafkaConnection {
         }
 
         @Override
+        public @NotNull ReceivedEvent getReceivedAtLeastOne(@NotNull Duration timeout) {
+            return getReceivedAtLeast(1, timeout).get(0);
+        }
+
+        @Override
         public @NotNull List<ReceivedEvent> getReceivedAtLeast(int expectedEvents, @NotNull Duration timeout) {
             final List<ReceivedEvent> receivedEvents = new CopyOnWriteArrayList<>();
 
