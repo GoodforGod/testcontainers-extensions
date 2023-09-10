@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.kafka;
 
 import java.time.Duration;
 import java.util.*;
+import org.apache.kafka.clients.admin.Admin;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
@@ -41,6 +42,13 @@ public interface KafkaConnection {
      */
     @NotNull
     Optional<Params> paramsInNetwork();
+
+    @NotNull
+    Admin admin();
+
+    void createTopics(@NotNull Set<String> topics);
+
+    void dropTopics(@NotNull Set<String> topics);
 
     @NotNull
     default KafkaConnectionClosable withProperties(@NotNull Map<String, String> properties) {

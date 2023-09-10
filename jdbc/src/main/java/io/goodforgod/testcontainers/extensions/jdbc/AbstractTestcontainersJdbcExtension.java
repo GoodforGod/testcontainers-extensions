@@ -13,9 +13,6 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
         extends
         AbstractTestcontainersExtension<JdbcConnection, Container, Metadata> {
 
-    private static final JdbcMigrationEngine FLYWAY_ENGINE = new FlywayJdbcMigrationEngine();
-    private static final JdbcMigrationEngine LIQUIBASE_ENGINE = new LiquibaseJdbcMigrationEngine();
-
     @Override
     protected Class<JdbcConnection> getConnectionType() {
         return JdbcConnection.class;
@@ -23,17 +20,17 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
 
     private void tryMigrateIfRequired(JdbcMetadata metadata, JdbcConnection connection) {
         if (metadata.migration().engine() == Migration.Engines.FLYWAY) {
-            FLYWAY_ENGINE.migrate(connection, Arrays.asList(metadata.migration().migrations()));
+            FlywayJdbcMigrationEngine.INSTANCE.migrate(connection, Arrays.asList(metadata.migration().migrations()));
         } else if (metadata.migration().engine() == Migration.Engines.LIQUIBASE) {
-            LIQUIBASE_ENGINE.migrate(connection, Arrays.asList(metadata.migration().migrations()));
+            LiquibaseJdbcMigrationEngine.INSTANCE.migrate(connection, Arrays.asList(metadata.migration().migrations()));
         }
     }
 
     private void tryDropIfRequired(JdbcMetadata metadata, JdbcConnection connection) {
         if (metadata.migration().engine() == Migration.Engines.FLYWAY) {
-            FLYWAY_ENGINE.drop(connection, Arrays.asList(metadata.migration().migrations()));
+            FlywayJdbcMigrationEngine.INSTANCE.drop(connection, Arrays.asList(metadata.migration().migrations()));
         } else if (metadata.migration().engine() == Migration.Engines.LIQUIBASE) {
-            LIQUIBASE_ENGINE.drop(connection, Arrays.asList(metadata.migration().migrations()));
+            LiquibaseJdbcMigrationEngine.INSTANCE.drop(connection, Arrays.asList(metadata.migration().migrations()));
         }
     }
 

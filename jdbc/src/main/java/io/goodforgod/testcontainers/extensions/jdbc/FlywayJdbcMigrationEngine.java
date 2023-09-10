@@ -11,6 +11,10 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(FlywayJdbcMigrationEngine.class);
 
+    public static final JdbcMigrationEngine INSTANCE = new FlywayJdbcMigrationEngine();
+
+    private FlywayJdbcMigrationEngine() {}
+
     private static Flyway getFlyway(JdbcConnection connection, List<String> locations) {
         final List<String> migrationLocations = (locations.isEmpty())
                 ? List.of("classpath:db/migration")

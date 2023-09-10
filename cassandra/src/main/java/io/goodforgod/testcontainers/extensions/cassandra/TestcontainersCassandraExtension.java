@@ -18,8 +18,6 @@ class TestcontainersCassandraExtension extends
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersCassandraExtension.class);
 
-    private static final CassandraMigrationEngine SCRIPT_ENGINE = new ScriptCassandraMigrationEngine();
-
     @Override
     protected Class<CassandraConnection> getConnectionType() {
         return CassandraConnection.class;
@@ -70,13 +68,13 @@ class TestcontainersCassandraExtension extends
 
     private void tryMigrateIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            SCRIPT_ENGINE.migrate(connection, Arrays.asList(annotation.migration().migrations()));
+            ScriptCassandraMigrationEngine.INSTANCE.migrate(connection, Arrays.asList(annotation.migration().migrations()));
         }
     }
 
     private void tryDropIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            SCRIPT_ENGINE.drop(connection, Arrays.asList(annotation.migration().migrations()));
+            ScriptCassandraMigrationEngine.INSTANCE.drop(connection, Arrays.asList(annotation.migration().migrations()));
         }
     }
 

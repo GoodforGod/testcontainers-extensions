@@ -20,7 +20,11 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LiquibaseJdbcMigrationEngine.class);
 
+    public static final JdbcMigrationEngine INSTANCE = new LiquibaseJdbcMigrationEngine();
+
     private static volatile boolean isLiquibaseActivated = false;
+
+    private LiquibaseJdbcMigrationEngine() {}
 
     @FunctionalInterface
     private interface LiquibaseRunner {

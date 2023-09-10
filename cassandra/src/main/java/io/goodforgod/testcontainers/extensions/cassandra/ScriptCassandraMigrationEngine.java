@@ -18,6 +18,8 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
 
     private static final Logger logger = LoggerFactory.getLogger(ScriptCassandraMigrationEngine.class);
 
+    public static final CassandraMigrationEngine INSTANCE = new ScriptCassandraMigrationEngine();
+
     private static class Table {
 
         private final String keyspace;
@@ -36,6 +38,8 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
             return name;
         }
     }
+
+    private ScriptCassandraMigrationEngine() {}
 
     private static List<File> getFilesFromLocations(List<String> locations) {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();

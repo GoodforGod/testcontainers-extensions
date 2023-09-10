@@ -47,6 +47,22 @@ public class MariaDBContainerExtra<SELF extends MariaDBContainerExtra<SELF>> ext
         this.setNetworkAliases(new ArrayList<>(List.of(alias)));
     }
 
+    public void migrate(@NotNull Migration.Engines engine, @NotNull List<String> locations) {
+        if (engine == Migration.Engines.FLYWAY) {
+            FlywayJdbcMigrationEngine.INSTANCE.migrate(connection(), locations);
+        } else if (engine == Migration.Engines.LIQUIBASE) {
+            LiquibaseJdbcMigrationEngine.INSTANCE.migrate(connection(), locations);
+        }
+    }
+
+    public void drop(@NotNull Migration.Engines engine, @NotNull List<String> locations) {
+        if (engine == Migration.Engines.FLYWAY) {
+            FlywayJdbcMigrationEngine.INSTANCE.drop(connection(), locations);
+        } else if (engine == Migration.Engines.LIQUIBASE) {
+            LiquibaseJdbcMigrationEngine.INSTANCE.drop(connection(), locations);
+        }
+    }
+
     @NotNull
     public JdbcConnection connection() {
         if (connection == null) {
