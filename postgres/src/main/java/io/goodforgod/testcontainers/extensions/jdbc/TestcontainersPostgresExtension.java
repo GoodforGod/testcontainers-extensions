@@ -1,20 +1,17 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.lang.annotation.Annotation;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 final class TestcontainersPostgresExtension extends
-        AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>, PostgresMetadata> {
+        AbstractTestcontainersJdbcExtension<PostgreSQLContainerExtra<?>, PostgresMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersPostgresExtension.class);
@@ -30,8 +27,8 @@ final class TestcontainersPostgresExtension extends
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Class<PostgreSQLContainer<?>> getContainerType() {
-        return (Class<PostgreSQLContainer<?>>) ((Class<?>) PostgreSQLContainer.class);
+    protected Class<PostgreSQLContainerExtra<?>> getContainerType() {
+        return (Class<PostgreSQLContainerExtra<?>>) ((Class<?>) PostgreSQLContainerExtra.class);
     }
 
     @Override
@@ -45,19 +42,11 @@ final class TestcontainersPostgresExtension extends
     }
 
     @Override
-    protected PostgreSQLContainer<?> getContainerDefault(PostgresMetadata metadata) {
+    protected PostgreSQLContainerExtra<?> getContainerDefault(PostgresMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
-        var container = new PostgreSQLContainer<>(dockerImage)
-                .withDatabaseName("postgres")
-                .withUsername("postgres")
-                .withPassword("postgres")
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
-                        .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAliasOrDefault()))
-                .withStartupTimeout(Duration.ofMinutes(5));
-
+        var container = new PostgreSQLContainerExtra<>(dockerImage);
         container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
@@ -78,21 +67,9 @@ final class TestcontainersPostgresExtension extends
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(PostgresMetadata metadata, @NotNull PostgreSQLContainer<?> container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
-                .findFirst()
-                .or(() -> container.getNetworkAliases().stream().findFirst())
-                .orElse(null);
-
-        return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
-                container.getHost(),
-                container.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
-                alias,
-                PostgreSQLContainer.POSTGRESQL_PORT,
-                container.getDatabaseName(),
-                container.getUsername(),
-                container.getPassword());
+    protected JdbcConnection getConnectionForContainer(PostgresMetadata metadata,
+                                                       @NotNull PostgreSQLContainerExtra<?> container) {
+        return container.connection();
     }
 
     @NotNull

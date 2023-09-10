@@ -1,36 +1,22 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.lang.annotation.Annotation;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.OracleContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExtension<OracleContainer, OracleMetadata> {
+final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExtension<OracleContainerExtra, OracleMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersOracleExtension.class);
 
-    private static final String PROTOCOL = "oracle:thin";
-    private static final int ORACLE_PORT = 1521;
-
-    private static final String EXTERNAL_TEST_ORACLE_JDBC_URL = "EXTERNAL_TEST_ORACLE_JDBC_URL";
-    private static final String EXTERNAL_TEST_ORACLE_USERNAME = "EXTERNAL_TEST_ORACLE_USERNAME";
-    private static final String EXTERNAL_TEST_ORACLE_PASSWORD = "EXTERNAL_TEST_ORACLE_PASSWORD";
-    private static final String EXTERNAL_TEST_ORACLE_HOST = "EXTERNAL_TEST_ORACLE_HOST";
-    private static final String EXTERNAL_TEST_ORACLE_PORT = "EXTERNAL_TEST_ORACLE_PORT";
-    private static final String EXTERNAL_TEST_ORACLE_DATABASE = "EXTERNAL_TEST_ORACLE_DATABASE";
-
     @Override
-    protected Class<OracleContainer> getContainerType() {
-        return OracleContainer.class;
+    protected Class<OracleContainerExtra> getContainerType() {
+        return OracleContainerExtra.class;
     }
 
     @Override
@@ -44,18 +30,11 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
     }
 
     @Override
-    protected OracleContainer getContainerDefault(OracleMetadata metadata) {
+    protected OracleContainerExtra getContainerDefault(OracleMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("gvenzl/oracle-xe"));
 
-        var container = new OracleContainer(dockerImage)
-                .withPassword("test")
-                .withDatabaseName("oracle")
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
-                        .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAliasOrDefault()))
-                .withStartupTimeout(Duration.ofMinutes(5));
-
+        var container = new OracleContainerExtra(dockerImage);
         container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
@@ -76,42 +55,7 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
     }
 
     @NotNull
-    protected JdbcConnection getConnectionForContainer(OracleMetadata metadata, @NotNull OracleContainer container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
-                .findFirst()
-                .or(() -> container.getNetworkAliases().stream().findFirst())
-                .orElse(null);
-
-        return JdbcConnectionImpl.forJDBC(container.getJdbcUrl(),
-                container.getHost(),
-                container.getMappedPort(ORACLE_PORT),
-                alias,
-                ORACLE_PORT,
-                container.getDatabaseName(),
-                container.getUsername(),
-                container.getPassword());
-    }
-
-    @NotNull
-    protected Optional<JdbcConnection> getConnectionExternal() {
-        var url = System.getenv(EXTERNAL_TEST_ORACLE_JDBC_URL);
-        var host = System.getenv(EXTERNAL_TEST_ORACLE_HOST);
-        var port = System.getenv(EXTERNAL_TEST_ORACLE_PORT);
-        var user = System.getenv(EXTERNAL_TEST_ORACLE_USERNAME);
-        var password = System.getenv(EXTERNAL_TEST_ORACLE_PASSWORD);
-        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_ORACLE_DATABASE)).orElse("xepdb1");
-
-        if (url != null) {
-            if (host != null && port != null) {
-                return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));
-            } else {
-                return Optional.of(JdbcConnectionImpl.forExternal(url, user, password));
-            }
-        } else if (host != null && port != null) {
-            return Optional.of(JdbcConnectionImpl.forProtocol(PROTOCOL, host, Integer.parseInt(port), db, user, password));
-        } else {
-            return Optional.empty();
-        }
+    protected JdbcConnection getConnectionForContainer(OracleMetadata metadata, @NotNull OracleContainerExtra container) {
+        return container.connection();
     }
 }

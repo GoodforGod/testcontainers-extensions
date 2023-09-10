@@ -33,7 +33,7 @@ import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @Internal
-final class KafkaConnectionImpl implements KafkaConnection {
+class KafkaConnectionImpl implements KafkaConnection {
 
     private static final class ParamsImpl implements Params {
 
@@ -340,6 +340,23 @@ final class KafkaConnectionImpl implements KafkaConnection {
     @Override
     public @NotNull Params params() {
         return params;
+    }
+
+    @Override
+    public @NotNull KafkaConnectionClosable withProperties(@NotNull Properties properties) {
+        final Properties kafkaProperties = new Properties();
+        kafkaProperties.putAll(params.properties());
+        kafkaProperties.putAll(properties);
+
+        final Properties networkProperties = paramsInNetwork().map(props -> {
+            final Properties kafkaNetworkProperties = new Properties();
+            kafkaNetworkProperties.putAll(props.properties());
+            kafkaNetworkProperties.putAll(properties);
+            return kafkaNetworkProperties;
+        })
+                .orElse(null);
+
+        return new KafkaConnectionClosableImpl(kafkaProperties, networkProperties);
     }
 
     @Override

@@ -2,38 +2,23 @@ package io.goodforgod.testcontainers.extensions.cassandra;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import java.io.File;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.net.URL;
-import java.nio.file.Files;
-import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.CassandraContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersCassandraExtension extends
-        AbstractTestcontainersExtension<CassandraConnection, CassandraContainer<?>, CassandraMetadata> {
-
-    private static final String EXTERNAL_TEST_CASSANDRA_USERNAME = "EXTERNAL_TEST_CASSANDRA_USERNAME";
-    private static final String EXTERNAL_TEST_CASSANDRA_PASSWORD = "EXTERNAL_TEST_CASSANDRA_PASSWORD";
-    private static final String EXTERNAL_TEST_CASSANDRA_HOST = "EXTERNAL_TEST_CASSANDRA_HOST";
-    private static final String EXTERNAL_TEST_CASSANDRA_PORT = "EXTERNAL_TEST_CASSANDRA_PORT";
-    private static final String EXTERNAL_TEST_CASSANDRA_DATACENTER = "EXTERNAL_TEST_CASSANDRA_DATACENTER";
+        AbstractTestcontainersExtension<CassandraConnection, CassandraContainerExtra<?>, CassandraMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersCassandraExtension.class);
+
+    private static final CassandraMigrationEngine SCRIPT_ENGINE = new ScriptCassandraMigrationEngine();
 
     @Override
     protected Class<CassandraConnection> getConnectionType() {
@@ -41,17 +26,11 @@ class TestcontainersCassandraExtension extends
     }
 
     @Override
-    protected CassandraContainer<?> getContainerDefault(CassandraMetadata metadata) {
+    protected CassandraContainerExtra<?> getContainerDefault(CassandraMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("cassandra"));
 
-        var container = new CassandraContainer<>(dockerImage)
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
-                        .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAliasOrDefault()))
-                .waitingFor(Wait.forListeningPort())
-                .withStartupTimeout(Duration.ofMinutes(5));
-
+        var container = new CassandraContainerExtra<>(dockerImage);
         container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
@@ -66,8 +45,8 @@ class TestcontainersCassandraExtension extends
     }
 
     @SuppressWarnings("unchecked")
-    protected Class<CassandraContainer<?>> getContainerType() {
-        return (Class<CassandraContainer<?>>) ((Class<?>) CassandraContainer.class);
+    protected Class<CassandraContainerExtra<?>> getContainerType() {
+        return (Class<CassandraContainerExtra<?>>) ((Class<?>) CassandraContainerExtra.class);
     }
 
     protected Class<? extends Annotation> getContainerAnnotation() {
@@ -85,126 +64,19 @@ class TestcontainersCassandraExtension extends
     }
 
     @NotNull
-    protected CassandraConnection getConnectionForContainer(CassandraMetadata metadata,
-                                                            @NotNull CassandraContainer<?> container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
-                .findFirst()
-                .or(() -> container.getNetworkAliases().stream().findFirst())
-                .orElse(null);
-
-        return CassandraConnectionImpl.forContainer(container.getHost(),
-                container.getMappedPort(CassandraContainer.CQL_PORT),
-                alias,
-                CassandraContainer.CQL_PORT,
-                container.getLocalDatacenter(),
-                container.getUsername(),
-                container.getPassword());
+    protected CassandraConnection getConnectionForContainer(CassandraMetadata metadata, CassandraContainerExtra<?> container) {
+        return container.connection();
     }
 
-    @NotNull
-    protected Optional<CassandraConnection> getConnectionExternal() {
-        var host = System.getenv(EXTERNAL_TEST_CASSANDRA_HOST);
-        var port = System.getenv(EXTERNAL_TEST_CASSANDRA_PORT);
-        var user = System.getenv(EXTERNAL_TEST_CASSANDRA_USERNAME);
-        var password = System.getenv(EXTERNAL_TEST_CASSANDRA_PASSWORD);
-        var dc = Optional.ofNullable(System.getenv(EXTERNAL_TEST_CASSANDRA_DATACENTER)).orElse("datacenter1");
-
-        if (host != null && port != null) {
-            return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, user, password));
-        } else
-            return Optional.empty();
-    }
-
-    private static List<File> getFilesFromLocations(List<String> locations) {
-        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        return locations.stream()
-                .flatMap(location -> {
-                    final URL url = loader.getResource(location);
-                    final String path = url.getPath();
-                    final File file = new File(path);
-                    return file.isFile()
-                            ? Stream.of(file)
-                            : Arrays.stream(file.listFiles()).sorted();
-                })
-                .collect(Collectors.toList());
-    }
-
-    private static void migrateScripts(CassandraConnection connection, List<String> locations) {
-        final Set<String> validLocations = locations.stream()
-                .filter(Objects::nonNull)
-                .filter(location -> !location.isBlank())
-                .collect(Collectors.toSet());
-
-        if (validLocations.isEmpty()) {
-            throw new IllegalArgumentException("Found 0 valid migration paths: " + locations);
-        }
-
-        final List<File> filesToUseForMigration = getFilesFromLocations(locations);
-        for (File file : filesToUseForMigration) {
-            try {
-                final String cql = Files.readString(file.toPath());
-                final List<String> queries = Arrays.stream(cql.split(";"))
-                        .map(query -> query + ";")
-                        .collect(Collectors.toList());
-
-                for (String query : queries) {
-                    connection.execute(query);
-                }
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Illegal file for migration: " + file.getPath(), e);
-            }
-        }
-    }
-
-    private static class Table {
-
-        private final String keyspace;
-        private final String name;
-
-        private Table(String keyspace, String name) {
-            this.keyspace = keyspace;
-            this.name = name;
-        }
-
-        public String keyspace() {
-            return keyspace;
-        }
-
-        public String name() {
-            return name;
-        }
-    }
-
-    private static void dropScripts(CassandraConnection connection, List<String> locations) {
-        var tables = ((CassandraConnectionImpl) connection).queryMany(
-                "SELECT keyspace_name, table_name FROM system_schema.tables;",
-                r -> new Table(r.getString(0), r.getString(1)));
-
-        for (Table table : tables) {
-            if (!table.keyspace().startsWith("system")) {
-                connection.execute("TRUNCATE TABLE " + table.keyspace() + "." + table.name());
-            }
-        }
-    }
-
-    private void tryMigrateIfRequired(CassandraMetadata annotation, CassandraConnection cassandraConnection) {
+    private void tryMigrateIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            logger.debug("Starting schema migration for engine '{}' for connection: {}",
-                    annotation.migration().engine(), cassandraConnection);
-            migrateScripts(cassandraConnection, Arrays.asList(annotation.migration().migrations()));
-            logger.debug("Finished schema migration for engine '{}' for connection: {}",
-                    annotation.migration().engine(), cassandraConnection);
+            SCRIPT_ENGINE.migrate(connection, Arrays.asList(annotation.migration().migrations()));
         }
     }
 
-    private void tryDropIfRequired(CassandraMetadata annotation, CassandraConnection cassandraConnection) {
+    private void tryDropIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            logger.debug("Starting schema dropping for engine '{}' for connection: {}", annotation.migration().engine(),
-                    cassandraConnection);
-            dropScripts(cassandraConnection, Arrays.asList(annotation.migration().migrations()));
-            logger.debug("Finished schema dropping for engine '{}' for connection: {}",
-                    annotation.migration().engine(), cassandraConnection);
+            SCRIPT_ENGINE.drop(connection, Arrays.asList(annotation.migration().migrations()));
         }
     }
 
@@ -252,11 +124,6 @@ class TestcontainersCassandraExtension extends
             }
         }
 
-        var connectionCurrent = getConnectionCurrent(context);
-        if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            ((CassandraConnectionImpl) connectionCurrent).close();
-        }
-
         super.afterEach(context);
     }
 
@@ -268,10 +135,6 @@ class TestcontainersCassandraExtension extends
             if (metadata.runMode() == ContainerMode.PER_RUN) {
                 tryDropIfRequired(metadata, connectionCurrent);
             }
-        }
-
-        if (metadata.runMode() == ContainerMode.PER_CLASS) {
-            ((CassandraConnectionImpl) connectionCurrent).close();
         }
 
         super.afterAll(context);

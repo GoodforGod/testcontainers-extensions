@@ -77,6 +77,7 @@ final class RedisConnectionImpl implements RedisConnection {
     private final Params params;
     private final Params network;
 
+    private volatile boolean isClosed = false;
     private volatile RedisCommandsImpl jedis;
 
     RedisConnectionImpl(Params params, Params network) {
@@ -123,6 +124,10 @@ final class RedisConnectionImpl implements RedisConnection {
 
     @NotNull
     private RedisCommands connection() {
+        if (isClosed) {
+            throw new IllegalStateException("RedisConnection was closed");
+        }
+
         if (jedis == null) {
             try {
                 var config = DefaultJedisClientConfig.builder()
@@ -314,6 +319,7 @@ final class RedisConnectionImpl implements RedisConnection {
     void close() {
         if (jedis != null) {
             jedis.close();
+            isClosed = true;
         }
     }
 }

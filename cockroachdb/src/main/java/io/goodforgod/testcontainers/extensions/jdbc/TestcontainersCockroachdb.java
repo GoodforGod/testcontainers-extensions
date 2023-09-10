@@ -5,10 +5,10 @@ import io.goodforgod.testcontainers.extensions.Network;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.CockroachContainer;
 
 /**
- * Extension that is running {@link CockroachContainer} for tests in different modes with database
+ * Extension that is running {@link CockroachContainerExtra} for tests in different modes with
+ * database
  * schema migration support between test executions
  */
 @Order(Order.DEFAULT - 100) // Run before other extensions

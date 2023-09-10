@@ -7,10 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.CassandraContainer;
 
 /**
- * Describes active Cassandra connection of currently running {@link CassandraContainer}
+ * Describes active Cassandra connection of currently running {@link CassandraContainerExtra}
  */
 public interface CassandraConnection {
 

@@ -84,6 +84,10 @@ final class MockserverConnectionImpl implements MockserverConnection {
         return client;
     }
 
+    void close() {
+        client.close();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

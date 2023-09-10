@@ -71,10 +71,4 @@ public final class ExampleTestcontainersJdbcExtension extends
                 container.getUsername(),
                 container.getPassword());
     }
-
-    @Override
-    @NotNull
-    protected Optional<JdbcConnection> getConnectionExternal() {
-        return Optional.empty();
-    }
 }

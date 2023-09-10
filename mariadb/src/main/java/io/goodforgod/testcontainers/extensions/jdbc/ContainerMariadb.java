@@ -1,10 +1,9 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.lang.annotation.*;
-import org.testcontainers.containers.MariaDBContainer;
 
 /**
- * Indicates that annotated field containers {@link MariaDBContainer} instance
+ * Indicates that annotated field containers {@link MariaDBContainerExtra} instance
  * that should be used by {@link TestcontainersMariadb} rather than creating default container
  */
 @Documented

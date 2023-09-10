@@ -76,6 +76,7 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
+    private volatile boolean isClosed = false;
     private final Params params;
     private final Params network;
 
@@ -144,6 +145,10 @@ final class JdbcConnectionImpl implements JdbcConnection {
     @NotNull
     @Override
     public Connection open() {
+        if (isClosed) {
+            throw new IllegalStateException("JdbcConnection was closed");
+        }
+
         try {
             logger.debug("Opening SQL connection...");
             return DriverManager.getConnection(params.jdbcUrl(), params.username(), params.username());
@@ -388,6 +393,10 @@ final class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public boolean checkDeleted(String sql) {
         return checkInserted(sql);
+    }
+
+    void close() {
+        this.isClosed = true;
     }
 
     @Override

@@ -5,10 +5,10 @@ import io.goodforgod.testcontainers.extensions.Network;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Extension that is running {@link PostgreSQLContainer} for tests in different modes with database
+ * Extension that is running {@link PostgreSQLContainerExtra} for tests in different modes with
+ * database
  * schema migration support between test executions
  */
 @Order(Order.DEFAULT - 100) // Run before other extensions

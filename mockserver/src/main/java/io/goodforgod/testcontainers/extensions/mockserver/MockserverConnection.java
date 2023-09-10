@@ -7,7 +7,7 @@ import org.mockserver.client.MockServerClient;
 
 /**
  * Describes active Mockserver connection of currently running
- * {@link org.testcontainers.containers.MockServerContainer}
+ * {@link MockServerContainerExtra}
  */
 public interface MockserverConnection {
 

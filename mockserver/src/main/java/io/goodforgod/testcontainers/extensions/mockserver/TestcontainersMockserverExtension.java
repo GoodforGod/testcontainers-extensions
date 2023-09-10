@@ -2,32 +2,24 @@ package io.goodforgod.testcontainers.extensions.mockserver;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
 import java.lang.annotation.Annotation;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersMockserverExtension extends
-        AbstractTestcontainersExtension<MockserverConnection, MockServerContainer, MockserverMetadata> {
-
-    private static final String EXTERNAL_TEST_MOCKSERVER_HOST = "EXTERNAL_TEST_MOCKSERVER_HOST";
-    private static final String EXTERNAL_TEST_MOCKSERVER_PORT = "EXTERNAL_TEST_MOCKSERVER_PORT";
+        AbstractTestcontainersExtension<MockserverConnection, MockServerContainerExtra, MockserverMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersMockserverExtension.class);
 
-    protected Class<MockServerContainer> getContainerType() {
-        return MockServerContainer.class;
+    protected Class<MockServerContainerExtra> getContainerType() {
+        return MockServerContainerExtra.class;
     }
 
     protected Class<? extends Annotation> getContainerAnnotation() {
@@ -44,16 +36,11 @@ class TestcontainersMockserverExtension extends
     }
 
     @Override
-    protected MockServerContainer getContainerDefault(MockserverMetadata metadata) {
+    protected MockServerContainerExtra getContainerDefault(MockserverMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("mockserver/mockserver"));
 
-        var container = new MockServerContainer(dockerImage)
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainer.class))
-                        .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAliasOrDefault()))
-                .waitingFor(Wait.forListeningPort())
-                .withStartupTimeout(Duration.ofMinutes(5));
+        var container = new MockServerContainerExtra(dockerImage);
 
         container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
         if (metadata.networkShared()) {
@@ -75,36 +62,15 @@ class TestcontainersMockserverExtension extends
     }
 
     @NotNull
-    protected MockserverConnection getConnectionForContainer(MockserverMetadata metadata,
-                                                             @NotNull MockServerContainer container) {
-        final String alias = container.getNetworkAliases().stream()
-                .filter(a -> a.equals(metadata.networkAliasOrDefault()))
-                .findFirst()
-                .or(() -> container.getNetworkAliases().stream().findFirst())
-                .orElse(null);
-
-        return MockserverConnectionImpl.forContainer(container.getHost(),
-                container.getMappedPort(MockServerContainer.PORT),
-                alias,
-                MockServerContainer.PORT);
-    }
-
-    @NotNull
-    protected Optional<MockserverConnection> getConnectionExternal() {
-        var host = System.getenv(EXTERNAL_TEST_MOCKSERVER_HOST);
-        var port = System.getenv(EXTERNAL_TEST_MOCKSERVER_PORT);
-
-        if (host != null && port != null) {
-            return Optional.of(MockserverConnectionImpl.forExternal(host, Integer.parseInt(port)));
-        } else
-            return Optional.empty();
+    protected MockserverConnection getConnectionForContainer(MockserverMetadata metadata, MockServerContainerExtra container) {
+        return container.connection();
     }
 
     @Override
-    public void afterEach(ExtensionContext context) {
+    public void beforeEach(ExtensionContext context) {
+        super.beforeEach(context);
+
         var connection = getConnectionCurrent(context);
         connection.client().reset();
-
-        super.afterEach(context);
     }
 }
