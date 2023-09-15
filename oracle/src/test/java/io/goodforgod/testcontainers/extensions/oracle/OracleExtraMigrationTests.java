@@ -13,7 +13,7 @@ class OracleExtraMigrationTests {
         try (var container = new OracleContainerExtra(DockerImageName.parse("gvenzl/oracle-xe:18.4.0-faststart"))) {
             container.start();
             container.migrate(Migration.Engines.FLYWAY, List.of("classpath:db/migration"));
-            container.connection().assertQueriesNone("SELECT * FROM users;");
+            container.connection().assertQueriesNone("SELECT * FROM users");
             container.drop(Migration.Engines.FLYWAY, List.of("classpath:db/migration"));
         }
     }
@@ -23,7 +23,7 @@ class OracleExtraMigrationTests {
         try (var container = new OracleContainerExtra(DockerImageName.parse("gvenzl/oracle-xe:18.4.0-faststart"))) {
             container.start();
             container.migrate(Migration.Engines.LIQUIBASE, List.of("db/changelog.sql"));
-            container.connection().assertQueriesNone("SELECT * FROM users;");
+            container.connection().assertQueriesNone("SELECT * FROM users");
             container.drop(Migration.Engines.LIQUIBASE, List.of("db/changelog.sql"));
         }
     }
