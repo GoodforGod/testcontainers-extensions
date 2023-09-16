@@ -52,15 +52,55 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.1"
 
 ## Content
 - [Container](#container)
+  - [Connection](#container-connection)
+- [Annotation](#annotation)
   - [Manual Container](#manual-container)
-  - [Setup topics](#topics)
-- [Connection](#connection)
-  - [Producer](#producer)
-  - [Consumer](#consumer)
-  - [Properties](#properties)
+  - [Setup topics](#annotation-topics)
+  - [Connection](#annotation-connection)
+  - [Properties](#annotation-properties)
   - [External Connection](#external-connection)
+- [Producer](#producer)
+- [Consumer](#consumer)
 
 ## Container
+
+Library provides special `KafkaContainerExtra` with ability for migration and connection.
+It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new KafkaContainerExtra(DockerImageName.parse("cp-kafka:7.4.1"))) {
+            container.start();
+        }
+    }
+}
+```
+
+### Container Connection
+
+`RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+
+```java
+class ExampleTests {
+
+  @Test
+  void test() {
+    try (var container = new KafkaContainerExtra(DockerImageName.parse("cp-kafka:7.4.1"))) {
+      container.start();
+      var connection = container.connection();
+      
+      var consumer = connection.subscribe("my-topic-name");
+      connection.send("my-topic-name", Event.ofValue("value1"), Event.ofValue("value2"));
+      consumer.assertReceivedAtLeast(2, Duration.ofSeconds(5));
+    }
+  }
+}
+```
+
+## Annotation
 
 `@TestcontainersKafka` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
@@ -164,7 +204,7 @@ Image syntax:
 - Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
 - Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
-### Topics
+### Annotation Topics
 
 It is possible configure topics for creation right after Kafka container started (or before test class started if ContainerMode is PER_RUN), such topics will be created if not exist.
 This can be useful in tests before tested application started and connected to Kafka, especially with Consumers.
@@ -186,12 +226,37 @@ class ExampleTests {
 }
 ```
 
-## Connection
+### Annotation Connection
 
 `KafkaConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerKafkaConnection` annotation.
 `KafkaConnection` provides kafka properties, ability to send events to kafka or consume events from kafka for easier testing.
 
-### Producer
+### Annotation Properties
+
+It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
+
+```java
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.4.1")
+class ExampleTests {
+
+    @ContainerKafkaConnection(properties = { @ContainerKafkaConnection.Property(name = "enable.auto.commit", value = "true") })
+    private KafkaConnection connection;
+}
+```
+
+### External Connection
+
+In case you want to use some external Kafka instance that is running in CI or other place for tests (due to docker limitations or other), 
+you can use special *environment variables* and extension will use them to propagate connection and no Kafka containers will be running in such case.
+
+Special environment variables:
+- `EXTERNAL_TEST_KAFKA_BOOTSTRAP_SERVERS` - Kafka instance boostrap server.
+- Prefix `EXTERNAL_TEST_KAFKA_` - any environmental variable with prefix `EXTERNAL_TEST_KAFKA_` will be converted and used for `KafkaConnection`.
+
+Prefix `EXTERNAL_TEST_KAFKA_` conversion rules: Cut prefix and lower case and replace `_` with `.`.
+Example if found env `EXTERNAL_TEST_KAFKA_AUTO_OFFSET_RESET` it will be converted to `auto.offset.reset`.
+
+## Producer
 
 You can easily send events to any topic (if topic not exist before sending, it will be automatically created).
 
@@ -210,7 +275,7 @@ class ExampleTests {
 }
 ```
 
-### Consumer
+## Consumer
 
 You can easily subscribe and consume events from any topic (if topic not exist before subscribing, it will be automatically created).
 
@@ -235,31 +300,6 @@ class ExampleTests {
     }
 }
 ```
-
-### Properties
-
-It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
-
-```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.4.1")
-class ExampleTests {
-
-    @ContainerKafkaConnection(properties = { @ContainerKafkaConnection.Property(name = "enable.auto.commit", value = "true") })
-    private KafkaConnection connection;
-}
-```
-
-### External Connection
-
-In case you want to use some external Kafka instance that is running in CI or other place for tests (due to docker limitations or other), 
-you can use special *environment variables* and extension will use them to propagate connection and no Kafka containers will be running in such case.
-
-Special environment variables:
-- `EXTERNAL_TEST_KAFKA_BOOTSTRAP_SERVERS` - Kafka instance boostrap server.
-- Prefix `EXTERNAL_TEST_KAFKA_` - any environmental variable with prefix `EXTERNAL_TEST_KAFKA_` will be converted and used for `KafkaConnection`.
-
-Prefix `EXTERNAL_TEST_KAFKA_` conversion rules: Cut prefix and lower case and replace `_` with `.`.
-Example if found env `EXTERNAL_TEST_KAFKA_AUTO_OFFSET_RESET` it will be converted to `auto.offset.reset`.
 
 ## License
 

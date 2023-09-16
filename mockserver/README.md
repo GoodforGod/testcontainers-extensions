@@ -32,12 +32,52 @@ testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.0"
 
 ## Content
 - [Container](#container)
+  - [Connection](#container-connection)
+- [Annotation](#annotation)
   - [Manual Container](#manual-container)
-- [Connection](#connection)
+  - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
-- [Migration](#migration)
 
 ## Container
+
+Library provides special `MockServerContainerExtra` with ability for migration and connection.
+It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new MockServerContainerExtra(DockerImageName.parse("mockserver/mockserver:5.15.0"))) {
+            container.start();
+        }
+    }
+}
+```
+
+### Container Connection
+
+`MockserverConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+
+```java
+class ExampleTests {
+
+  @Test
+  void test() {
+    try (var container = new MockServerContainerExtra(DockerImageName.parse("mockserver/mockserver:5.15.0"))) {
+      container.start();
+      container.connection().client().when(HttpRequest.request()
+                      .withMethod("GET")
+                      .withPath("/get"))
+              .respond(HttpResponse.response()
+                      .withStatusCode(200)
+                      .withBody("OK"));
+    }
+  }
+}
+```
+
+## Annotation
 
 `@TestcontainersMockserver` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
@@ -141,7 +181,7 @@ Image syntax:
 - Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
 - Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
-## Connection
+### Annotation Connection
 
 `MockserverConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerMockserverConnection` annotation.
 `MockserverConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.

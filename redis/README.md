@@ -51,12 +51,50 @@ testImplementation "redis.clients:jedis:4.4.3"
 
 ## Content
 - [Container](#container)
+  - [Connection](#container-connection)
+- [Annotation](#annotation)
   - [Manual Container](#manual-container)
-- [Connection](#connection)
+  - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
-- [Migration](#migration)
 
 ## Container
+
+Library provides special `RedisContainerExtra` with ability for migration and connection.
+It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new RedisContainerExtra<>(DockerImageName.parse("redis:7.2-alpine"))) {
+            container.start();
+        }
+    }
+}
+```
+
+### Container Connection
+
+`RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+
+```java
+class ExampleTests {
+
+  @Test
+  void test() {
+    try (var container = new RedisContainerExtra<>(DockerImageName.parse("redis:7.2-alpine"))) {
+      container.start();
+      var connection = container.connection();
+      connection.commands().set("11", "1");
+      connection.commands().set("12", "2");
+      assertEquals(2, connection.countPrefix(RedisKey.of("1")));
+    }
+  }
+}
+```
+
+## Annotation
 
 `@TestcontainersRedis` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
@@ -160,7 +198,7 @@ Image syntax:
 - Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
 - Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
-## Connection
+### Annotation Connection
 
 `RedisConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerRedisConnection` annotation.
 `RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
