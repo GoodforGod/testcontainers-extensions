@@ -67,7 +67,7 @@ subprojects {
     dependencies {
         compileOnly "org.jetbrains:annotations:24.0.1"
 
-        testRuntimeOnly "ch.qos.logback:logback-classic:1.4.8"
+        testRuntimeOnly "ch.qos.logback:logback-classic:1.4.11"
         testRuntimeOnly libs.junit.engine
         testRuntimeOnly libs.testcontainers.junit
         testImplementation libs.junit.api

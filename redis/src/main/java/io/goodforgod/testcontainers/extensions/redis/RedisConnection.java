@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Describes active Redis connection of currently running {@link RedisContainer}
+ * Describes active Redis connection of currently running {@link RedisContainerExtra}
  */
 public interface RedisConnection {
 

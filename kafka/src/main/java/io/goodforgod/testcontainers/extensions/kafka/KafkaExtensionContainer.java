@@ -5,11 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.KafkaContainer;
 
 @Internal
 final class KafkaExtensionContainer implements
-        ExtensionContainer<KafkaContainer, KafkaConnection> {
+        ExtensionContainer<KafkaContainerExtra, KafkaConnection> {
 
     static final class KafkaConnectionPool {
 
@@ -42,11 +41,11 @@ final class KafkaExtensionContainer implements
         }
     }
 
-    private final KafkaContainer container;
+    private final KafkaContainerExtra container;
     private final KafkaConnection connection;
     private final KafkaConnectionPool pool = new KafkaConnectionPool();
 
-    KafkaExtensionContainer(KafkaContainer container, KafkaConnection connection) {
+    KafkaExtensionContainer(KafkaContainerExtra container, KafkaConnection connection) {
         this.container = container;
         this.connection = connection;
         this.pool.add((KafkaConnectionImpl) connection);
@@ -58,7 +57,7 @@ final class KafkaExtensionContainer implements
     }
 
     @Override
-    public KafkaContainer container() {
+    public KafkaContainerExtra container() {
         return container;
     }
 

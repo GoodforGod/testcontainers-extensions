@@ -5,7 +5,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
-public final class RedisContainer extends GenericContainer<RedisContainer> {
+public class RedisContainer<SELF extends RedisContainer<SELF>> extends GenericContainer<SELF> {
 
     public static final Integer PORT = 6379;
 
@@ -23,10 +23,10 @@ public final class RedisContainer extends GenericContainer<RedisContainer> {
     public RedisContainer(DockerImageName dockerImageName) {
         super(dockerImageName);
         dockerImageName.assertCompatibleWith(IMAGE);
-        withExposedPorts(PORT);
-        withCommand("redis-server", "--requirepass " + DEFAULT_PASSWORD);
-        waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
-        withStartupTimeout(Duration.ofSeconds(30));
+        this.withExposedPorts(PORT);
+        this.withCommand("redis-server", "--requirepass " + DEFAULT_PASSWORD);
+        this.waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
+        this.withStartupTimeout(Duration.ofSeconds(30));
     }
 
     public String getUser() {

@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
@@ -106,8 +105,6 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private Connection externalConnection = null;
-
     protected abstract Class<? extends Annotation> getContainerAnnotation();
 
     protected abstract Class<? extends Annotation> getConnectionAnnotation();
@@ -115,8 +112,6 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     protected abstract Class<Connection> getConnectionType();
 
     protected abstract Class<Container> getContainerType();
-
-    protected abstract Optional<Connection> getConnectionExternal();
 
     protected abstract Optional<Metadata> findMetadata(ExtensionContext context);
 
@@ -147,19 +142,6 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     protected final Connection getConnectionCurrent(ExtensionContext context) {
         return getStorage(context).get(getConnectionType(), getConnectionType());
-    }
-
-    @Nullable
-    protected Connection getConnectionExternalCached() {
-        if (this.externalConnection == null) {
-            this.externalConnection = getConnectionExternal().orElse(null);
-        }
-
-        if (this.externalConnection != null) {
-            logger.debug("Found external connection, no containers will be created during tests: {}", externalConnection);
-        }
-
-        return this.externalConnection;
     }
 
     protected <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
@@ -261,11 +243,6 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
-        Connection externalConnection = getConnectionExternalCached();
-        if (externalConnection != null) {
-            return externalConnection;
-        }
-
         CallMode callMode = getCallMode(parameterContext);
         Connection connection = getConnectionCurrent(extensionContext);
         if (connection != null) {
@@ -314,100 +291,90 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        final Connection externalConnection = getConnectionExternalCached();
         final Metadata metadata = getMetadata(context);
         final ExtensionContext.Store storage = getStorage(context);
-        if (externalConnection == null) {
-            final Connection storageConnection = getConnectionCurrent(context);
-            if (storageConnection == null) {
-                if (metadata.runMode() == ContainerMode.PER_RUN) {
-                    final Optional<Container> containerFromField = getContainerFromField(context);
-                    final SharedKey sharedKey = containerFromField
-                            .map(c -> ((SharedKey) new SharedContainerInstance(c)))
-                            .orElseGet(() -> {
-                                final String imageShared = metadata.image();
-                                final Boolean networkShared = containerFromField.filter(c -> c.getNetwork() != null)
-                                        .map(c -> c.getNetwork() == Network.SHARED)
-                                        .orElse(metadata.networkShared());
+        final Connection storageConnection = getConnectionCurrent(context);
+        if (storageConnection == null) {
+            if (metadata.runMode() == ContainerMode.PER_RUN) {
+                final Optional<Container> containerFromField = getContainerFromField(context);
+                final SharedKey sharedKey = containerFromField
+                        .map(c -> ((SharedKey) new SharedContainerInstance(c)))
+                        .orElseGet(() -> {
+                            final String imageShared = metadata.image();
+                            final Boolean networkShared = containerFromField.filter(c -> c.getNetwork() != null)
+                                    .map(c -> c.getNetwork() == Network.SHARED)
+                                    .orElse(metadata.networkShared());
 
-                                final String networkAlias = containerFromField.map(c -> c.getNetworkAliases())
-                                        .filter(a -> !a.isEmpty())
-                                        .map(a -> a.stream()
-                                                .filter(alias -> alias.equals(metadata.networkAlias()))
-                                                .findFirst()
-                                                .orElse(a.get(0)))
-                                        .orElse(metadata.networkAlias());
+                            final String networkAlias = containerFromField.map(c -> c.getNetworkAliases())
+                                    .filter(a -> !a.isEmpty())
+                                    .map(a -> a.stream()
+                                            .filter(alias -> alias.equals(metadata.networkAlias()))
+                                            .findFirst()
+                                            .orElse(a.get(0)))
+                                    .orElse(metadata.networkAlias());
 
-                                return new SharedContainerKey(imageShared, networkShared, networkAlias);
-                            });
-
-                    var sharedContainerMap = CLASS_TO_SHARED_CONTAINERS.computeIfAbsent(
-                            getClass().getCanonicalName(),
-                            k -> new ConcurrentHashMap<>());
-
-                    var extensionContainer = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
-                        Container container = containerFromField.orElseGet(() -> {
-                            logger.debug("Getting default container for image: {}", metadata.image());
-                            return getContainerDefault(metadata);
+                            return new SharedContainerKey(imageShared, networkShared, networkAlias);
                         });
 
-                        logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                        container.withReuse(true).start();
-                        logger.info("Started in mode '{}' container: {}", metadata.runMode(),
-                                container.getDockerImageName());
-                        Connection connection = getConnectionForContainer(metadata, container);
-                        return getExtensionContainer(container, connection);
-                    });
+                var sharedContainerMap = CLASS_TO_SHARED_CONTAINERS.computeIfAbsent(
+                        getClass().getCanonicalName(),
+                        k -> new ConcurrentHashMap<>());
 
-                    storage.put(metadata.runMode(), extensionContainer);
-                    storage.put(getConnectionType(), extensionContainer.connection());
-                    injectConnection((Connection) extensionContainer.connection(), context);
-                } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
-                    Container container = getContainerFromField(context).orElseGet(() -> {
+                var extensionContainer = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
+                    Container container = containerFromField.orElseGet(() -> {
                         logger.debug("Getting default container for image: {}", metadata.image());
                         return getContainerDefault(metadata);
                     });
 
                     logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                    container.start();
-                    logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
+                    container.withReuse(true).start();
+                    logger.info("Started in mode '{}' container: {}", metadata.runMode(),
+                            container.getDockerImageName());
                     Connection connection = getConnectionForContainer(metadata, container);
-                    ExtensionContainer<Container, Connection> extensionContainer = getExtensionContainer(container, connection);
-                    storage.put(metadata.runMode(), extensionContainer);
-                    storage.put(getConnectionType(), connection);
-                    injectConnection(connection, context);
-                }
+                    return getExtensionContainer(container, connection);
+                });
+
+                storage.put(metadata.runMode(), extensionContainer);
+                storage.put(getConnectionType(), extensionContainer.connection());
+                injectConnection((Connection) extensionContainer.connection(), context);
+            } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
+                Container container = getContainerFromField(context).orElseGet(() -> {
+                    logger.debug("Getting default container for image: {}", metadata.image());
+                    return getContainerDefault(metadata);
+                });
+
+                logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
+                container.start();
+                logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
+                Connection connection = getConnectionForContainer(metadata, container);
+                ExtensionContainer<Container, Connection> extensionContainer = getExtensionContainer(container, connection);
+                storage.put(metadata.runMode(), extensionContainer);
+                storage.put(getConnectionType(), connection);
+                injectConnection(connection, context);
             }
-        } else {
-            storage.put(getConnectionType(), externalConnection);
         }
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        Connection externalConnection = getConnectionExternalCached();
         Metadata metadata = getMetadata(context);
         ExtensionContext.Store storage = getStorage(context);
-        if (externalConnection == null) {
-            Connection storageConnection = getConnectionCurrent(context);
-            if (storageConnection == null) {
-                if (metadata.runMode() == ContainerMode.PER_METHOD) {
-                    Container container = getContainerFromField(context).orElseGet(() -> {
-                        logger.debug("Getting default container for image: {}", metadata.image());
-                        return getContainerDefault(metadata);
-                    });
+        Connection storageConnection = getConnectionCurrent(context);
+        if (storageConnection == null) {
+            if (metadata.runMode() == ContainerMode.PER_METHOD) {
+                Container container = getContainerFromField(context).orElseGet(() -> {
+                    logger.debug("Getting default container for image: {}", metadata.image());
+                    return getContainerDefault(metadata);
+                });
 
-                    logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                    container.start();
-                    logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                    Connection connection = getConnectionForContainer(metadata, container);
-                    ExtensionContainer<Container, Connection> extensionContainer = getExtensionContainer(container, connection);
-                    storage.put(metadata.runMode(), extensionContainer);
-                    storage.put(getConnectionType(), connection);
-                }
+                logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
+                container.start();
+                logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
+                Connection connection = getConnectionForContainer(metadata, container);
+                ExtensionContainer<Container, Connection> extensionContainer = getExtensionContainer(container, connection);
+                storage.put(metadata.runMode(), extensionContainer);
+                storage.put(getConnectionType(), connection);
             }
-        } else {
-            storage.put(getConnectionType(), externalConnection);
         }
 
         TestInstance.Lifecycle lifecycle = context.getTestInstanceLifecycle().orElse(TestInstance.Lifecycle.PER_METHOD);
@@ -426,43 +393,37 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     @Override
     public void afterEach(ExtensionContext context) {
-        Connection externalConnection = getConnectionExternalCached();
-        if (externalConnection == null) {
-            Metadata metadata = getMetadata(context);
-            if (metadata.runMode() == ContainerMode.PER_METHOD) {
-                ExtensionContext.Store storage = getStorage(context);
-                final ExtensionContainer<Container, Connection> extensionContainer = storage.get(metadata.runMode(),
-                        ExtensionContainer.class);
-                if (extensionContainer != null) {
-                    logger.debug("Stopping in mode '{}' container: {}",
-                            metadata.runMode(), extensionContainer.container().getDockerImageName());
-                    extensionContainer.stop();
-                    logger.info("Stopped in mode '{}' container: {}",
-                            metadata.runMode(), extensionContainer.container().getDockerImageName());
+        Metadata metadata = getMetadata(context);
+        if (metadata.runMode() == ContainerMode.PER_METHOD) {
+            ExtensionContext.Store storage = getStorage(context);
+            final ExtensionContainer<Container, Connection> extensionContainer = storage.get(metadata.runMode(),
+                    ExtensionContainer.class);
+            if (extensionContainer != null) {
+                logger.debug("Stopping in mode '{}' container: {}",
+                        metadata.runMode(), extensionContainer.container().getDockerImageName());
+                extensionContainer.stop();
+                logger.info("Stopped in mode '{}' container: {}",
+                        metadata.runMode(), extensionContainer.container().getDockerImageName());
 
-                    storage.remove(getConnectionType());
-                    storage.remove(metadata.runMode());
-                }
+                storage.remove(getConnectionType());
+                storage.remove(metadata.runMode());
             }
         }
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
-        Connection externalConnection = getConnectionExternalCached();
         ExtensionContext.Store storage = getStorage(context);
         Metadata metadata = getMetadata(context);
-        if (externalConnection == null) {
-            if (metadata.runMode() == ContainerMode.PER_CLASS) {
-                final ExtensionContainer<Container, Connection> extensionContainer = storage.get(metadata.runMode(),
-                        ExtensionContainer.class);
-                if (extensionContainer != null) {
-                    logger.debug("Stopping in mode '{}' container: {}",
-                            metadata.runMode(), extensionContainer.container().getDockerImageName());
-                    extensionContainer.stop();
-                    logger.info("Stopped in mode '{}' container: {}",
-                            metadata.runMode(), extensionContainer.container().getDockerImageName());
-                }
+        if (metadata.runMode() == ContainerMode.PER_CLASS) {
+            final ExtensionContainer<Container, Connection> extensionContainer = storage.get(metadata.runMode(),
+                    ExtensionContainer.class);
+            if (extensionContainer != null) {
+                logger.debug("Stopping in mode '{}' container: {}",
+                        metadata.runMode(), extensionContainer.container().getDockerImageName());
+                extensionContainer.stop();
+                logger.info("Stopped in mode '{}' container: {}",
+                        metadata.runMode(), extensionContainer.container().getDockerImageName());
             }
         }
     }

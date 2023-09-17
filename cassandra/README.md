@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.8.0"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.9.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.8.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -51,14 +51,88 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 ```
 
 ## Content
+- [Old Driver](#container-old-driver)
 - [Container](#container)
-  - [Manual Container](#manual-container)
-  - [Container Old Driver](#container-old-driver)
-- [Connection](#connection)
-  - [External Connection](#external-connection)
-- [Migration](#migration)
+  - [Connection](#container-connection)
+  - [Migration](#container-migration)
+- [Annotation](#container)
+  - [Manual](#manual-container)
+  - [Network](#network)
+  - [Connection](#annotation-connection)
+  - [Migration](#annotation-migration)
+- [External Connection](#external-connection)
+
+## Container Old Driver
+
+[Testcontainers Cassandra module](https://java.testcontainers.org/modules/databases/cassandra/) leaks old driver as transitive dependency and uses it in its deprecated APIs.
+
+Library excludes [com.datastax.cassandra:cassandra-driver-core](https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core/3.10.0)
+old driver from dependency leaking due to lots of vulnerabilities, if you require it add such dependency manually yourself.
 
 ## Container
+
+Library provides special `CassandraContainerExtra` with ability for migration and connection.
+It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
+            container.start();
+        }
+    }
+}
+```
+
+### Container Connection
+
+`CassandraConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+
+```java
+class ExampleTests {
+
+  @Test
+  void test() {
+    try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
+      container.start();
+      container.connection().assertQueriesNone("SELECT * FROM cassandra.users;");
+    }
+  }
+}
+```
+
+### Container Migration
+
+`Migrations` allow easily migrate database between test executions and drop after tests.
+
+Annotation parameters:
+- `engine` - to use for migration.
+- `apply` - parameter configures migration mode.
+- `drop` - configures when to reset/drop/clear database.
+
+Available migration engines:
+- Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all cassandra
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
+            container.start();
+            container.migrate(Migration.Engines.SCRIPTS, List.of("migration"));
+            container.connection().assertQueriesNone("SELECT * FROM cassandra.users;");
+            container.drop(Migration.Engines.SCRIPTS, List.of("migration"));
+        }
+    }
+}
+```
+
+## Annotation
+
+Library provides annotation based approach for creating container.
 
 `@TestcontainersCassandra` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
@@ -162,14 +236,7 @@ Image syntax:
 - Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
 - Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
-## Container Old Driver
-
-[Testcontainers Cassandra module](https://java.testcontainers.org/modules/databases/cassandra/) leaks old driver as transitive dependency and uses it in its deprecated APIs.
-
-Library excludes [com.datastax.cassandra:cassandra-driver-core](https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core/3.10.0)
-old driver from dependency leaking due to lots of vulnerabilities, if you require it add such dependency manually yourself.
-
-## Connection
+### Annotation Connection
 
 `CassandraConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerCassandraConnection` annotation.
 `CassandraConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
@@ -192,19 +259,7 @@ class ExampleTests {
 }
 ```
 
-### External Connection
-
-In case you want to use some external Cassandra instance that is running in CI or other place for tests (due to docker limitations or other), 
-you can use special *environment variables* and extension will use them to propagate connection and no Cassandra containers will be running in such case.
-
-Special environment variables:
-- `EXTERNAL_TEST_CASSANDRA_USERNAME` - Cassandra instance username (optional).
-- `EXTERNAL_TEST_CASSANDRA_PASSWORD` - Cassandra instance password (optional).
-- `EXTERNAL_TEST_CASSANDRA_HOST` - Cassandra instance host.
-- `EXTERNAL_TEST_CASSANDRA_PORT` - Cassandra instance port.
-- `EXTERNAL_TEST_CASSANDRA_DATACENTER` - Cassandra instance database (`datacenter1` by default).
-
-## Migration
+### Annotation Migration
 
 `@Migrations` allow easily migrate database between test executions and drop after tests.
 
@@ -215,7 +270,6 @@ Annotation parameters:
 
 Available migration engines:
 - Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all cassandra
-
 
 Given engine is Scripts and migration file named `setup.sql` is in resource directory `migration`:
 ```sql
@@ -249,6 +303,18 @@ class ExampleTests {
 }
 ```
 
+### External Connection
+
+In case you want to use some external Cassandra instance that is running in CI or other place for tests (due to docker limitations or other),
+you can use special *environment variables* and extension will use them to propagate connection and no Cassandra containers will be running in such case.
+
+Special environment variables:
+- `EXTERNAL_TEST_CASSANDRA_USERNAME` - Cassandra instance username (optional).
+- `EXTERNAL_TEST_CASSANDRA_PASSWORD` - Cassandra instance password (optional).
+- `EXTERNAL_TEST_CASSANDRA_HOST` - Cassandra instance host.
+- `EXTERNAL_TEST_CASSANDRA_PORT` - Cassandra instance port.
+- `EXTERNAL_TEST_CASSANDRA_DATACENTER` - Cassandra instance database (`datacenter1` by default).
+- 
 ## License
 
 This project licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.

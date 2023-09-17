@@ -1,10 +1,9 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
 import java.lang.annotation.*;
-import org.testcontainers.containers.KafkaContainer;
 
 /**
- * Indicates that annotated field containers {@link KafkaContainer} instance
+ * Indicates that annotated field containers {@link KafkaContainerExtra} instance
  * that should be used by {@link TestcontainersKafka} rather than creating default container
  */
 @Documented

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.time.Duration;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
@@ -13,6 +15,17 @@ class KafkaConnectionAssertsTests {
 
     @ContainerKafkaConnection
     private KafkaConnection connection;
+
+    @Test
+    void admin() throws Exception {
+        connection.createTopics(Set.of("test-topic"));
+        final Set<String> createdTopics = connection.admin().listTopics().names().get(10, TimeUnit.SECONDS);
+        assertTrue(createdTopics.contains("test-topic"));
+
+        connection.dropTopics(Set.of("test-topic"));
+        final Set<String> droppedTopics = connection.admin().listTopics().names().get(10, TimeUnit.SECONDS);
+        assertFalse(droppedTopics.contains("test-topic"));
+    }
 
     @Test
     void getReceived() {

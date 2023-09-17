@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.8.0"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.9.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.8.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -52,12 +52,77 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 
 ## Content
 - [Container](#container)
+  - [Connection](#container-connection)
+  - [Migration](#container-migration)
+- [Annotation](#annotation)
   - [Manual Container](#manual-container)
-- [Connection](#connection)
+  - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
-- [Migration](#migration)
+  - [Migration](#annotation-migration)
 
 ## Container
+
+Library provides special `PostgreSQLContainerExtra` with ability for migration and connection.
+It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.3-alpine"))) {
+            container.start();
+        }
+    }
+}
+```
+
+### Container Connection
+
+`JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+
+```java
+class ExampleTests {
+
+  @Test
+  void test() {
+    try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.3-alpine"))) {
+      container.start();
+      container.connection().assertQueriesNone("SELECT * FROM users;");
+    }
+  }
+}
+```
+
+### Container Migration
+
+`Migrations` allow easily migrate database between test executions and drop after tests.
+
+Annotation parameters:
+- `engine` - to use for migration.
+- `apply` - parameter configures migration mode.
+- `drop` - configures when to reset/drop/clear database.
+
+Available migration engines:
+- [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
+- [Liquibase](https://www.liquibase.com/databases/cockroachdb-2)
+
+```java
+class ExampleTests {
+
+    @Test
+    void test() {
+        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.3-alpine"))) {
+            container.start();
+            container.migrate(Migration.Engines.FLYWAY, List.of("db/migration"));
+            container.connection().assertQueriesNone("SELECT * FROM users;");
+            container.drop(Migration.Engines.Flyway, List.of("db/migration"));
+        }
+    }
+}
+```
+
+## Annotation
 
 `@TestcontainersPostgres` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
@@ -163,7 +228,7 @@ Image syntax:
 - Image can be provided via environment variable using syntax: `${MY_ALIAS_ENV}`
 - Image environment variable can have default value if empty using syntax: `${MY_ALIAS_ENV|my-alias-default}`
 
-## Connection
+### Annotation Connection
 
 `JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerPostgresConnection` annotation.
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
@@ -206,7 +271,7 @@ or use combination of `EXTERNAL_TEST_POSTGRES_HOST` & `EXTERNAL_TEST_POSTGRES_PO
 
 `EXTERNAL_TEST_POSTGRES_JDBC_URL` env have higher priority over host & port & database.
 
-## Migration
+### Annotation Migration
 
 `@Migrations` allow easily migrate database between test executions and drop after tests.
 

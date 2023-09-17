@@ -1,10 +1,9 @@
 package io.goodforgod.testcontainers.extensions.mockserver;
 
 import java.lang.annotation.*;
-import org.testcontainers.containers.MockServerContainer;
 
 /**
- * Indicates that annotated field containers {@link MockServerContainer} instance
+ * Indicates that annotated field containers {@link MockServerContainerExtra} instance
  * that should be used by {@link TestcontainersMockserver} rather than creating default container
  */
 @Documented

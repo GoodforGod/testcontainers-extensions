@@ -1,10 +1,9 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.lang.annotation.*;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Indicates that annotated field containers {@link PostgreSQLContainer} instance
+ * Indicates that annotated field containers {@link PostgreSQLContainerExtra} instance
  * that should be used by {@link TestcontainersPostgres} rather than creating default container
  */
 @Documented

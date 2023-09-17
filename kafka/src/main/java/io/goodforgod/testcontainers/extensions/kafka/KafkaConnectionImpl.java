@@ -33,7 +33,7 @@ import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
 @Internal
-final class KafkaConnectionImpl implements KafkaConnection {
+class KafkaConnectionImpl implements KafkaConnection {
 
     private static final class ParamsImpl implements Params {
 
@@ -183,6 +183,11 @@ final class KafkaConnectionImpl implements KafkaConnection {
             } catch (InterruptedException e) {
                 return Assertions.fail("Expected to receive 1 event, but was interrupted: " + e.getMessage());
             }
+        }
+
+        @Override
+        public @NotNull ReceivedEvent getReceivedAtLeastOne(@NotNull Duration timeout) {
+            return getReceivedAtLeast(1, timeout).get(0);
         }
 
         @Override
@@ -343,6 +348,23 @@ final class KafkaConnectionImpl implements KafkaConnection {
     }
 
     @Override
+    public @NotNull KafkaConnectionClosable withProperties(@NotNull Properties properties) {
+        final Properties kafkaProperties = new Properties();
+        kafkaProperties.putAll(params.properties());
+        kafkaProperties.putAll(properties);
+
+        final Properties networkProperties = paramsInNetwork().map(props -> {
+            final Properties kafkaNetworkProperties = new Properties();
+            kafkaNetworkProperties.putAll(props.properties());
+            kafkaNetworkProperties.putAll(properties);
+            return kafkaNetworkProperties;
+        })
+                .orElse(null);
+
+        return new KafkaConnectionClosableImpl(kafkaProperties, networkProperties);
+    }
+
+    @Override
     public void send(@NotNull String topic, @NotNull Event... events) {
         send(topic, Arrays.asList(events));
     }
@@ -483,6 +505,71 @@ final class KafkaConnectionImpl implements KafkaConnection {
                 logger.trace("Required topics already exist: {}", topics);
             } else {
                 throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
+            }
+        } catch (Exception e) {
+            throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
+        }
+    }
+
+    @Override
+    public @NotNull Admin admin() {
+        final Properties adminProperties = new Properties();
+        adminProperties.putAll(params.properties());
+        return Admin.create(adminProperties);
+    }
+
+    @Override
+    public void createTopics(@NotNull Set<String> topics) {
+        try (var admin = admin()) {
+            logger.trace("Looking for existing topics...");
+            var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
+            logger.trace("Found existing topics: {}", existingTopics);
+
+            var topicsToCreate = topics.stream()
+                    .filter(topic -> !existingTopics.contains(topic))
+                    .map(topic -> new NewTopic(topic, Optional.of(1), Optional.empty()))
+                    .collect(Collectors.toSet());
+
+            if (!topicsToCreate.isEmpty()) {
+                logger.trace("Creating topics: {}", topics);
+                var result = admin.createTopics(topicsToCreate);
+                result.all().get(2, TimeUnit.MINUTES);
+                logger.info("Created topics: {}", topics);
+            } else {
+                logger.trace("Required topics already exist: {}", topics);
+            }
+        } catch (TopicExistsException e) {
+            logger.trace("Required topics already exist: {}", topics);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof TopicExistsException) {
+                logger.trace("Required topics already exist: {}", topics);
+            } else {
+                throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
+            }
+        } catch (Exception e) {
+            throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
+        }
+    }
+
+    @Override
+    public void dropTopics(@NotNull Set<String> topics) {
+        try (var admin = admin()) {
+            logger.trace("Looking for existing topics...");
+            var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
+            logger.trace("Found existing topics: {}", existingTopics);
+
+            var topicsToDrop = existingTopics.stream()
+                    .filter(topics::contains)
+                    .collect(Collectors.toSet());
+
+            if (!topicsToDrop.isEmpty()) {
+                logger.trace("Dropping topics: {}", topicsToDrop);
+                var deleteTopicsResult = admin.deleteTopics(topics);
+                var deleteFutures = deleteTopicsResult.topicNameValues().values().toArray(KafkaFuture[]::new);
+                KafkaFuture.allOf(deleteFutures).get(2, TimeUnit.MINUTES);
+                logger.info("Dropped topics: {}", topicsToDrop);
+            } else {
+                logger.trace("Required topics already dropped: {}", topics);
             }
         } catch (Exception e) {
             throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);

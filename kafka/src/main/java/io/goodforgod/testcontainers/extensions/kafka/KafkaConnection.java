@@ -1,10 +1,8 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
+import org.apache.kafka.clients.admin.Admin;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
@@ -44,6 +42,23 @@ public interface KafkaConnection {
      */
     @NotNull
     Optional<Params> paramsInNetwork();
+
+    @NotNull
+    Admin admin();
+
+    void createTopics(@NotNull Set<String> topics);
+
+    void dropTopics(@NotNull Set<String> topics);
+
+    @NotNull
+    default KafkaConnectionClosable withProperties(@NotNull Map<String, String> properties) {
+        final Properties props = new Properties();
+        props.putAll(properties);
+        return withProperties(props);
+    }
+
+    @NotNull
+    KafkaConnectionClosable withProperties(@NotNull Properties properties);
 
     void send(@NotNull String topic, @NotNull Event... events);
 
@@ -89,6 +104,18 @@ public interface KafkaConnection {
         @NotNull
         default Optional<ReceivedEvent> getReceived() {
             return getReceived(Duration.ofSeconds(15));
+        }
+
+        /**
+         * @param timeout to wait for new events
+         * @return try to receive N specified events as list in specified time
+         */
+        @NotNull
+        ReceivedEvent getReceivedAtLeastOne(@NotNull Duration timeout);
+
+        @NotNull
+        default ReceivedEvent getReceivedAtLeastOne() {
+            return getReceivedAtLeastOne(Duration.ofSeconds(15));
         }
 
         /**
