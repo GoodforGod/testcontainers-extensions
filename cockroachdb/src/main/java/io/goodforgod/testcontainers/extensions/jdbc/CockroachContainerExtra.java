@@ -32,7 +32,7 @@ public class CockroachContainerExtra extends CockroachContainer {
         super(dockerImageName);
 
         final String alias = "cockroachdb-" + System.currentTimeMillis();
-        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
+        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainerExtra.class))
                 .withMdc("image", dockerImageName.asCanonicalNameString())
                 .withMdc("alias", alias));
         this.withStartupTimeout(Duration.ofMinutes(5));

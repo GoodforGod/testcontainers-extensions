@@ -27,7 +27,7 @@ public class RedisContainerExtra<SELF extends RedisContainerExtra<SELF>> extends
         super(dockerImageName);
 
         final String alias = "redis-" + System.currentTimeMillis();
-        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
+        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainerExtra.class))
                 .withMdc("image", dockerImageName.asCanonicalNameString())
                 .withMdc("alias", alias))
                 .withStartupTimeout(Duration.ofMinutes(5));

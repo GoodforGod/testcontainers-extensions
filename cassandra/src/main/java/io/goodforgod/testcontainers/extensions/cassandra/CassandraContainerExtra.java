@@ -29,7 +29,7 @@ public class CassandraContainerExtra<SELF extends CassandraContainerExtra<SELF>>
         super(dockerImageName);
 
         final String alias = "cassandra-" + System.currentTimeMillis();
-        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
+        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainerExtra.class))
                 .withMdc("image", dockerImageName.asCanonicalNameString())
                 .withMdc("alias", alias));
         this.waitingFor(Wait.forListeningPort());
@@ -96,7 +96,8 @@ public class CassandraContainerExtra<SELF extends CassandraContainerExtra<SELF>>
 
         if (host != null && port != null) {
             return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, user, password));
-        } else
+        } else {
             return Optional.empty();
+        }
     }
 }

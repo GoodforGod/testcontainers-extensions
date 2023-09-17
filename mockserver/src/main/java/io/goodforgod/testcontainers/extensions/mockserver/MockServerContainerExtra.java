@@ -26,7 +26,7 @@ public class MockServerContainerExtra extends MockServerContainer {
         super(dockerImageName);
 
         final String alias = "mockserver-" + System.currentTimeMillis();
-        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainer.class))
+        this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainerExtra.class))
                 .withMdc("image", dockerImageName.asCanonicalNameString())
                 .withMdc("alias", alias));
         this.waitingFor(Wait.forListeningPort());
