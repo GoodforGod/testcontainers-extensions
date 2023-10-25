@@ -39,7 +39,7 @@ jobs:
 
       - name: SonarQube
         if: matrix.java == '17'
-        run: './gradlew sonar'
+        run: './gradlew sonar --info'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
