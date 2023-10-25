@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MockServerContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 public class MockServerContainerExtra extends MockServerContainer {
@@ -29,9 +28,7 @@ public class MockServerContainerExtra extends MockServerContainer {
         this.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainerExtra.class))
                 .withMdc("image", dockerImageName.asCanonicalNameString())
                 .withMdc("alias", alias));
-        this.waitingFor(Wait.forListeningPort());
         this.withStartupTimeout(Duration.ofMinutes(5));
-
         this.setNetworkAliases(new ArrayList<>(List.of(alias)));
     }
 

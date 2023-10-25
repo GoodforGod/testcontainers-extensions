@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
 import java.time.Duration;
+import org.jetbrains.annotations.NotNull;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -16,6 +17,8 @@ public class RedisContainer<SELF extends RedisContainer<SELF>> extends GenericCo
     private static final String DEFAULT_PASSWORD = "redis";
     private static final int DEFAULT_DATABASE = 0;
 
+    private Duration waitAfterStart = Duration.ZERO;
+
     public RedisContainer(String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
     }
@@ -27,6 +30,19 @@ public class RedisContainer<SELF extends RedisContainer<SELF>> extends GenericCo
         this.withCommand("redis-server", "--requirepass " + DEFAULT_PASSWORD);
         this.waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
         this.withStartupTimeout(Duration.ofSeconds(30));
+    }
+
+    @Override
+    public void start() {
+        super.start();
+
+        if (waitAfterStart != Duration.ZERO) {
+            try {
+                Thread.sleep(waitAfterStart.toMillis());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public String getUser() {
@@ -43,5 +59,10 @@ public class RedisContainer<SELF extends RedisContainer<SELF>> extends GenericCo
 
     public int getPort() {
         return getMappedPort(PORT);
+    }
+
+    public SELF waitAfterStart(@NotNull Duration duration) {
+        this.waitAfterStart = duration;
+        return self();
     }
 }
