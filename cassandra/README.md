@@ -51,6 +51,7 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 ```
 
 ## Content
+- [Usage](#usage)
 - [Old Driver](#container-old-driver)
 - [Container](#container)
   - [Connection](#container-connection)
@@ -61,6 +62,29 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
   - [Connection](#annotation-connection)
   - [Migration](#annotation-migration)
 - [External Connection](#external-connection)
+
+## Usage
+
+Test with container start in `PER_RUN` mode and migration per method will look like:
+
+```java
+@TestcontainersCassandra(mode = ContainerMode.PER_RUN,
+        migration = @Migration(
+                engine = Migration.Engines.SCRIPTS,
+                apply = Migration.Mode.PER_METHOD,
+                drop = Migration.Mode.PER_METHOD,
+                migrations = { "migration/setup.cql" }
+        ))
+class ExampleTests {
+
+    @Test
+    void test(@ContainerCassandraConnection CassandraConnection connection) {
+        connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
+        var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        assertEquals(1, usersFound.size());
+    }
+}
+```
 
 ## Container Old Driver
 

@@ -51,6 +51,7 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.1"
 ```
 
 ## Content
+- [Usage](#usage)
 - [Container](#container)
   - [Connection](#container-connection)
 - [Annotation](#annotation)
@@ -61,6 +62,22 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.1"
   - [External Connection](#external-connection)
 - [Producer](#producer)
 - [Consumer](#consumer)
+
+## Usage
+
+Test with container start in `PER_RUN` mode and topic reset per method will look like:
+
+```java
+@TestcontainersKafka(mode = ContainerMode.PER_RUN,
+        topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
+class ExampleTests {
+
+  @Test
+  void test(@ContainerKafkaConnection KafkaConnection connection) {
+    connection.send("my-topic-name", Event.ofValue("{\"name\":\"User\"}"));
+  }
+}
+```
 
 ## Container
 

@@ -54,6 +54,7 @@ Oracle behavior differently based on [Database version](https://hub.docker.com/r
 Extension tested against image `gvenzl/oracle-xe:18.4.0-faststart` and driver `com.oracle.database.jdbc:ojdbc8:21.5.0.0`.
 
 ## Content
+- [Usage](#usage)
 - [Container](#container)
   - [Connection](#container-connection)
   - [Migration](#container-migration)
@@ -62,6 +63,27 @@ Extension tested against image `gvenzl/oracle-xe:18.4.0-faststart` and driver `c
   - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
   - [Migration](#annotation-migration)
+
+## Usage
+
+Test with container start in `PER_RUN` mode and migration per method will look like:
+
+```java
+@TestcontainersOracle(mode = ContainerMode.PER_RUN,
+        migration = @Migration(
+                engine = Migration.Engines.FLYWAY,
+                apply = Migration.Mode.PER_METHOD,
+                drop = Migration.Mode.PER_METHOD))
+class ExampleTests {
+
+  @Test
+  void test(@ContainerOracleConnection JdbcConnection connection) {
+    connection.execute("INSERT INTO users VALUES(1)");
+    var usersFound = connection.queryMany("SELECT * FROM users", r -> r.getInt(1));
+    assertEquals(1, usersFound.size());
+  }
+}
+```
 
 ## Container
 

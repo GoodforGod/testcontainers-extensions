@@ -51,6 +51,7 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 ```
 
 ## Content
+- [Usage](#usage)
 - [Container](#container)
   - [Connection](#container-connection)
   - [Migration](#container-migration)
@@ -59,6 +60,27 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
   - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
   - [Migration](#annotation-migration)
+
+## Usage
+
+Test with container start in `PER_RUN` mode and migration per method will look like:
+
+```java
+@TestcontainersPostgres(mode = ContainerMode.PER_RUN,
+        migration = @Migration(
+                engine = Migration.Engines.FLYWAY,
+                apply = Migration.Mode.PER_METHOD,
+                drop = Migration.Mode.PER_METHOD))
+class ExampleTests {
+
+  @Test
+  void test(@ContainerPostgresConnection JdbcConnection connection) {
+    connection.execute("INSERT INTO users VALUES(1);");
+    var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
+    assertEquals(1, usersFound.size());
+  }
+}
+```
 
 ## Container
 

@@ -50,12 +50,30 @@ testImplementation "redis.clients:jedis:4.4.3"
 ```
 
 ## Content
+- [Usage](#usage)
 - [Container](#container)
   - [Connection](#container-connection)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
+
+## Usage
+
+Test with container start in `PER_RUN` mode will look like:
+
+```java
+@TestcontainersRedis(mode = ContainerMode.PER_RUN)
+class ExampleTests {
+
+  @Test
+  void test(@ContainerRedisConnection RedisConnection connection) {
+    connection.commands().set("11", "1");
+    connection.commands().set("12", "2");
+    assertEquals(2, connection.countPrefix(RedisKey.of("1")));
+  }
+}
+```
 
 ## Container
 

@@ -31,12 +31,33 @@ testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.0"
 ```
 
 ## Content
+- [Usage](#usage)
 - [Container](#container)
   - [Connection](#container-connection)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
   - [External Connection](#external-connection)
+
+## Usage
+
+Test with container start in `PER_RUN` mode will look like:
+
+```java
+@TestcontainersMockserver(mode = ContainerMode.PER_RUN)
+class ExampleTests {
+
+  @Test
+  void test(@ContainerMockserverConnection MockserverConnection connection) {
+    connection.client().when(HttpRequest.request()
+                    .withMethod("GET")
+                    .withPath("/get"))
+            .respond(HttpResponse.response()
+                    .withStatusCode(200)
+                    .withBody("OK"));
+  }
+}
+```
 
 ## Container
 
