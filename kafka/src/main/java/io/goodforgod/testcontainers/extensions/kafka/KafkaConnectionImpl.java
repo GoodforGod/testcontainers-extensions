@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -104,48 +104,32 @@ class KafkaConnectionImpl implements KafkaConnection {
         private final KafkaConsumer<byte[], byte[]> consumer;
         private final BlockingQueue<ConsumerRecord<byte[], byte[]>> messageQueue = new LinkedBlockingDeque<>();
         private final Set<String> topics;
-        private final String groupId;
+        private final String clientId;
 
-        ConsumerImpl(KafkaConsumer<byte[], byte[]> consumer, Set<String> topics) {
-            this.groupId = consumer.groupMetadata().groupId();
+        ConsumerImpl(KafkaConsumer<byte[], byte[]> consumer, String clientId, Collection<TopicPartition> topicPartitions) {
             this.consumer = consumer;
-            this.topics = topics;
+            this.clientId = clientId;
+            this.topics = topicPartitions.stream().map(TopicPartition::topic).collect(Collectors.toSet());
 
-            final AtomicBoolean wait = new AtomicBoolean(true);
-            this.consumer.subscribe(topics, new ConsumerRebalanceListener() {
-
-                @Override
-                public void onPartitionsRevoked(Collection<TopicPartition> partitions) {}
-
-                @Override
-                public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-                    logger.info("KafkaConsumer '{}' partitions assigned: {}", groupId, partitions);
-                    wait.set(false);
-                }
-            });
-
-            this.executor.execute(this::launch);
-
-            while (wait.get()) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    // do nothing
-                }
+            this.consumer.assign(topicPartitions);
+            Set<TopicPartition> assignment = this.consumer.assignment();
+            if (assignment.isEmpty()) {
+                throw new IllegalStateException("OPS");
             }
+            this.executor.execute(this::launch);
         }
 
         private void launch() {
-            logger.info("KafkaConsumer '{}' started consuming events from topics: {}", groupId, topics);
+            logger.info("KafkaConsumer '{}' started consuming events from topics: {}", clientId, topics);
             while (isActive.get()) {
                 try {
                     poll(Duration.ofMillis(50));
                 } catch (WakeupException | InterruptException ignore) {
                     // do nothing
                 } catch (Exception e) {
-                    logger.error("KafkaConsumer '{}' for {} topics got unhandled exception", groupId, topics, e);
+                    logger.error("KafkaConsumer '{}' for {} topics got unhandled exception", clientId, topics, e);
                     consumer.close(Duration.ofMinutes(5));
-                    break;
+                    throw e;
                 }
             }
         }
@@ -153,15 +137,14 @@ class KafkaConnectionImpl implements KafkaConnection {
         private void poll(Duration maxPollTimeout) {
             var records = consumer.poll(maxPollTimeout);
             if (!records.isEmpty()) {
-                logger.info("KafkaConsumer '{}' polled '{}' records from topics: {}", groupId, records.count(), topics);
+                logger.info("KafkaConsumer '{}' polled '{}' records from topics: {}", clientId, records.count(), topics);
             } else {
-                logger.trace("KafkaConsumer '{}' polled '{}' records...", groupId, records.count());
+                logger.trace("KafkaConsumer '{}' polled '{}' records...", clientId, records.count());
             }
 
             for (var record : records) {
                 messageQueue.offer(record);
             }
-            consumer.commitSync();
         }
 
         @Override
@@ -261,6 +244,11 @@ class KafkaConnectionImpl implements KafkaConnection {
         }
 
         @Override
+        public @NotNull ReceivedEvent assertReceivedAtLeastOne(@NotNull Duration timeout) {
+            return assertReceivedAtLeast(1, timeout).get(0);
+        }
+
+        @Override
         public @NotNull List<ReceivedEvent> assertReceivedAtLeast(int expectedAtLeast, @NotNull Duration timeout) {
             final List<ReceivedEvent> received = getReceivedAtLeast(expectedAtLeast, timeout);
             if (received.size() < expectedAtLeast) {
@@ -318,7 +306,7 @@ class KafkaConnectionImpl implements KafkaConnection {
 
         void close() {
             if (isActive.compareAndSet(true, false)) {
-                logger.debug("Stopping KafkaConsumer '{}' for {} topics...", groupId, topics);
+                logger.debug("Stopping KafkaConsumer '{}' for {} topics...", clientId, topics);
                 final long started = System.nanoTime();
 
                 try {
@@ -330,7 +318,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                     // do nothing
                 } finally {
                     reset();
-                    logger.info("Stopped KafkaConsumer '{}' for {} topics took {}", groupId, topics,
+                    logger.info("Stopped KafkaConsumer '{}' for {} topics took {}", clientId, topics,
                             Duration.ofNanos(System.nanoTime() - started));
                 }
             }
@@ -419,11 +407,28 @@ class KafkaConnectionImpl implements KafkaConnection {
             throw new KafkaConnectionException("Can't subscribed cause was closed");
         }
 
-        createTopicsIfNeeded(this, topics);
+        try (var admin = getAdmin(params.properties)) {
+            createTopicsIfNeeded(admin, this, topics, false);
 
-        try {
-            var kafkaConsumer = getConsumer(params.properties());
-            var consumer = new ConsumerImpl(kafkaConsumer, topics);
+            var topicInfo = Awaitility.await().atMost(Duration.ofMinutes(1))
+                    .pollInterval(Duration.ofMillis(100))
+                    .until(() -> {
+                        try {
+                            return admin.describeTopics(topics).allTopicNames().get(1, TimeUnit.MINUTES);
+                        } catch (Exception e) {
+                            return Collections.<String, TopicDescription>emptyMap();
+                        }
+                    }, result -> result.keySet().containsAll(topics));
+
+            var topicPartition = topicInfo.entrySet().stream()
+                    .filter(e -> topics.contains(e.getValue().name()))
+                    .flatMap(e -> e.getValue().partitions().stream()
+                            .map(p -> new TopicPartition(e.getValue().name(), p.partition())))
+                    .collect(Collectors.toSet());
+
+            final String id = "testcontainers-kafka-" + UUID.randomUUID().toString().substring(0, 8);
+            var kafkaConsumer = getConsumer(id, params.properties());
+            var consumer = new ConsumerImpl(kafkaConsumer, id, topicPartition);
             consumers.add(consumer);
             return consumer;
         } catch (Exception e) {
@@ -439,14 +444,12 @@ class KafkaConnectionImpl implements KafkaConnection {
         return new KafkaProducer<>(producerProperties, new ByteArraySerializer(), new ByteArraySerializer());
     }
 
-    private static KafkaConsumer<byte[], byte[]> getConsumer(Properties properties) {
+    private static KafkaConsumer<byte[], byte[]> getConsumer(String consumerId, Properties properties) {
         final Properties consumerProperties = new Properties();
-        final String id = "testcontainers-kafka-" + UUID.randomUUID().toString().substring(0, 8);
         consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
-        consumerProperties.put(ConsumerConfig.GROUP_ID_CONFIG, id);
-        consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG, id);
+        consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerId);
         consumerProperties.putAll(properties);
         return new KafkaConsumer<>(consumerProperties, new ByteArrayDeserializer(), new ByteArrayDeserializer());
     }
@@ -463,6 +466,15 @@ class KafkaConnectionImpl implements KafkaConnection {
 
     static void createTopicsIfNeeded(@NotNull KafkaConnection connection, @NotNull Set<String> topics, boolean reset) {
         try (var admin = getAdmin(connection.params().properties())) {
+            createTopicsIfNeeded(admin, connection, topics, reset);
+        }
+    }
+
+    static void createTopicsIfNeeded(@NotNull Admin admin,
+                                     @NotNull KafkaConnection connection,
+                                     @NotNull Set<String> topics,
+                                     boolean reset) {
+        try {
             logger.trace("Looking for existing topics...");
             var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
             logger.trace("Found existing topics: {}", existingTopics);

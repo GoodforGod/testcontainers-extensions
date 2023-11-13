@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.9.0"
+testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.9.2"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.9.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-kafka</artifactId>
-    <version>0.9.0</version>
+    <version>0.9.2</version>
     <scope>test</scope>
 </dependency>
 ```
