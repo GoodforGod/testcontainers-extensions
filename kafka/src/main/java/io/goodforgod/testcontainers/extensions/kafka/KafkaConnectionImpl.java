@@ -112,10 +112,16 @@ class KafkaConnectionImpl implements KafkaConnection {
             this.topics = topicPartitions.stream().map(TopicPartition::topic).collect(Collectors.toSet());
 
             this.consumer.assign(topicPartitions);
-            Set<TopicPartition> assignment = this.consumer.assignment();
-            if (assignment.isEmpty()) {
-                throw new IllegalStateException("OPS");
-            }
+
+            Awaitility.await()
+                    .atMost(Duration.ofMinutes(1))
+                    .pollInterval(Duration.ofMillis(50))
+                    .until(() -> this.consumer.listTopics(Duration.ofMinutes(1)), result -> {
+                        var topics = new HashSet<>(result.keySet());
+                        return this.topics.containsAll(topics);
+                    });
+
+            poll(Duration.ofMillis(50));
             this.executor.execute(this::launch);
         }
 
@@ -408,7 +414,7 @@ class KafkaConnectionImpl implements KafkaConnection {
         }
 
         try (var admin = getAdmin(params.properties)) {
-            createTopicsIfNeeded(admin, this, topics, false);
+            createTopicsIfNeeded(admin, topics, false);
 
             var topicInfo = Awaitility.await().atMost(Duration.ofMinutes(1))
                     .pollInterval(Duration.ofMillis(100))
@@ -466,14 +472,11 @@ class KafkaConnectionImpl implements KafkaConnection {
 
     static void createTopicsIfNeeded(@NotNull KafkaConnection connection, @NotNull Set<String> topics, boolean reset) {
         try (var admin = getAdmin(connection.params().properties())) {
-            createTopicsIfNeeded(admin, connection, topics, reset);
+            createTopicsIfNeeded(admin, topics, reset);
         }
     }
 
-    static void createTopicsIfNeeded(@NotNull Admin admin,
-                                     @NotNull KafkaConnection connection,
-                                     @NotNull Set<String> topics,
-                                     boolean reset) {
+    static void createTopicsIfNeeded(@NotNull Admin admin, @NotNull Set<String> topics, boolean reset) {
         try {
             logger.trace("Looking for existing topics...");
             var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
