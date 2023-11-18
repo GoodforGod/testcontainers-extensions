@@ -138,6 +138,19 @@ public interface KafkaConnection {
         void assertReceivedNone(@NotNull Duration timeToWait);
 
         /**
+         * @param timeout time to check that at least N events received in specified time
+         * @throws AssertionFailedError if received less than N event in specified time
+         *                              {@link Assertions#fail()}
+         */
+        @NotNull
+        ReceivedEvent assertReceivedAtLeastOne(@NotNull Duration timeout);
+
+        @NotNull
+        default ReceivedEvent assertReceivedAtLeastOne() {
+            return assertReceivedAtLeastOne(Duration.ofSeconds(15));
+        }
+
+        /**
          * @param expectedAtLeast number of expected events
          * @param timeout         time to check that at least N events received in specified time
          * @throws AssertionFailedError if received less than N event in specified time

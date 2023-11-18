@@ -132,11 +132,12 @@ final class TestcontainersKafkaExtension extends
             var connectionCurrent = getConnectionCurrent(context);
             var storage = getStorage(context);
             if (metadata.runMode() == ContainerMode.PER_RUN) {
-                KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(),
+                connectionCurrent.createTopics(metadata.topics());
+                ((KafkaConnectionImpl) connectionCurrent).createTopicsIfNeeded(metadata.topics(),
                         metadata.reset() != Topics.Mode.NONE);
                 storage.put(Topics.class, metadata.reset());
             } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
-                KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), false);
+                ((KafkaConnectionImpl) connectionCurrent).createTopicsIfNeeded(metadata.topics(), false);
                 storage.put(Topics.class, metadata.reset());
             }
         }
@@ -156,12 +157,12 @@ final class TestcontainersKafkaExtension extends
         if (!metadata.topics().isEmpty()) {
             var connectionCurrent = getConnectionCurrent(context);
             if (metadata.runMode() == ContainerMode.PER_METHOD) {
-                KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), false);
+                ((KafkaConnectionImpl) connectionCurrent).createTopicsIfNeeded(metadata.topics(), false);
             } else if (metadata.reset() == Topics.Mode.PER_METHOD) {
                 var storage = getStorage(context);
                 var createdTopicsFlag = storage.get(Topics.class, Topics.Mode.class);
                 if (createdTopicsFlag == null) {
-                    KafkaConnectionImpl.createTopicsIfNeeded(connectionCurrent, metadata.topics(), true);
+                    ((KafkaConnectionImpl) connectionCurrent).createTopicsIfNeeded(metadata.topics(), true);
                 }
             }
         }
