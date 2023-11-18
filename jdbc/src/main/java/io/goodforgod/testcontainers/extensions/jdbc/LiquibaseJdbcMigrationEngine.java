@@ -82,12 +82,6 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
 
     @Override
     public void migrate(@NotNull JdbcConnection connection, @NotNull List<String> locations) {
-        if (locations.isEmpty()) {
-            logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
-                    getClass().getSimpleName(), connection);
-            return;
-        }
-
         logger.debug("Starting schema migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
 
@@ -111,12 +105,6 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
 
     @Override
     public void drop(@NotNull JdbcConnection connection, @NotNull List<String> locations) {
-        if (locations.isEmpty()) {
-            logger.warn("Empty locations for schema drop for engine '{}' for connection: {}",
-                    getClass().getSimpleName(), connection);
-            return;
-        }
-
         logger.debug("Starting schema dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
 
