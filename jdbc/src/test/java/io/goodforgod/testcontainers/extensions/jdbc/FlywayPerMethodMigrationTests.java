@@ -1,7 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.jdbc.example.ContainerJdbcConnection;
@@ -19,8 +18,7 @@ class FlywayPerMethodMigrationTests {
 
     @BeforeAll
     public static void setupAll(@ContainerJdbcConnection JdbcConnection paramConnection) {
-        paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
-        assertNotNull(paramConnection);
+        assertThrows(JdbcConnectionException.class, () -> paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1)));
     }
 
     @BeforeEach
