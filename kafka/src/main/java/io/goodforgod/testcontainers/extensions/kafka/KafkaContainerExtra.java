@@ -1,19 +1,22 @@
 package io.goodforgod.testcontainers.extensions.kafka;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.ComparableVersion;
 import org.testcontainers.utility.DockerImageName;
 
 public class KafkaContainerExtra extends KafkaContainer {
+
+    // https://docs.confluent.io/platform/7.0.0/release-notes/index.html#ak-raft-kraft
+    private static final String MIN_KRAFT_TAG = "7.0.0";
 
     private static final String EXTERNAL_TEST_KAFKA_BOOTSTRAP = "EXTERNAL_TEST_KAFKA_BOOTSTRAP_SERVERS";
     private static final String EXTERNAL_TEST_KAFKA_PREFIX = "EXTERNAL_TEST_KAFKA_";
@@ -38,10 +41,28 @@ public class KafkaContainerExtra extends KafkaContainer {
                 "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.network=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=INFO,kafka.log=ERROR,kafka.server=ERROR,state.change.logger=ERROR");
         this.withEnv("ZOOKEEPER_LOG4J_LOGGERS",
                 "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,org.kafka.zookeeper.server=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR");
-        this.withEmbeddedZookeeper();
         this.withExposedPorts(9092, KafkaContainer.KAFKA_PORT);
         this.waitingFor(Wait.forListeningPort());
         this.withStartupTimeout(Duration.ofMinutes(5));
+
+        var actualVersion = new ComparableVersion(DockerImageName.parse(getDockerImageName()).getVersionPart());
+        if (!actualVersion.isLessThan(MIN_KRAFT_TAG)) {
+            final Optional<Method> withKraft = Arrays.stream(KafkaContainer.class.getDeclaredMethods())
+                    .filter(m -> m.getName().equals("withKraft"))
+                    .findFirst();
+
+            if (withKraft.isPresent()) {
+                withKraft.get().setAccessible(true);
+                try {
+                    withKraft.get().invoke(this);
+                    logger().info("Kraft is enabled");
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    this.withEmbeddedZookeeper();
+                }
+            } else {
+                this.withEmbeddedZookeeper();
+            }
+        }
 
         this.setNetworkAliases(new ArrayList<>(List.of(alias)));
     }
