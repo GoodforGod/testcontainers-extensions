@@ -15,6 +15,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.TopicExistsException;
@@ -117,8 +118,14 @@ class KafkaConnectionImpl implements KafkaConnection {
             Awaitility.await()
                     .atMost(Duration.ofMinutes(1))
                     .pollInterval(Duration.ofMillis(50))
-                    .until(() -> this.consumer.listTopics(Duration.ofMinutes(1)),
-                            result -> this.topics.containsAll(result.keySet()));
+                    .until(() -> {
+                        try {
+                            return this.consumer.listTopics(Duration.ofSeconds(10));
+                        } catch (Exception e) {
+                            return Collections.<String, List<PartitionInfo>>emptyMap();
+                        }
+                    },
+                            result -> new HashSet<>(result.keySet()).containsAll(this.topics));
             logger.debug("KafkaConsumer topics {} assigned", this.topics);
 
             logger.trace("KafkaConsumer topics {} poll starting", this.topics);
@@ -395,7 +402,7 @@ class KafkaConnectionImpl implements KafkaConnection {
             try {
                 logger.trace("KafkaProducer sending event: {}", event);
                 var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers))
-                        .get(5, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);
                 logger.info("KafkaProducer sent event with offset '{}' with partition '{}' with timestamp '{}' event: {}",
                         result.offset(), result.partition(), result.timestamp(), event);
             } catch (Exception e) {
@@ -486,7 +493,7 @@ class KafkaConnectionImpl implements KafkaConnection {
     static void createTopicsIfNeeded(@NotNull Admin admin, @NotNull Set<String> topics, boolean reset) {
         try {
             logger.trace("Looking for existing topics...");
-            var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
+            var existingTopics = admin.listTopics().names().get(1, TimeUnit.MINUTES);
             logger.debug("Found existing topics: {}", existingTopics);
 
             var topicsToCreate = topics.stream()
@@ -505,7 +512,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                 logger.info("Required topics {} created", topics);
             } else if (reset && !topicsToReset.isEmpty()) {
                 logger.trace("Required topics {} already exist, but require reset, resetting...", topicsToReset);
-                admin.deleteTopics(topicsToReset).all().get(2, TimeUnit.MINUTES);
+                admin.deleteTopics(topicsToReset).all().get(1, TimeUnit.MINUTES);
                 logger.debug("Topics {} reset success", topicsToReset);
 
                 var topicsToCreateAfterReset = topicsToReset.stream()
@@ -565,7 +572,7 @@ class KafkaConnectionImpl implements KafkaConnection {
     public void dropTopics(@NotNull Set<String> topics) {
         try (var admin = admin()) {
             logger.trace("Looking for existing topics...");
-            var existingTopics = admin.listTopics().names().get(2, TimeUnit.MINUTES);
+            var existingTopics = admin.listTopics().names().get(1, TimeUnit.MINUTES);
             logger.debug("Found existing topics: {}", existingTopics);
 
             var topicsToDrop = existingTopics.stream()
@@ -576,7 +583,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                 logger.trace("Topics {} dropping...", topicsToDrop);
                 var deleteTopicsResult = admin.deleteTopics(topics);
                 var deleteFutures = deleteTopicsResult.topicNameValues().values().toArray(KafkaFuture[]::new);
-                KafkaFuture.allOf(deleteFutures).get(2, TimeUnit.MINUTES);
+                KafkaFuture.allOf(deleteFutures).get(1, TimeUnit.MINUTES);
                 logger.info("Required topics {} dropped", topicsToDrop);
             } else {
                 logger.debug("Required topics already dropped: {}", topics);
