@@ -39,11 +39,9 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
         super.beforeAll(context);
 
         var metadata = getMetadata(context);
-        if (metadata.migration().apply() != Migration.Mode.NONE) {
-            var storage = getStorage(context);
+        if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
             var connectionCurrent = getConnectionCurrent(context);
             tryMigrateIfRequired(metadata, connectionCurrent);
-            storage.put(Migration.class, metadata.migration().apply());
         }
     }
 
@@ -58,9 +56,7 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
 
         super.beforeEach(context);
 
-        var storage = getStorage(context);
-        var mode = storage.get(Migration.class, Migration.Mode.class);
-        if (mode == null) {
+        if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
             var connectionCurrent = getConnectionCurrent(context);
             tryMigrateIfRequired(metadata, connectionCurrent);
         }
