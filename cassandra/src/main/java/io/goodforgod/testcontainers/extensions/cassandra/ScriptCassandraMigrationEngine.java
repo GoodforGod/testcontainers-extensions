@@ -57,6 +57,12 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
 
     @Override
     public void migrate(@NotNull CassandraConnection connection, @NotNull List<String> locations) {
+        if (locations.isEmpty()) {
+            logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
+                    getClass().getSimpleName(), connection);
+            return;
+        }
+
         logger.debug("Starting schema migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
 
@@ -91,6 +97,12 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
 
     @Override
     public void drop(@NotNull CassandraConnection connection, @NotNull List<String> locations) {
+        if (locations.isEmpty()) {
+            logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
+                    getClass().getSimpleName(), connection);
+            return;
+        }
+
         logger.debug("Starting schema dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
 

@@ -83,7 +83,7 @@ class TestcontainersCassandraExtension extends
         super.beforeAll(context);
 
         var metadata = getMetadata(context);
-        if (metadata.migration().apply() != Migration.Mode.NONE) {
+        if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
             var storage = getStorage(context);
             var connectionCurrent = getConnectionCurrent(context);
             tryMigrateIfRequired(metadata, connectionCurrent);
@@ -102,9 +102,7 @@ class TestcontainersCassandraExtension extends
 
         super.beforeEach(context);
 
-        var storage = getStorage(context);
-        var mode = storage.get(Migration.class, Migration.Mode.class);
-        if (mode == null) {
+        if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
             var connectionCurrent = getConnectionCurrent(context);
             tryMigrateIfRequired(metadata, connectionCurrent);
         }
