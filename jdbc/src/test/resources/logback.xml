@@ -14,6 +14,7 @@
         <appender-ref ref="ASYNC"/>
     </root>
 
-    <logger level="DEBUG" name="org.testcontainers"/>
+    <logger level="INFO" name="org.testcontainers"/>
+    <logger level="WARN" name="org.testcontainers.containers"/>
     <logger level="TRACE" name="io.goodforgod.testcontainers.extensions"/>
 </configuration>

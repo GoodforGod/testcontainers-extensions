@@ -432,6 +432,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                         try {
                             return admin.describeTopics(topics).allTopicNames().get(10, TimeUnit.SECONDS);
                         } catch (Exception e) {
+                            logger.warn(e.getMessage());
                             return Collections.<String, TopicDescription>emptyMap();
                         }
                     }, result -> result.values().stream().map(TopicDescription::name).collect(Collectors.toSet())
