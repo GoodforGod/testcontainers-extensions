@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -124,8 +125,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                         } catch (Exception e) {
                             return Collections.<String, List<PartitionInfo>>emptyMap();
                         }
-                    },
-                            result -> new HashSet<>(result.keySet()).containsAll(this.topics));
+                    }, result -> new HashSet<>(result.keySet()).containsAll(this.topics));
             logger.debug("KafkaConsumer topics {} assigned", this.topics);
 
             logger.trace("KafkaConsumer topics {} poll starting", this.topics);
@@ -361,8 +361,7 @@ class KafkaConnectionImpl implements KafkaConnection {
             kafkaNetworkProperties.putAll(props.properties());
             kafkaNetworkProperties.putAll(properties);
             return kafkaNetworkProperties;
-        })
-                .orElse(null);
+        }).orElse(null);
 
         return new KafkaConnectionClosableImpl(kafkaProperties, networkProperties);
     }
@@ -529,6 +528,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                 Thread.sleep(55); // check above is not 100%
                 logger.debug("Topics {} reset status check success", topicsToReset);
 
+                final AtomicInteger counter = new AtomicInteger(0);
                 logger.trace("Topics {} recreating...", topicsToReset);
                 Awaitility.await().atMost(Duration.ofSeconds(35))
                         .pollInterval(Duration.ofMillis(50))
@@ -538,7 +538,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                                 return true;
                             } catch (ExecutionException e) {
                                 if (e.getCause() instanceof TopicExistsException) {
-                                    return true;
+                                    return counter.getAndIncrement() > 2;
                                 } else {
                                     throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
                                 }
