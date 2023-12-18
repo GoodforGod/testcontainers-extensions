@@ -508,10 +508,10 @@ class KafkaConnectionImpl implements KafkaConnection {
             if (!topicsToCreate.isEmpty()) {
                 logger.trace("Topics {} creating...", topics);
                 var result = admin.createTopics(topicsToCreate);
-                result.all().get(2, TimeUnit.MINUTES);
-                logger.info("Required topics {} created", topics);
+                result.all().get(1, TimeUnit.MINUTES);
+                logger.info("Topics {} created", topics);
             } else if (reset && !topicsToReset.isEmpty()) {
-                logger.trace("Required topics {} already exist, but require reset, resetting...", topicsToReset);
+                logger.trace("Topics {} already exist, but require reset, resetting...", topicsToReset);
                 admin.deleteTopics(topicsToReset).all().get(1, TimeUnit.MINUTES);
                 logger.debug("Topics {} reset success", topicsToReset);
 
@@ -519,8 +519,18 @@ class KafkaConnectionImpl implements KafkaConnection {
                         .map(topic -> new NewTopic(topic, Optional.of(1), Optional.empty()))
                         .collect(Collectors.toSet());
 
+                logger.trace("Topics {} reset status check...", topicsToReset);
+                Awaitility.await().atMost(Duration.ofSeconds(35))
+                        .pollInterval(Duration.ofMillis(50))
+                        .until(() -> admin.listTopics().names().get(10, TimeUnit.SECONDS).stream()
+                                .filter(topicsToReset::contains)
+                                .findFirst()
+                                .isEmpty());
+                Thread.sleep(55); // check above is not 100%
+                logger.debug("Topics {} reset status check success", topicsToReset);
+
                 logger.trace("Topics {} recreating...", topicsToReset);
-                Awaitility.await().atMost(Duration.ofSeconds(30))
+                Awaitility.await().atMost(Duration.ofSeconds(35))
                         .pollInterval(Duration.ofMillis(50))
                         .until(() -> {
                             try {
@@ -528,7 +538,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                                 return true;
                             } catch (ExecutionException e) {
                                 if (e.getCause() instanceof TopicExistsException) {
-                                    return false;
+                                    return true;
                                 } else {
                                     throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
                                 }
@@ -537,18 +547,18 @@ class KafkaConnectionImpl implements KafkaConnection {
                             }
                         });
 
-                logger.info("Required topics {} recreated", topicsToReset);
+                logger.info("Topics {} recreated", topicsToReset);
             } else {
-                logger.debug("Required topics already exist: {}", topics);
+                logger.debug("Topics already exist: {}", topics);
             }
         } catch (ExecutionException e) {
             if (e.getCause() instanceof TopicExistsException) {
-                logger.trace("Required topics already exist exception received: {}", topics);
+                logger.trace("Topics already exist exception received: {}", topics);
             } else {
                 throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
             }
         } catch (TopicExistsException e) {
-            logger.trace("Required topics already exist exception received: {}", topics);
+            logger.trace("Topics already exist exception received: {}", topics);
         } catch (Exception e) {
             throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
         }
