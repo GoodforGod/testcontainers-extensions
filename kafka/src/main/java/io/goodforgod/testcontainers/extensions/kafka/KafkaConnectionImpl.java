@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -520,16 +519,23 @@ class KafkaConnectionImpl implements KafkaConnection {
                         .collect(Collectors.toSet());
 
                 logger.trace("Topics {} reset status check...", topicsToReset);
-                Awaitility.await().atMost(Duration.ofSeconds(35))
-                        .pollInterval(Duration.ofMillis(50))
-                        .until(() -> admin.listTopics().names().get(10, TimeUnit.SECONDS).stream()
+                Awaitility.await()
+                        .atMost(Duration.ofSeconds(35))
+                        .pollInterval(Duration.ofMillis(100))
+                        .until(() -> {
+                            try {
+                                return admin.describeTopics(topics).allTopicNames().get(10, TimeUnit.SECONDS);
+                            } catch (Exception e) {
+                                logger.warn(e.getMessage());
+                                return Collections.<String, TopicDescription>emptyMap();
+                            }
+                        }, result -> result.values().stream()
+                                .map(TopicDescription::name)
                                 .filter(topicsToReset::contains)
                                 .findFirst()
                                 .isEmpty());
-                Thread.sleep(55); // check above is not 100%
                 logger.debug("Topics {} reset status check success", topicsToReset);
 
-                final AtomicInteger counter = new AtomicInteger(0);
                 logger.trace("Topics {} recreating...", topicsToReset);
                 Awaitility.await().atMost(Duration.ofSeconds(35))
                         .pollInterval(Duration.ofMillis(50))
@@ -539,7 +545,8 @@ class KafkaConnectionImpl implements KafkaConnection {
                                 return true;
                             } catch (ExecutionException e) {
                                 if (e.getCause() instanceof TopicExistsException) {
-                                    return counter.getAndIncrement() > 2;
+                                    Thread.sleep(500);
+                                    return false;
                                 } else {
                                     throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);
                                 }
