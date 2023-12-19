@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.2"
+testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.4"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mockserver</artifactId>
-    <version>0.9.2</version>
+    <version>0.9.4</version>
     <scope>test</scope>
 </dependency>
 ```
