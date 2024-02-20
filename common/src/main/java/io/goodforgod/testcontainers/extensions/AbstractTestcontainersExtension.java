@@ -144,6 +144,13 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         return getStorage(context).get(getConnectionType(), getConnectionType());
     }
 
+    protected final Container getContainerCurrent(ExtensionContext context) {
+        Metadata metadata = getMetadata(context);
+        ExtensionContainer<Container, Connection> extensionContainer = getStorage(context).get(metadata.runMode(),
+                ExtensionContainer.class);
+        return extensionContainer.container();
+    }
+
     protected <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
         Optional<ExtensionContext> current = Optional.of(context);
         while (current.isPresent()) {

@@ -16,15 +16,6 @@ final class TestcontainersPostgresExtension extends
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersPostgresExtension.class);
 
-    private static final String PROTOCOL = "postgresql";
-
-    private static final String EXTERNAL_TEST_POSTGRES_JDBC_URL = "EXTERNAL_TEST_POSTGRES_JDBC_URL";
-    private static final String EXTERNAL_TEST_POSTGRES_USERNAME = "EXTERNAL_TEST_POSTGRES_USERNAME";
-    private static final String EXTERNAL_TEST_POSTGRES_PASSWORD = "EXTERNAL_TEST_POSTGRES_PASSWORD";
-    private static final String EXTERNAL_TEST_POSTGRES_HOST = "EXTERNAL_TEST_POSTGRES_HOST";
-    private static final String EXTERNAL_TEST_POSTGRES_PORT = "EXTERNAL_TEST_POSTGRES_PORT";
-    private static final String EXTERNAL_TEST_POSTGRES_DATABASE = "EXTERNAL_TEST_POSTGRES_DATABASE";
-
     @SuppressWarnings("unchecked")
     @Override
     protected Class<PostgreSQLContainerExtra<?>> getContainerType() {
@@ -56,6 +47,12 @@ final class TestcontainersPostgresExtension extends
     }
 
     @Override
+    protected JdbcMigrationEngine getMigrationEngine(Migration.Engines engine, ExtensionContext context) {
+        var containerCurrent = getContainerCurrent(context);
+        return containerCurrent.getMigrationEngine(engine);
+    }
+
+    @Override
     protected ExtensionContext.Namespace getNamespace() {
         return NAMESPACE;
     }
@@ -70,27 +67,5 @@ final class TestcontainersPostgresExtension extends
     protected JdbcConnection getConnectionForContainer(PostgresMetadata metadata,
                                                        @NotNull PostgreSQLContainerExtra<?> container) {
         return container.connection();
-    }
-
-    @NotNull
-    protected Optional<JdbcConnection> getConnectionExternal() {
-        var url = System.getenv(EXTERNAL_TEST_POSTGRES_JDBC_URL);
-        var host = System.getenv(EXTERNAL_TEST_POSTGRES_HOST);
-        var port = System.getenv(EXTERNAL_TEST_POSTGRES_PORT);
-        var user = System.getenv(EXTERNAL_TEST_POSTGRES_USERNAME);
-        var password = System.getenv(EXTERNAL_TEST_POSTGRES_PASSWORD);
-        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_POSTGRES_DATABASE)).orElse("postgres");
-
-        if (url != null) {
-            if (host != null && port != null) {
-                return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));
-            } else {
-                return Optional.of(JdbcConnectionImpl.forExternal(url, user, password));
-            }
-        } else if (host != null && port != null) {
-            return Optional.of(JdbcConnectionImpl.forProtocol(PROTOCOL, host, Integer.parseInt(port), db, user, password));
-        } else {
-            return Optional.empty();
-        }
     }
 }

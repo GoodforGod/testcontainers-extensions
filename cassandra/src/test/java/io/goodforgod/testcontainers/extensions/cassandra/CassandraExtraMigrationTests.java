@@ -10,9 +10,11 @@ class CassandraExtraMigrationTests {
     void script() {
         try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
             container.start();
-            container.migrate(Migration.Engines.SCRIPTS, List.of("migration"));
+            ScriptCassandraMigrationEngine scriptCassandraMigrationEngine = new ScriptCassandraMigrationEngine(
+                    container.connection());
+            scriptCassandraMigrationEngine.migrate(List.of("migration"));
             container.connection().assertQueriesNone("SELECT * FROM cassandra.users;");
-            container.drop(Migration.Engines.SCRIPTS, List.of("migration"));
+            scriptCassandraMigrationEngine.drop(List.of("migration"));
         }
     }
 }

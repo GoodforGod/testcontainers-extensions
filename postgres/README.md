@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.9.4"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.9.5"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.9.4"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.9.4</version>
+    <version>0.9.5</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -92,7 +92,7 @@ class ExampleTests {
 
     @Test
     void test() {
-        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.3-alpine"))) {
+        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:16.2-alpine"))) {
             container.start();
         }
     }
@@ -108,7 +108,7 @@ class ExampleTests {
 
   @Test
   void test() {
-    try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.3-alpine"))) {
+    try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:16.2-alpine"))) {
       container.start();
       container.connection().assertQueriesNone("SELECT * FROM users;");
     }
@@ -128,21 +128,6 @@ Annotation parameters:
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
 - [Liquibase](https://www.liquibase.com/databases/cockroachdb-2)
-
-```java
-class ExampleTests {
-
-    @Test
-    void test() {
-        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.3-alpine"))) {
-            container.start();
-            container.migrate(Migration.Engines.FLYWAY, List.of("db/migration"));
-            container.connection().assertQueriesNone("SELECT * FROM users;");
-            container.drop(Migration.Engines.Flyway, List.of("db/migration"));
-        }
-    }
-}
-```
 
 ## Annotation
 
@@ -172,7 +157,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgres(image = "${MY_IMAGE_ENV|postgres:15.3-alpine}")
+@TestcontainersPostgres(image = "${MY_IMAGE_ENV|postgres:16.2-alpine}")
 class ExampleTests {
 
     @Test
@@ -184,9 +169,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `postgres:15.3-alpine`
+- Image can have static value: `postgres:16.2-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:15.3-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:16.2-alpine}`
 
 ### Manual Container
 
@@ -257,7 +242,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:15.3-alpine")
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:16.2-alpine")
 class ExampleTests {
 
     @ContainerPostgresConnection

@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MariaDBContainer;
@@ -25,6 +26,8 @@ public class MariaDBContainerExtra<SELF extends MariaDBContainerExtra<SELF>> ext
     private static final String EXTERNAL_TEST_MARIADB_DATABASE = "EXTERNAL_TEST_MARIADB_DATABASE";
 
     private volatile JdbcConnectionImpl connection;
+    private volatile FlywayJdbcMigrationEngine flywayJdbcMigrationEngine;
+    private volatile LiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
 
     public MariaDBContainerExtra(String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
@@ -47,19 +50,20 @@ public class MariaDBContainerExtra<SELF extends MariaDBContainerExtra<SELF>> ext
         this.setNetworkAliases(new ArrayList<>(List.of(alias)));
     }
 
-    public void migrate(@NotNull Migration.Engines engine, @NotNull List<String> locations) {
+    @Internal
+    JdbcMigrationEngine getMigrationEngine(@NotNull Migration.Engines engine) {
         if (engine == Migration.Engines.FLYWAY) {
-            FlywayJdbcMigrationEngine.INSTANCE.migrate(connection(), locations);
+            if (flywayJdbcMigrationEngine == null) {
+                this.flywayJdbcMigrationEngine = new FlywayJdbcMigrationEngine(connection());
+            }
+            return this.flywayJdbcMigrationEngine;
         } else if (engine == Migration.Engines.LIQUIBASE) {
-            LiquibaseJdbcMigrationEngine.INSTANCE.migrate(connection(), locations);
-        }
-    }
-
-    public void drop(@NotNull Migration.Engines engine, @NotNull List<String> locations) {
-        if (engine == Migration.Engines.FLYWAY) {
-            FlywayJdbcMigrationEngine.INSTANCE.drop(connection(), locations);
-        } else if (engine == Migration.Engines.LIQUIBASE) {
-            LiquibaseJdbcMigrationEngine.INSTANCE.drop(connection(), locations);
+            if (liquibaseJdbcMigrationEngine == null) {
+                this.liquibaseJdbcMigrationEngine = new LiquibaseJdbcMigrationEngine(connection());
+            }
+            return this.liquibaseJdbcMigrationEngine;
+        } else {
+            throw new UnsupportedOperationException("Unsupported engine: " + engine);
         }
     }
 
@@ -99,8 +103,18 @@ public class MariaDBContainerExtra<SELF extends MariaDBContainerExtra<SELF>> ext
 
     @Override
     public void stop() {
-        connection.close();
-        connection = null;
+        if (flywayJdbcMigrationEngine != null) {
+            flywayJdbcMigrationEngine.close();
+            flywayJdbcMigrationEngine = null;
+        }
+        if (liquibaseJdbcMigrationEngine != null) {
+            liquibaseJdbcMigrationEngine.close();
+            liquibaseJdbcMigrationEngine = null;
+        }
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
         super.stop();
     }
 

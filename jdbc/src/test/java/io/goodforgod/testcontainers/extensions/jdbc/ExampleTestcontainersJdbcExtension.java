@@ -18,6 +18,9 @@ public final class ExampleTestcontainersJdbcExtension extends
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(ExampleTestcontainersJdbcExtension.class);
 
+    private volatile FlywayJdbcMigrationEngine flywayJdbcMigrationEngine;
+    private volatile LiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
+
     @Override
     protected ExtensionContext.Namespace getNamespace() {
         return NAMESPACE;
@@ -52,6 +55,38 @@ public final class ExampleTestcontainersJdbcExtension extends
                         .withMdc("image", metadata.image())
                         .withMdc("alias", metadata.networkAliasOrDefault()))
                 .withNetworkAliases(metadata.networkAliasOrDefault());
+    }
+
+    @Override
+    protected JdbcMigrationEngine getMigrationEngine(Migration.Engines engine, ExtensionContext context) {
+        if (engine == Migration.Engines.FLYWAY) {
+            if (this.flywayJdbcMigrationEngine == null) {
+                var connection = getConnectionCurrent(context);
+                this.flywayJdbcMigrationEngine = new FlywayJdbcMigrationEngine(connection);
+            }
+            return this.flywayJdbcMigrationEngine;
+        } else if (engine == Migration.Engines.LIQUIBASE) {
+            if (this.liquibaseJdbcMigrationEngine == null) {
+                var connection = getConnectionCurrent(context);
+                this.liquibaseJdbcMigrationEngine = new LiquibaseJdbcMigrationEngine(connection);
+            }
+            return this.liquibaseJdbcMigrationEngine;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void afterAll(ExtensionContext context) {
+        super.afterAll(context);
+        if (this.flywayJdbcMigrationEngine != null) {
+            this.flywayJdbcMigrationEngine.close();
+            this.flywayJdbcMigrationEngine = null;
+        }
+        if (this.liquibaseJdbcMigrationEngine != null) {
+            this.liquibaseJdbcMigrationEngine.close();
+            this.liquibaseJdbcMigrationEngine = null;
+        }
     }
 
     @NotNull

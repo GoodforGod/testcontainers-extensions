@@ -18,21 +18,17 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
         return JdbcConnection.class;
     }
 
-    private void tryMigrateIfRequired(JdbcMetadata metadata, JdbcConnection connection) {
-        if (metadata.migration().engine() == Migration.Engines.FLYWAY) {
-            FlywayJdbcMigrationEngine.INSTANCE.migrate(connection, Arrays.asList(metadata.migration().migrations()));
-        } else if (metadata.migration().engine() == Migration.Engines.LIQUIBASE) {
-            LiquibaseJdbcMigrationEngine.INSTANCE.migrate(connection, Arrays.asList(metadata.migration().migrations()));
-        }
+    private void tryMigrateIfRequired(JdbcMetadata metadata, ExtensionContext context) {
+        JdbcMigrationEngine migrationEngine = getMigrationEngine(metadata.migration().engine(), context);
+        migrationEngine.migrate(Arrays.asList(metadata.migration().migrations()));
     }
 
-    private void tryDropIfRequired(JdbcMetadata metadata, JdbcConnection connection) {
-        if (metadata.migration().engine() == Migration.Engines.FLYWAY) {
-            FlywayJdbcMigrationEngine.INSTANCE.drop(connection, Arrays.asList(metadata.migration().migrations()));
-        } else if (metadata.migration().engine() == Migration.Engines.LIQUIBASE) {
-            LiquibaseJdbcMigrationEngine.INSTANCE.drop(connection, Arrays.asList(metadata.migration().migrations()));
-        }
+    private void tryDropIfRequired(JdbcMetadata metadata, ExtensionContext context) {
+        JdbcMigrationEngine migrationEngine = getMigrationEngine(metadata.migration().engine(), context);
+        migrationEngine.drop(Arrays.asList(metadata.migration().migrations()));
     }
+
+    protected abstract JdbcMigrationEngine getMigrationEngine(Migration.Engines engine, ExtensionContext context);
 
     @Override
     public void beforeAll(ExtensionContext context) {
@@ -40,8 +36,7 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
 
         var metadata = getMetadata(context);
         if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
-            var connectionCurrent = getConnectionCurrent(context);
-            tryMigrateIfRequired(metadata, connectionCurrent);
+            tryMigrateIfRequired(metadata, context);
         }
     }
 
@@ -57,20 +52,16 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
         super.beforeEach(context);
 
         if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
-            var connectionCurrent = getConnectionCurrent(context);
-            tryMigrateIfRequired(metadata, connectionCurrent);
+            tryMigrateIfRequired(metadata, context);
         }
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
         var metadata = getMetadata(context);
-        var storage = getStorage(context);
-        storage.remove(Migration.class);
         if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
             if (metadata.runMode() != ContainerMode.PER_METHOD) {
-                var connectionCurrent = getConnectionCurrent(context);
-                tryDropIfRequired(metadata, connectionCurrent);
+                tryDropIfRequired(metadata, context);
             }
         }
 
@@ -80,10 +71,9 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
     @Override
     public void afterAll(ExtensionContext context) {
         var metadata = getMetadata(context);
-        var connectionCurrent = getConnectionCurrent(context);
         if (metadata.migration().drop() == Migration.Mode.PER_CLASS) {
             if (metadata.runMode() == ContainerMode.PER_RUN) {
-                tryDropIfRequired(metadata, connectionCurrent);
+                tryDropIfRequired(metadata, context);
             }
         }
 

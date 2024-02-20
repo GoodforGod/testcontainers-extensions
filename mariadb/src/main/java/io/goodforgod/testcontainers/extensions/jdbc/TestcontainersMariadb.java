@@ -22,13 +22,13 @@ public @interface TestcontainersMariadb {
      * @see TestcontainersMariadbExtension#getContainerDefault(MariadbMetadata)
      * @return MariaDB image
      *             <p>
-     *             1) Image can have static value: "mariadb:11.0-jammy"
+     *             1) Image can have static value: "mariadb:11.2-jammy"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|mariadb:11.0-jammy}"
+     *             "${MY_IMAGE_ENV|mariadb:11.2-jammy}"
      *             <p>
      */
-    String image() default "mariadb:11.0-jammy";
+    String image() default "mariadb:11.2-jammy";
 
     /**
      * @return when to start container

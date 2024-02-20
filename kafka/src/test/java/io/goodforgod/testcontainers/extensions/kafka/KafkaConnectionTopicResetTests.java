@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS,
-        image = "confluentinc/cp-kafka:7.4.1",
+        image = "confluentinc/cp-kafka:7.5.3",
         topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class KafkaConnectionTopicResetTests {

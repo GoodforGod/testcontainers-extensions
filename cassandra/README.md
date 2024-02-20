@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.9.4"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.9.5"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.9.4"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.9.4</version>
+    <version>0.9.5</version>
     <scope>test</scope>
 </dependency>
 ```
