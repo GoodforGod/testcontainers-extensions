@@ -365,6 +365,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
     void close() {
         if (connection != null) {
             connection.close();
+            connection = null;
         }
     }
 }

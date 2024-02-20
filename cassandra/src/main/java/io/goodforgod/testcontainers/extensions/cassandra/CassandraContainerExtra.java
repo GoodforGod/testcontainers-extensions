@@ -38,14 +38,6 @@ public class CassandraContainerExtra<SELF extends CassandraContainerExtra<SELF>>
         this.setNetworkAliases(new ArrayList<>(List.of(alias)));
     }
 
-    public void migrate(@NotNull Migration.Engines engine, @NotNull List<String> locations) {
-        ScriptCassandraMigrationEngine.INSTANCE.migrate(connection(), locations);
-    }
-
-    public void drop(Migration.Engines engine, @NotNull List<String> locations) {
-        ScriptCassandraMigrationEngine.INSTANCE.migrate(connection(), locations);
-    }
-
     @NotNull
     public CassandraConnection connection() {
         if (connection == null) {
@@ -81,8 +73,10 @@ public class CassandraContainerExtra<SELF extends CassandraContainerExtra<SELF>>
 
     @Override
     public void stop() {
-        connection.close();
-        connection = null;
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
         super.stop();
     }
 

@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.9.4"
+testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.9.5"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.9.4"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cockroachdb</artifactId>
-    <version>0.9.4</version>
+    <version>0.9.5</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -128,21 +128,6 @@ Annotation parameters:
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
 - [Liquibase](https://www.liquibase.com/databases/cockroachdb-2)
-
-```java
-class ExampleTests {
-
-    @Test
-    void test() {
-        try (var container = new CockorackContainerExtra(DockerImageName.parse("cockroachdb/cockroach:latest-v23.1"))) {
-            container.start();
-            container.migrate(Migration.Engines.FLYWAY, List.of("db/migration"));
-            container.connection().assertQueriesNone("SELECT * FROM users;");
-            container.drop(Migration.Engines.Flyway, List.of("db/migration"));
-        }
-    }
-}
-```
 
 ## Annotation
 

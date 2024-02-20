@@ -22,13 +22,13 @@ public @interface TestcontainersPostgres {
      * @see TestcontainersPostgresExtension#getContainerDefault(PostgresMetadata)
      * @return Postgres image
      *             <p>
-     *             1) Image can have static value: "postgres:15.3-alpine"
+     *             1) Image can have static value: "postgres:16.2-alpine"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|postgres:15.3-alpine}"
+     *             "${MY_IMAGE_ENV|postgres:16.2-alpine}"
      *             <p>
      */
-    String image() default "postgres:15.3-alpine";
+    String image() default "postgres:16.2-alpine";
 
     /**
      * @return when to start container

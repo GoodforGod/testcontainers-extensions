@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.9.4"
+testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.9.5"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.9.4"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mariadb</artifactId>
-    <version>0.9.4</version>
+    <version>0.9.5</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -92,7 +92,7 @@ class ExampleTests {
 
     @Test
     void test() {
-        try (var container = new MariaDBContainerExtra<>(DockerImageName.parse("mariadb:11.0-jammy"))) {
+        try (var container = new MariaDBContainerExtra<>(DockerImageName.parse("mariadb:11.2-jammy"))) {
             container.start();
         }
     }
@@ -108,7 +108,7 @@ class ExampleTests {
 
   @Test
   void test() {
-    try (var container = new MariaDBContainerExtra<>(DockerImageName.parse("mariadb:11.0-jammy"))) {
+    try (var container = new MariaDBContainerExtra<>(DockerImageName.parse("mariadb:11.2-jammy"))) {
       container.start();
       container.connection().assertQueriesNone("SELECT * FROM users;");
     }
@@ -128,21 +128,6 @@ Annotation parameters:
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
 - [Liquibase](https://www.liquibase.com/databases/cockroachdb-2)
-
-```java
-class ExampleTests {
-
-    @Test
-    void test() {
-        try (var container = new MariaDBContainerExtra<>(DockerImageName.parse("mariadb:11.0-jammy"))) {
-            container.start();
-            container.migrate(Migration.Engines.FLYWAY, List.of("db/migration"));
-            container.connection().assertQueriesNone("SELECT * FROM users;");
-            container.drop(Migration.Engines.Flyway, List.of("db/migration"));
-        }
-    }
-}
-```
 
 ## Annotation
 
@@ -172,7 +157,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMariadb(image = "${MY_IMAGE_ENV|mariadb:11.0-jammy}")
+@TestcontainersMariadb(image = "${MY_IMAGE_ENV|mariadb:11.2-jammy}")
 class ExampleTests {
 
     @Test
@@ -184,9 +169,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `mariadb:11.0-jammy`
+- Image can have static value: `mariadb:11.2-jammy`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mariadb:11.0-jammy}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mariadb:11.2-jammy}`
 
 ### Manual Container
 
@@ -257,7 +242,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMariadb(mode = ContainerMode.PER_CLASS, image = "mariadb:11.0-jammy")
+@TestcontainersMariadb(mode = ContainerMode.PER_CLASS, image = "mariadb:11.2-jammy")
 class ExampleTests {
 
     @ContainerMariadbConnection

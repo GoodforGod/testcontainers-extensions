@@ -3,12 +3,15 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.nio.file.Files;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
+import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
+import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.jetbrains.annotations.NotNull;
@@ -16,15 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
+public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(LiquibaseJdbcMigrationEngine.class);
 
-    public static final JdbcMigrationEngine INSTANCE = new LiquibaseJdbcMigrationEngine();
-
     private static volatile boolean isLiquibaseActivated = false;
-
-    private LiquibaseJdbcMigrationEngine() {}
 
     @FunctionalInterface
     private interface LiquibaseRunner {
@@ -32,7 +31,15 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
         void apply(Liquibase liquibase, Writer writer) throws LiquibaseException;
     }
 
-    private static void prepareLiquibase(JdbcConnection connection, List<String> locations, LiquibaseRunner liquibaseConsumer) {
+    private final JdbcConnection jdbcConnection;
+
+    private volatile Database database;
+
+    public LiquibaseJdbcMigrationEngine(JdbcConnection jdbcConnection) {
+        this.jdbcConnection = jdbcConnection;
+    }
+
+    private static void prepareLiquibase(Database database, List<String> locations, LiquibaseRunner liquibaseConsumer) {
         try {
             final List<String> changeLogLocations = (locations.isEmpty())
                     ? List.of("db/changelog.sql")
@@ -50,17 +57,12 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
                 }
             }
 
-            try (var con = connection.open()) {
-                var liquibaseConnection = new liquibase.database.jvm.JdbcConnection(con);
-                var database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(liquibaseConnection);
+            try (var classLoaderResourceAccessor = new ClassLoaderResourceAccessor()) {
                 for (String changeLog : changeLogLocations) {
-                    try (var classLoaderResourceAccessor = new ClassLoaderResourceAccessor()) {
-                        try (var liquibase = new Liquibase(changeLog, classLoaderResourceAccessor, database)) {
-                            var tmpFile = Files.createTempFile("liquibase-changelog-output", ".txt");
-                            try (var writer = new FileWriter(tmpFile.toFile())) {
-                                liquibaseConsumer.apply(liquibase, writer);
-                            }
-                        }
+                    var liquibase = new Liquibase(changeLog, classLoaderResourceAccessor, database);
+                    var tmpFile = Files.createTempFile("liquibase-changelog-output", ".txt");
+                    try (var writer = new FileWriter(tmpFile.toFile())) {
+                        liquibaseConsumer.apply(liquibase, writer);
                     }
                 }
             }
@@ -69,45 +71,81 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine {
         }
     }
 
-    private static void migrateLiquibase(JdbcConnection connection, List<String> locations) {
-        prepareLiquibase(connection, locations, (liquibase, writer) -> {
+    private static void migrateLiquibase(Database database, List<String> locations) {
+        prepareLiquibase(database, locations, (liquibase, writer) -> {
             var contexts = new Contexts();
             var labelExpression = new LabelExpression();
             var changeSetStatuses = liquibase.getChangeSetStatuses(contexts, labelExpression, true);
             if (!changeSetStatuses.isEmpty()) {
                 liquibase.update();
+                database.commit();
             }
         });
     }
 
+    private static void dropLiquibase(Database database, List<String> locations) {
+        prepareLiquibase(database, locations, (liquibase, writer) -> {
+            liquibase.dropAll();
+            database.commit();
+        });
+    }
+
     @Override
-    public void migrate(@NotNull JdbcConnection connection, @NotNull List<String> locations) {
+    public void migrate(@NotNull List<String> locations) {
         logger.debug("Starting schema migration for engine '{}' for connection: {}",
-                getClass().getSimpleName(), connection);
+                getClass().getSimpleName(), jdbcConnection);
 
         try {
-            migrateLiquibase(connection, locations);
+            migrateLiquibase(getDatabase(), locations);
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                migrateLiquibase(connection, locations);
-
-                logger.debug("Finished schema migration for engine '{}' for connection: {}",
-                        getClass().getSimpleName(), connection);
+                migrateLiquibase(getDatabase(), locations);
             } catch (InterruptedException ex) {
                 logger.error("Failed schema migration for engine '{}' for connection: {}",
-                        getClass().getSimpleName(), connection);
+                        getClass().getSimpleName(), jdbcConnection);
 
                 throw new IllegalStateException(ex);
             }
         }
+
+        logger.info("Finished schema migration for engine '{}' for connection: {}",
+                getClass().getSimpleName(), jdbcConnection);
     }
 
     @Override
-    public void drop(@NotNull JdbcConnection connection, @NotNull List<String> locations) {
+    public void drop(@NotNull List<String> locations) {
         logger.debug("Starting schema dropping for engine '{}' for connection: {}",
-                getClass().getSimpleName(), connection);
+                getClass().getSimpleName(), jdbcConnection);
 
-        prepareLiquibase(connection, locations, (liquibase, writer) -> liquibase.dropAll());
+        dropLiquibase(getDatabase(), locations);
+
+        logger.info("Finished schema dropping for engine '{}' for connection: {}",
+                getClass().getSimpleName(), jdbcConnection);
+    }
+
+    private Database getDatabase() {
+        try {
+            if (this.database == null) {
+                Connection connection = jdbcConnection.open();
+                var liquibaseConnection = new liquibase.database.jvm.JdbcConnection(connection);
+                this.database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(liquibaseConnection);
+            }
+            return this.database;
+        } catch (DatabaseException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Override
+    public void close() {
+        if (database != null) {
+            try {
+                database.close();
+                database = null;
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        }
     }
 }

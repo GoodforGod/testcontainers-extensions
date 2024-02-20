@@ -45,6 +45,12 @@ final class TestcontainersCockroachdbExtension extends
     }
 
     @Override
+    protected JdbcMigrationEngine getMigrationEngine(Migration.Engines engine, ExtensionContext context) {
+        var containerCurrent = getContainerCurrent(context);
+        return containerCurrent.getMigrationEngine(engine);
+    }
+
+    @Override
     protected ExtensionContext.Namespace getNamespace() {
         return NAMESPACE;
     }

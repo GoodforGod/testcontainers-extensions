@@ -18,8 +18,6 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
 
     private static final Logger logger = LoggerFactory.getLogger(ScriptCassandraMigrationEngine.class);
 
-    public static final CassandraMigrationEngine INSTANCE = new ScriptCassandraMigrationEngine();
-
     private static class Table {
 
         private final String keyspace;
@@ -39,7 +37,11 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
         }
     }
 
-    private ScriptCassandraMigrationEngine() {}
+    private final CassandraConnection connection;
+
+    public ScriptCassandraMigrationEngine(CassandraConnection connection) {
+        this.connection = connection;
+    }
 
     private static List<File> getFilesFromLocations(List<String> locations) {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -56,7 +58,7 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
     }
 
     @Override
-    public void migrate(@NotNull CassandraConnection connection, @NotNull List<String> locations) {
+    public void migrate(@NotNull List<String> locations) {
         if (locations.isEmpty()) {
             logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
                     getClass().getSimpleName(), connection);
@@ -96,7 +98,7 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
     }
 
     @Override
-    public void drop(@NotNull CassandraConnection connection, @NotNull List<String> locations) {
+    public void drop(@NotNull List<String> locations) {
         if (locations.isEmpty()) {
             logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
                     getClass().getSimpleName(), connection);

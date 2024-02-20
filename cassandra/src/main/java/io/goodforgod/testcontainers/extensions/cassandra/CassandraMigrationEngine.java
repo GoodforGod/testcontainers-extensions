@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface CassandraMigrationEngine {
 
-    void migrate(@NotNull CassandraConnection connection, @NotNull List<String> locations);
+    void migrate(@NotNull List<String> locations);
 
-    void drop(@NotNull CassandraConnection connection, @NotNull List<String> locations);
+    void drop(@NotNull List<String> locations);
 }
