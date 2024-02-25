@@ -30,6 +30,8 @@ public interface CassandraConnection {
      */
     interface Params {
 
+        String contactPoint();
+
         @NotNull
         String host();
 
@@ -63,6 +65,11 @@ public interface CassandraConnection {
      */
     @NotNull
     CqlSession get();
+
+    /**
+     * @param keyspaceName to create
+     */
+    void createKeyspace(@NotNull String keyspaceName);
 
     /**
      * @param cql to execute

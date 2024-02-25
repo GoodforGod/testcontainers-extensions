@@ -319,6 +319,7 @@ final class RedisConnectionImpl implements RedisConnection {
     void close() {
         if (jedis != null) {
             jedis.close();
+            jedis = null;
             isClosed = true;
         }
     }
