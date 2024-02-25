@@ -92,7 +92,7 @@ class ExampleTests {
 
     @Test
     void test() {
-        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:16.2-alpine"))) {
+        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.6-alpine"))) {
             container.start();
         }
     }
@@ -108,7 +108,7 @@ class ExampleTests {
 
   @Test
   void test() {
-    try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:16.2-alpine"))) {
+    try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.6-alpine"))) {
       container.start();
       container.connection().assertQueriesNone("SELECT * FROM users;");
     }
@@ -157,7 +157,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgres(image = "${MY_IMAGE_ENV|postgres:16.2-alpine}")
+@TestcontainersPostgres(image = "${MY_IMAGE_ENV|postgres:15.6-alpine}")
 class ExampleTests {
 
     @Test
@@ -169,9 +169,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `postgres:16.2-alpine`
+- Image can have static value: `postgres:15.6-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:16.2-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:15.6-alpine}`
 
 ### Manual Container
 
@@ -242,7 +242,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:16.2-alpine")
+@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:15.6-alpine")
 class ExampleTests {
 
     @ContainerPostgresConnection

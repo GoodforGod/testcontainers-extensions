@@ -15,9 +15,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public @interface TestcontainersJdbc {
 
     /**
-     * @return Postgres image like: "postgres:16.2-alpine"
+     * @return Postgres image like: "postgres:15.6-alpine"
      */
-    String image() default "postgres:16.2-alpine";
+    String image() default "postgres:15.6-alpine";
 
     /**
      * @return when to start container

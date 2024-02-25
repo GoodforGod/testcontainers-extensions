@@ -2,10 +2,11 @@ package io.goodforgod.testcontainers.extensions.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
-import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.OptionsMap;
+import com.datastax.oss.driver.api.core.config.TypedDriverOption;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.internal.core.config.typesafe.DefaultProgrammaticDriverConfigLoaderBuilder;
 import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,11 @@ final class CassandraConnectionImpl implements CassandraConnection {
             this.datacenter = datacenter;
             this.username = username;
             this.password = password;
+        }
+
+        @Override
+        public String contactPoint() {
+            return host + ":" + port;
         }
 
         @Override
@@ -142,15 +148,15 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private CqlSession openConnection() {
         logger.debug("Opening CQL connection...");
 
-        var config = new DefaultProgrammaticDriverConfigLoaderBuilder()
-                .withDuration(DefaultDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(5))
-                .withDuration(DefaultDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(5))
-                .withDuration(DefaultDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(5))
-                .build();
+        OptionsMap optionsMap = OptionsMap.driverDefaults();
+        optionsMap.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(5));
+        optionsMap.put(TypedDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(5));
+        optionsMap.put(TypedDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(5));
+        var configLoader = DriverConfigLoader.fromMap(optionsMap);
 
         var sessionBuilder = new CqlSessionBuilder()
                 .withCodecRegistry(new DefaultCodecRegistry("default-code-registry"))
-                .withConfigLoader(config)
+                .withConfigLoader(configLoader)
                 .withLocalDatacenter(params().datacenter())
                 .addContactPoint(new InetSocketAddress(params().host(), params().port()));
 
@@ -159,6 +165,12 @@ final class CassandraConnectionImpl implements CassandraConnection {
         }
 
         return sessionBuilder.build();
+    }
+
+    @Override
+    public void createKeyspace(@NotNull String keyspaceName) {
+        execute("CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
+                + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};");
     }
 
     @Override

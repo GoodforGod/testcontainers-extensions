@@ -4,10 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -50,9 +47,9 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
                     final URL url = loader.getResource(location);
                     final String path = url.getPath();
                     final File file = new File(path);
-                    return file.isFile()
-                            ? Stream.of(file)
-                            : Arrays.stream(file.listFiles()).sorted();
+                    return file.isDirectory()
+                            ? Arrays.stream(file.listFiles()).sorted(Comparator.comparing(File::getName))
+                            : Stream.of(file);
                 })
                 .collect(Collectors.toList());
     }
@@ -82,7 +79,9 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
             try {
                 final String cql = Files.readString(file.toPath());
                 final List<String> queries = Arrays.stream(cql.split(";"))
-                        .map(query -> query + ";")
+                        .map(String::trim)
+                        .filter(query -> !query.isBlank())
+                        .map(query -> query.trim() + ";")
                         .collect(Collectors.toList());
 
                 for (String query : queries) {
@@ -93,7 +92,7 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
             }
         }
 
-        logger.debug("Finished schema migration for engine '{}' for connection: {}",
+        logger.info("Finished schema migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
     }
 
@@ -118,7 +117,7 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
             }
         }
 
-        logger.debug("Finished schema dropping for engine '{}' for connection: {}",
+        logger.info("Finished schema dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
     }
 }
