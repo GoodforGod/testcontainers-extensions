@@ -15,9 +15,9 @@ public final class TestcontainersExtensionListener implements TestExecutionListe
     public void testPlanExecutionFinished(TestPlan testPlan) {
         for (var imageToContainers : AbstractTestcontainersExtension.CLASS_TO_SHARED_CONTAINERS.entrySet()) {
             for (var imageToContainer : imageToContainers.getValue().entrySet()) {
-                logger.debug("Stopping in mode '{}' container: {}", ContainerMode.PER_RUN, imageToContainer.getKey());
+                logger.debug("Stopping in mode '{}' container: {}", ContainerMode.PER_RUN, imageToContainer.getValue());
                 imageToContainer.getValue().stop();
-                logger.info("Stopped in mode '{}' container: {}", ContainerMode.PER_RUN, imageToContainer.getKey());
+                logger.info("Stopped in mode '{}' container: {}", ContainerMode.PER_RUN, imageToContainer.getValue());
             }
         }
     }

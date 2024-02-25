@@ -3,7 +3,7 @@ package io.goodforgod.testcontainers.extensions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import io.goodforgod.testcontainers.extensions.example.ContainerRedisConnection;
+import io.goodforgod.testcontainers.extensions.example.ConnectionRedis;
 import io.goodforgod.testcontainers.extensions.example.RedisConnection;
 import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.MethodOrderer;
@@ -17,12 +17,12 @@ class ContainerPerRunFirstTests {
 
     static volatile RedisConnection perRunConnection;
 
-    @ContainerRedisConnection
+    @ConnectionRedis
     private RedisConnection sameConnection;
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerRedisConnection RedisConnection connection) {
+    void firstConnection(@ConnectionRedis RedisConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.params().uri());
         assertNotNull(sameConnection);
@@ -39,7 +39,7 @@ class ContainerPerRunFirstTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerRedisConnection RedisConnection connection) {
+    void secondConnection(@ConnectionRedis RedisConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.params().uri());
         assertNotNull(sameConnection);

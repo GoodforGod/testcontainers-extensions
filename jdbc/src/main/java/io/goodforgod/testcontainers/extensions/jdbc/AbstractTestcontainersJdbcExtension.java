@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
+import io.goodforgod.testcontainers.extensions.ContainerContext;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.util.Arrays;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -19,16 +20,24 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
     }
 
     private void tryMigrateIfRequired(JdbcMetadata metadata, ExtensionContext context) {
-        JdbcMigrationEngine migrationEngine = getMigrationEngine(metadata.migration().engine(), context);
+        JdbcMigrationEngine migrationEngine = getContainerContext(context).connection()
+                .migrationEngine(metadata.migration().engine());
         migrationEngine.migrate(Arrays.asList(metadata.migration().migrations()));
     }
 
     private void tryDropIfRequired(JdbcMetadata metadata, ExtensionContext context) {
-        JdbcMigrationEngine migrationEngine = getMigrationEngine(metadata.migration().engine(), context);
+        JdbcMigrationEngine migrationEngine = getContainerContext(context).connection()
+                .migrationEngine(metadata.migration().engine());
         migrationEngine.drop(Arrays.asList(metadata.migration().migrations()));
     }
 
-    protected abstract JdbcMigrationEngine getMigrationEngine(Migration.Engines engine, ExtensionContext context);
+    protected abstract ContainerContext<JdbcConnection> createContainerContext(Container container);
+
+    @Override
+    protected ContainerContext<JdbcConnection> getContainerContext(ExtensionContext context) {
+        Metadata metadata = getMetadata(context);
+        return getStorage(context).get(metadata.runMode(), ContainerContext.class);
+    }
 
     @Override
     public void beforeAll(ExtensionContext context) {

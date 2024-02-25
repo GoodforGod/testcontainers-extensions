@@ -3,9 +3,11 @@ package io.goodforgod.testcontainers.extensions.kafka;
 import java.time.Duration;
 import java.util.*;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
+import org.testcontainers.containers.KafkaContainer;
 
 /**
  * Kafka Connection to {@link TestcontainersKafka}
@@ -16,7 +18,7 @@ import org.opentest4j.AssertionFailedError;
  * Consumer functionality
  * <a href="https://docs.confluent.io/platform/current/clients/consumer.html">KafkaConsumer</a>
  */
-public interface KafkaConnection {
+public interface KafkaConnection extends AutoCloseable {
 
     /**
      * Kafka connection parameters
@@ -51,14 +53,14 @@ public interface KafkaConnection {
     void dropTopics(@NotNull Set<String> topics);
 
     @NotNull
-    default KafkaConnectionClosable withProperties(@NotNull Map<String, String> properties) {
+    default KafkaConnection withProperties(@NotNull Map<String, String> properties) {
         final Properties props = new Properties();
         props.putAll(properties);
         return withProperties(props);
     }
 
     @NotNull
-    KafkaConnectionClosable withProperties(@NotNull Properties properties);
+    KafkaConnection withProperties(@NotNull Properties properties);
 
     void send(@NotNull String topic, @NotNull Event... events);
 
@@ -81,7 +83,7 @@ public interface KafkaConnection {
     /**
      * KafkaConsumer that is capable of testing/asserting specified topics
      */
-    interface Consumer {
+    interface Consumer extends AutoCloseable {
 
         /**
          * Reset consumer state and wipe out all already consumed messages
@@ -196,5 +198,33 @@ public interface KafkaConnection {
          * @return true if received exactly N events during specified time frame or false
          */
         boolean checkReceivedEqualsInTime(int expected, @NotNull Duration timeToWait);
+    }
+
+    @NotNull
+    static KafkaConnection forContainer(@NotNull KafkaContainer container) {
+        final Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
+
+        final Properties networkProperties = new Properties();
+        networkProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                String.format("%s:%s", container.getNetworkAliases().get(0), "9092"));
+
+        return new KafkaConnectionClosableImpl(properties, networkProperties);
+    }
+
+    @NotNull
+    static KafkaConnection forBootstrap(@NotNull String bootstrapServers) {
+        final Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return new KafkaConnectionClosableImpl(properties, null);
+    }
+
+    /**
+     * @param properties are {@link ConsumerConfig} properties
+     * @return kafka connection
+     */
+    @NotNull
+    static KafkaConnection forProperties(@NotNull Properties properties) {
+        return new KafkaConnectionClosableImpl(properties, null);
     }
 }

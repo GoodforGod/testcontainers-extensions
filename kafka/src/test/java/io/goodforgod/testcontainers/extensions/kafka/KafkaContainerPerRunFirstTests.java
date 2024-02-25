@@ -15,12 +15,12 @@ class KafkaContainerPerRunFirstTests {
 
     static volatile KafkaConnection perRunConnection;
 
-    @ContainerKafkaConnection
+    @ConnectionKafka
     private KafkaConnection sameConnection;
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerKafkaConnection KafkaConnection connection) {
+    void firstConnection(@ConnectionKafka KafkaConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.params().bootstrapServers());
         assertNotNull(sameConnection);
@@ -40,7 +40,7 @@ class KafkaContainerPerRunFirstTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerKafkaConnection KafkaConnection connection) {
+    void secondConnection(@ConnectionKafka KafkaConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.params().bootstrapServers());
         assertNotNull(sameConnection);

@@ -21,9 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Internal
-final class CassandraConnectionImpl implements CassandraConnection {
+class CassandraConnectionImpl implements CassandraConnection {
 
-    private static final class ParamsImpl implements Params {
+    static final class ParamsImpl implements Params {
 
         private final String host;
         private final int port;
@@ -114,7 +114,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
                                            String datacenter,
                                            String username,
                                            String password) {
-        var params = new ParamsImpl(host, port, datacenter, username, password);
+        var params = new CassandraConnectionImpl.ParamsImpl(host, port, datacenter, username, password);
         return new CassandraConnectionImpl(params, null);
     }
 
@@ -354,6 +354,18 @@ final class CassandraConnectionImpl implements CassandraConnection {
         });
     }
 
+    void stop() {
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        // do nothing
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -372,12 +384,5 @@ final class CassandraConnectionImpl implements CassandraConnection {
     @Override
     public String toString() {
         return params().toString();
-    }
-
-    void close() {
-        if (connection != null) {
-            connection.close();
-            connection = null;
-        }
     }
 }

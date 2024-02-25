@@ -15,25 +15,25 @@ import org.opentest4j.AssertionFailedError;
 class CassandraConnectionAssertsTests {
 
     @Test
-    void execute(@ContainerCassandraConnection CassandraConnection connection) {
+    void execute(@ConnectionCassandra CassandraConnection connection) {
         assertThrows(CassandraConnectionException.class,
                 () -> connection.execute("CREATE TABLE cassandra.users(id INT, PRIMARY KEY (id))"));
     }
 
     @Test
-    void executeFromResources(@ContainerCassandraConnection CassandraConnection connection) {
+    void executeFromResources(@ConnectionCassandra CassandraConnection connection) {
         connection.executeFromResources("migration/setup.cql");
     }
 
     @Test
-    void queryOne(@ContainerCassandraConnection CassandraConnection connection) {
+    void queryOne(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         var usersFound = connection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0)).orElse(null);
         assertEquals(1, usersFound);
     }
 
     @Test
-    void queryMany(@ContainerCassandraConnection CassandraConnection connection) {
+    void queryMany(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
@@ -41,148 +41,148 @@ class CassandraConnectionAssertsTests {
     }
 
     @Test
-    void count(@ContainerCassandraConnection CassandraConnection connection) {
+    void count(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertEquals(1, connection.count("cassandra.users"));
     }
 
     @Test
-    void assertCountsNoneWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsNoneWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsNone("cassandra.users"));
     }
 
     @Test
-    void assertCountsNoneWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsNoneWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertDoesNotThrow(() -> connection.assertCountsNone("cassandra.users"));
     }
 
     @Test
-    void assertCountsAtLeastWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsAtLeastWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsAtLeast(1, "cassandra.users"));
     }
 
     @Test
-    void assertCountsAtLeastWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsAtLeastWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "cassandra.users"));
     }
 
     @Test
-    void assertCountsAtLeastWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsAtLeastWhenEquals(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "cassandra.users"));
     }
 
     @Test
-    void assertCountsExactWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsExactWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "cassandra.users"));
     }
 
     @Test
-    void assertCountsExactWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsExactWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "cassandra.users"));
     }
 
     @Test
-    void assertCountsExactWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertCountsExactWhenEquals(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertDoesNotThrow(() -> connection.assertCountsEquals(1, "cassandra.users"));
     }
 
     @Test
-    void assertQueriesNoneWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesNoneWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertThrows(AssertionFailedError.class, () -> connection.assertQueriesNone("SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesNoneWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesNoneWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertDoesNotThrow(() -> connection.assertQueriesNone("SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesAtLeastWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesAtLeastWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertThrows(AssertionFailedError.class, () -> connection.assertQueriesAtLeast(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesAtLeastWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesAtLeastWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         assertDoesNotThrow(() -> connection.assertQueriesAtLeast(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesAtLeastWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesAtLeastWhenEquals(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertDoesNotThrow(() -> connection.assertQueriesAtLeast(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesExactWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesExactWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertThrows(AssertionFailedError.class, () -> connection.assertQueriesEquals(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesExactWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesExactWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         assertThrows(AssertionFailedError.class, () -> connection.assertQueriesEquals(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void assertQueriesExactWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
+    void assertQueriesExactWhenEquals(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertDoesNotThrow(() -> connection.assertQueriesEquals(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesNoneWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesNoneWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertFalse(connection.checkQueriesNone("SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesNoneWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesNoneWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertTrue(connection.checkQueriesNone("SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesAtLeastWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesAtLeastWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertFalse(connection.checkQueriesAtLeast(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesAtLeastWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesAtLeastWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         assertTrue(connection.checkQueriesAtLeast(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesAtLeastWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesAtLeastWhenEquals(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertTrue(connection.checkQueriesAtLeast(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesExactWhenZero(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesExactWhenZero(@ConnectionCassandra CassandraConnection connection) {
         assertFalse(connection.checkQueriesEquals(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesExactWhenMore(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesExactWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         assertFalse(connection.checkQueriesEquals(1, "SELECT * FROM cassandra.users;"));
     }
 
     @Test
-    void checkQueriesExactWhenEquals(@ContainerCassandraConnection CassandraConnection connection) {
+    void checkQueriesExactWhenEquals(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         assertTrue(connection.checkQueriesEquals(1, "SELECT * FROM cassandra.users;"));
     }

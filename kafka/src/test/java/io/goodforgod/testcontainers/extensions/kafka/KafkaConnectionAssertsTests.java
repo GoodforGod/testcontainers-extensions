@@ -13,7 +13,7 @@ import org.opentest4j.AssertionFailedError;
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.3")
 class KafkaConnectionAssertsTests {
 
-    @ContainerKafkaConnection
+    @ConnectionKafka
     private KafkaConnection connection;
 
     @Test

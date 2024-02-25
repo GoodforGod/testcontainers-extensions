@@ -18,13 +18,13 @@ class ContainerFromAnnotationTests {
             .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class)));
 
     @Test
-    void checkParams(@ContainerRedisConnection RedisConnection connection) {
+    void checkParams(@ConnectionRedis RedisConnection connection) {
         assertTrue(container.isRunning());
         connection.deleteAll();
     }
 
     @Test
-    void checkParamsAgain(@ContainerRedisConnection RedisConnection connection) {
+    void checkParamsAgain(@ConnectionRedis RedisConnection connection) {
         assertTrue(container.isRunning());
         connection.deleteAll();
     }

@@ -3,7 +3,7 @@ package io.goodforgod.testcontainers.extensions.kafka;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import io.goodforgod.testcontainers.extensions.kafka.ContainerKafkaConnection.Property;
+import io.goodforgod.testcontainers.extensions.kafka.ConnectionKafka.Property;
 import java.time.Duration;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.junit.jupiter.api.MethodOrderer;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class KafkaConnectionTopicResetTests {
 
-    @ContainerKafkaConnection(properties = @Property(name = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, value = "earliest"))
+    @ConnectionKafka(properties = @Property(name = ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, value = "earliest"))
     private KafkaConnection connection;
 
     @Order(1)

@@ -14,13 +14,13 @@ class KafkaContainerPerMethodConstructorTests {
 
     private static KafkaConnection firstConnection;
 
-    KafkaContainerPerMethodConstructorTests(@ContainerKafkaConnection KafkaConnection sameConnection) {
+    KafkaContainerPerMethodConstructorTests(@ConnectionKafka KafkaConnection sameConnection) {
         this.sameConnection = sameConnection;
         assertNotNull(sameConnection);
     }
 
     @BeforeEach
-    public void setupEach(@ContainerKafkaConnection KafkaConnection paramConnection) {
+    public void setupEach(@ConnectionKafka KafkaConnection paramConnection) {
         var consumer = paramConnection.subscribe("my-topic");
         paramConnection.send("my-topic", Event.ofValue("my-value"));
         consumer.assertReceivedAtLeast(1);
@@ -29,7 +29,7 @@ class KafkaContainerPerMethodConstructorTests {
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerKafkaConnection KafkaConnection connection) {
+    void firstConnection(@ConnectionKafka KafkaConnection connection) {
         assertNull(firstConnection);
         assertNotNull(connection);
         assertNotNull(sameConnection);
@@ -39,7 +39,7 @@ class KafkaContainerPerMethodConstructorTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerKafkaConnection KafkaConnection connection) {
+    void secondConnection(@ConnectionKafka KafkaConnection connection) {
         assertNotNull(connection);
         assertNotNull(firstConnection);
         assertNotNull(sameConnection);

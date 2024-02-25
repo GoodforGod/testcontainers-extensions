@@ -79,7 +79,7 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
             hikariConfig.setUsername(jdbcConnection.params().username());
             hikariConfig.setPassword(jdbcConnection.params().password());
             hikariConfig.setAutoCommit(true);
-            hikariConfig.setMinimumIdle(2);
+            hikariConfig.setMinimumIdle(1);
             hikariConfig.setMaximumPoolSize(10);
             hikariConfig.setPoolName("flyway");
             this.dataSource = new HikariDataSource(hikariConfig);

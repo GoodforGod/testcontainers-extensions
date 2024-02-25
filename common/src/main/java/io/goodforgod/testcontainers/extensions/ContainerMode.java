@@ -10,8 +10,7 @@ public enum ContainerMode {
      * classes
      * <p>
      * Container image and Container network and Container network alias must be same across annotations
-     * or
-     * will create container per image
+     * or container will be created such pair
      */
     PER_RUN,
     /**

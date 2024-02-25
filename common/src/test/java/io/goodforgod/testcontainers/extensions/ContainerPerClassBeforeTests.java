@@ -3,7 +3,7 @@ package io.goodforgod.testcontainers.extensions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import io.goodforgod.testcontainers.extensions.example.ContainerRedisConnection;
+import io.goodforgod.testcontainers.extensions.example.ConnectionRedis;
 import io.goodforgod.testcontainers.extensions.example.RedisConnection;
 import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.*;
@@ -16,25 +16,25 @@ class ContainerPerClassBeforeTests {
     private static RedisConnection setupEach;
     private static RedisConnection setupFirst;
 
-    @ContainerRedisConnection
+    @ConnectionRedis
     private RedisConnection fieldConnection;
 
     @BeforeAll
-    public static void setupAll(@ContainerRedisConnection RedisConnection paramConnection) {
+    public static void setupAll(@ConnectionRedis RedisConnection paramConnection) {
         assertNotNull(paramConnection);
         assertNotNull(paramConnection.params().uri());
         setupAll = paramConnection;
     }
 
     @BeforeEach
-    public void setupEach(@ContainerRedisConnection RedisConnection paramConnection) {
+    public void setupEach(@ConnectionRedis RedisConnection paramConnection) {
         assertEquals(fieldConnection, paramConnection);
         setupEach = paramConnection;
     }
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerRedisConnection RedisConnection paramConnection) {
+    void firstConnection(@ConnectionRedis RedisConnection paramConnection) {
         assertNotNull(paramConnection);
         assertNotNull(paramConnection.params().uri());
         assertNotNull(fieldConnection);
@@ -46,7 +46,7 @@ class ContainerPerClassBeforeTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerRedisConnection RedisConnection paramConnection) {
+    void secondConnection(@ConnectionRedis RedisConnection paramConnection) {
         assertNotNull(paramConnection);
         assertNotNull(paramConnection.params().uri());
         assertNotNull(fieldConnection);

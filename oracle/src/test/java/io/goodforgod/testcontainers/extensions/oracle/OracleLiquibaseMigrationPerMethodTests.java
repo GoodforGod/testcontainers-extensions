@@ -3,7 +3,7 @@ package io.goodforgod.testcontainers.extensions.oracle;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import io.goodforgod.testcontainers.extensions.jdbc.ContainerOracleConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.ConnectionOracle;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.Migration;
 import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersOracle;
@@ -23,13 +23,13 @@ class OracleLiquibaseMigrationPerMethodTests {
 
     @Order(1)
     @Test
-    void firstRun(@ContainerOracleConnection JdbcConnection connection) {
+    void firstRun(@ConnectionOracle JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1)");
     }
 
     @Order(2)
     @Test
-    void secondRun(@ContainerOracleConnection JdbcConnection connection) {
+    void secondRun(@ConnectionOracle JdbcConnection connection) {
         var usersFound = connection.queryOne("SELECT * FROM users", r -> r.getInt(1));
         assertTrue(usersFound.isEmpty());
     }

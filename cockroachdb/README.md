@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.9.6"
+testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.10.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.9.6"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cockroachdb</artifactId>
-    <version>0.9.6</version>
+    <version>0.10.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -261,17 +261,17 @@ In case you want to use some external Cockroachdb instance that is running in CI
 you can use special *environment variables* and extension will use them to propagate connection and no Cockroachdb containers will be running in such case.
 
 Special environment variables:
-- `EXTERNAL_TEST_COCKROACHDB_JDBC_URL` - Cockroachdb instance JDBC url.
-- `EXTERNAL_TEST_COCKROACHDB_USERNAME` - Cockroachdb instance username (optional).
-- `EXTERNAL_TEST_COCKROACHDB_PASSWORD` - Cockroachdb instance password (optional).
-- `EXTERNAL_TEST_COCKROACHDB_HOST` - Cockroachdb instance host (optional if JDBC url specified).
-- `EXTERNAL_TEST_COCKROACHDB_PORT` - Cockroachdb instance port (optional if JDBC url specified).
-- `EXTERNAL_TEST_COCKROACHDB_DATABASE` - Cockroachdb instance database (`cockroachdb` by default) (optional if JDBC url specified)
+- `EXTERNAL_TEST_COCKROACH_JDBC_URL` - Cockroachdb instance JDBC url.
+- `EXTERNAL_TEST_COCKROACH_USERNAME` - Cockroachdb instance username (optional).
+- `EXTERNAL_TEST_COCKROACH_PASSWORD` - Cockroachdb instance password (optional).
+- `EXTERNAL_TEST_COCKROACH_HOST` - Cockroachdb instance host (optional if JDBC url specified).
+- `EXTERNAL_TEST_COCKROACH_PORT` - Cockroachdb instance port (optional if JDBC url specified).
+- `EXTERNAL_TEST_COCKROACH_DATABASE` - Cockroachdb instance database (`cockroachdb` by default) (optional if JDBC url specified)
 
-Use can use either `EXTERNAL_TEST_COCKROACHDB_JDBC_URL` to specify connection with username & password combination
-or use combination of `EXTERNAL_TEST_COCKROACHDB_HOST` & `EXTERNAL_TEST_COCKROACHDB_PORT` & `EXTERNAL_TEST_COCKROACHDB_DATABASE`.
+Use can use either `EXTERNAL_TEST_COCKROACH_JDBC_URL` to specify connection with username & password combination
+or use combination of `EXTERNAL_TEST_COCKROACH_HOST` & `EXTERNAL_TEST_COCKROACH_PORT` & `EXTERNAL_TEST_COCKROACH_DATABASE`.
 
-`EXTERNAL_TEST_COCKROACHDB_JDBC_URL` env have higher priority over host & port & database.
+`EXTERNAL_TEST_COCKROACH_JDBC_URL` env have higher priority over host & port & database.
 
 ### Annotation Migration
 

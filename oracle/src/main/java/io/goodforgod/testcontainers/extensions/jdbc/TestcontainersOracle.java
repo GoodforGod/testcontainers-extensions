@@ -19,14 +19,12 @@ import org.testcontainers.containers.OracleContainer;
 public @interface TestcontainersOracle {
 
     /**
-     * @see TestcontainersOracleExtension#getContainerDefault(OracleMetadata)
      * @return Oracle image
      *             <p>
      *             1) Image can have static value: "gvenzl/oracle-xe:18.4.0-faststart"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
      *             "${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-faststart}"
-     *             <p>
      */
     String image() default "gvenzl/oracle-xe:18.4.0-faststart";
 

@@ -5,7 +5,7 @@ import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 @Internal
-abstract class JdbcMetadata extends AbstractContainerMetadata {
+class JdbcMetadata extends AbstractContainerMetadata {
 
     private final Migration migration;
 

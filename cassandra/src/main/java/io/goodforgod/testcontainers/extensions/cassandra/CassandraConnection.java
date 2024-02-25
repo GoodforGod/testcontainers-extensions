@@ -7,11 +7,12 @@ import java.util.List;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
+import org.testcontainers.containers.CassandraContainer;
 
 /**
- * Describes active Cassandra connection of currently running {@link CassandraContainerExtra}
+ * Describes active Cassandra connection of currently running {@link CassandraContainer}
  */
-public interface CassandraConnection {
+public interface CassandraConnection extends AutoCloseable {
 
     @FunctionalInterface
     interface RowMapper<R, E extends Throwable> {
@@ -180,4 +181,23 @@ public interface CassandraConnection {
      * @return true if executed CQL results in exact number of expected rows
      */
     boolean checkQueriesEquals(int expected, @NotNull @Language("CQL") String cql);
+
+    static CassandraConnection forContainer(CassandraContainer<?> container) {
+        var params = new CassandraConnectionImpl.ParamsImpl(container.getHost(),
+                container.getMappedPort(CassandraContainer.CQL_PORT),
+                container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+        final Params network = new CassandraConnectionImpl.ParamsImpl(container.getNetworkAliases().get(0),
+                CassandraContainer.CQL_PORT,
+                container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+        return new CassandraConnectionClosableImpl(params, network);
+    }
+
+    static CassandraConnection forParams(String host,
+                                         int port,
+                                         String datacenter,
+                                         String username,
+                                         String password) {
+        var params = new CassandraConnectionImpl.ParamsImpl(host, port, datacenter, username, password);
+        return new CassandraConnectionClosableImpl(params, null);
+    }
 }

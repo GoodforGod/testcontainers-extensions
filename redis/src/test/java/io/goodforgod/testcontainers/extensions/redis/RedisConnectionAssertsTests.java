@@ -11,7 +11,7 @@ import org.opentest4j.AssertionFailedError;
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.0-alpine")
 class RedisConnectionAssertsTests {
 
-    @ContainerRedisConnection
+    @ConnectionRedis
     private RedisConnection connection;
 
     @BeforeEach

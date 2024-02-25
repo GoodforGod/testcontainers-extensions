@@ -5,11 +5,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.util.JedisURIHelper;
 
 /**
- * Describes active Redis connection of currently running {@link RedisContainerExtra}
+ * Describes active Redis connection of currently running {@link RedisContainer}
  */
-public interface RedisConnection {
+public interface RedisConnection extends AutoCloseable {
 
     /**
      * Redis connection parameters
@@ -138,4 +140,31 @@ public interface RedisConnection {
      * @param expected exact number of values expected
      */
     List<RedisValue> assertCountsEquals(long expected, @NotNull Collection<RedisKey> keys);
+
+    static RedisConnection forContainer(RedisContainer<?> container) {
+        var params = new RedisConnectionImpl.ParamsImpl(container.getHost(), container.getPort(), container.getUser(),
+                container.getPassword(), container.getDatabase());
+        final String alias = container.getNetworkAliases().get(container.getNetworkAliases().size() - 1);
+        var network = new RedisConnectionImpl.ParamsImpl(alias, RedisContainer.PORT, container.getUser(), container.getPassword(),
+                container.getDatabase());
+        return new RedisConnectionClosableImpl(params, network);
+    }
+
+    static RedisConnection forURI(URI uri) {
+        HostAndPort hostAndPort = JedisURIHelper.getHostAndPort(uri);
+        String user = JedisURIHelper.getUser(uri);
+        String password = JedisURIHelper.getPassword(uri);
+        int database = JedisURIHelper.getDBIndex(uri);
+        var params = new RedisConnectionImpl.ParamsImpl(hostAndPort.getHost(), hostAndPort.getPort(), user, password, database);
+        return new RedisConnectionClosableImpl(params, null);
+    }
+
+    static RedisConnection forParams(String host,
+                                     int port,
+                                     int database,
+                                     String username,
+                                     String password) {
+        var params = new RedisConnectionImpl.ParamsImpl(host, port, username, password, database);
+        return new RedisConnectionClosableImpl(params, null);
+    }
 }

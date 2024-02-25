@@ -1,26 +1,30 @@
 package io.goodforgod.testcontainers.extensions.redis;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
+import io.goodforgod.testcontainers.extensions.ContainerContext;
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersRedisExtension extends
-        AbstractTestcontainersExtension<RedisConnection, RedisContainerExtra<?>, RedisMetadata> {
+        AbstractTestcontainersExtension<RedisConnection, RedisContainer<?>, RedisMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersRedisExtension.class);
 
     @SuppressWarnings("unchecked")
-    protected Class<RedisContainerExtra<?>> getContainerType() {
-        return (Class<RedisContainerExtra<?>>) ((Class<?>) RedisContainerExtra.class);
+    protected Class<RedisContainer<?>> getContainerType() {
+        return (Class<RedisContainer<?>>) ((Class<?>) RedisContainer.class);
     }
 
     protected Class<? extends Annotation> getContainerAnnotation() {
@@ -28,7 +32,7 @@ class TestcontainersRedisExtension extends
     }
 
     protected Class<? extends Annotation> getConnectionAnnotation() {
-        return ContainerRedisConnection.class;
+        return ConnectionRedis.class;
     }
 
     @Override
@@ -37,12 +41,22 @@ class TestcontainersRedisExtension extends
     }
 
     @Override
-    protected RedisContainerExtra<?> getContainerDefault(RedisMetadata metadata) {
-        var dockerImage = DockerImageName.parse(metadata.image())
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
+    }
+
+    @Override
+    protected RedisContainer<?> createContainerDefault(RedisMetadata metadata) {
+        var image = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("redis"));
 
-        var container = new RedisContainerExtra<>(dockerImage);
-        container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
+        final RedisContainer<?> container = new RedisContainer<>(image);
+        final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "redis-" + System.currentTimeMillis());
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
+                .withMdc("image", image.asCanonicalNameString())
+                .withMdc("alias", alias))
+                .withStartupTimeout(Duration.ofMinutes(5));
+        container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
@@ -51,18 +65,13 @@ class TestcontainersRedisExtension extends
     }
 
     @Override
-    protected ExtensionContext.Namespace getNamespace() {
-        return NAMESPACE;
+    protected ContainerContext<RedisConnection> createContainerContext(RedisContainer<?> container) {
+        return new RedisContext(container);
     }
 
     @NotNull
     protected Optional<RedisMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersRedis.class, context)
                 .map(a -> new RedisMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode()));
-    }
-
-    @NotNull
-    protected RedisConnection getConnectionForContainer(RedisMetadata metadata, RedisContainerExtra<?> container) {
-        return container.connection();
     }
 }

@@ -16,9 +16,9 @@ import redis.clients.jedis.Protocol;
 import redis.clients.jedis.args.FlushMode;
 
 @Internal
-final class RedisConnectionImpl implements RedisConnection {
+class RedisConnectionImpl implements RedisConnection {
 
-    private static final class ParamsImpl implements Params {
+    static final class ParamsImpl implements Params {
 
         private final String host;
         private final int port;
@@ -108,7 +108,7 @@ final class RedisConnectionImpl implements RedisConnection {
                                        int database,
                                        String username,
                                        String password) {
-        var params = new ParamsImpl(host, port, username, password, database);
+        var params = new RedisConnectionImpl.ParamsImpl(host, port, username, password, database);
         return new RedisConnectionImpl(params, null);
     }
 
@@ -316,7 +316,12 @@ final class RedisConnectionImpl implements RedisConnection {
         return params().toString();
     }
 
-    void close() {
+    @Override
+    public void close() throws Exception {
+        // do nothing
+    }
+
+    void stop() {
         if (jedis != null) {
             jedis.close();
             jedis = null;

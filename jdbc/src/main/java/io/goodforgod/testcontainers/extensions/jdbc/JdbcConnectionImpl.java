@@ -18,9 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Internal
-final class JdbcConnectionImpl implements JdbcConnection {
+class JdbcConnectionImpl implements JdbcConnection {
 
-    private static final class ParamsImpl implements JdbcConnection.Params {
+    static final class ParamsImpl implements JdbcConnection.Params {
 
         private final String jdbcUrl;
         private final String host;
@@ -80,6 +80,9 @@ final class JdbcConnectionImpl implements JdbcConnection {
     private final Params params;
     private final Params network;
 
+    private volatile FlywayJdbcMigrationEngine flywayJdbcMigrationEngine;
+    private volatile LiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
+
     JdbcConnectionImpl(Params params, Params network) {
         this.params = params;
         this.network = network;
@@ -116,9 +119,7 @@ final class JdbcConnectionImpl implements JdbcConnection {
         return new JdbcConnectionImpl(params, network);
     }
 
-    static JdbcConnection forExternal(String jdbcUrl,
-                                      String username,
-                                      String password) {
+    static JdbcConnection forExternal(String jdbcUrl, String username, String password) {
         final URI uri = URI.create(jdbcUrl);
         var host = uri.getHost();
         var port = uri.getPort();
@@ -130,6 +131,23 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
         var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
         return new JdbcConnectionImpl(params, null);
+    }
+
+    @Override
+    public @NotNull JdbcMigrationEngine migrationEngine(Migration.@NotNull Engines engine) {
+        if (engine == Migration.Engines.FLYWAY) {
+            if (flywayJdbcMigrationEngine == null) {
+                this.flywayJdbcMigrationEngine = new FlywayJdbcMigrationEngine(this);
+            }
+            return this.flywayJdbcMigrationEngine;
+        } else if (engine == Migration.Engines.LIQUIBASE) {
+            if (liquibaseJdbcMigrationEngine == null) {
+                this.liquibaseJdbcMigrationEngine = new LiquibaseJdbcMigrationEngine(this);
+            }
+            return this.liquibaseJdbcMigrationEngine;
+        } else {
+            throw new UnsupportedOperationException("Unsupported engine: " + engine);
+        }
     }
 
     @Override
@@ -395,8 +413,22 @@ final class JdbcConnectionImpl implements JdbcConnection {
         return checkInserted(sql);
     }
 
-    void close() {
+    void stop() {
         this.isClosed = true;
+
+        if (flywayJdbcMigrationEngine != null) {
+            flywayJdbcMigrationEngine.close();
+            flywayJdbcMigrationEngine = null;
+        }
+        if (liquibaseJdbcMigrationEngine != null) {
+            liquibaseJdbcMigrationEngine.close();
+            liquibaseJdbcMigrationEngine = null;
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        // do nothing
     }
 
     @Override

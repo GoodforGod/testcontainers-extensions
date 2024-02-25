@@ -12,7 +12,7 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 /**
  * Describes active JDBC connection of currently running {@link JdbcDatabaseContainer}
  */
-public interface JdbcConnection {
+public interface JdbcConnection extends AutoCloseable {
 
     @FunctionalInterface
     interface ResultSetMapper<R, E extends Throwable> {
@@ -66,6 +66,9 @@ public interface JdbcConnection {
     @NotNull
     Connection open();
 
+    @NotNull
+    JdbcMigrationEngine migrationEngine(@NotNull Migration.Engines engine);
+
     /**
      * @param sql to execute
      */
@@ -111,7 +114,7 @@ public interface JdbcConnection {
 
     /**
      * Asserts that SELECT COUNT(*) in specified table counts 0 rows
-     * 
+     *
      * @param tableName to SELECT COUNT(*) in
      */
     void assertCountsNone(@NotNull String tableName);
@@ -119,7 +122,7 @@ public interface JdbcConnection {
     /**
      * Asserts that SELECT COUNT(*) in specified table counts at least minimal number expectedAtLeast
      * rows
-     * 
+     *
      * @param tableName       to SELECT COUNT(*) in
      * @param expectedAtLeast at least minimal number of rows expected
      */
@@ -127,7 +130,7 @@ public interface JdbcConnection {
 
     /**
      * Asserts that SELECT COUNT(*) in specified table counts exact number expected rows
-     * 
+     *
      * @param tableName to SELECT COUNT(*) in
      * @param expected  exact number of rows expected
      */
@@ -135,14 +138,14 @@ public interface JdbcConnection {
 
     /**
      * Asserts that executed SQL results in 0 rows
-     * 
+     *
      * @param sql to execute
      */
     void assertQueriesNone(@NotNull @Language("SQL") String sql);
 
     /**
      * Asserts that executed SQL results in at least minimal number of expectedAtLeast rows
-     * 
+     *
      * @param sql             to execute
      * @param expectedAtLeast at least minimal number of rows expected
      */
@@ -150,7 +153,7 @@ public interface JdbcConnection {
 
     /**
      * Asserts that executed SQL results in exact number of expected rows
-     * 
+     *
      * @param sql      to execute
      * @param expected exact number of rows expected
      */
@@ -158,21 +161,21 @@ public interface JdbcConnection {
 
     /**
      * Asserts that executed SQL results in any inserted entities
-     * 
+     *
      * @param sql to execute
      */
     void assertInserted(@NotNull @Language("SQL") String sql);
 
     /**
      * Asserts that executed SQL results in any updated entities
-     * 
+     *
      * @param sql to execute
      */
     void assertUpdated(@NotNull @Language("SQL") String sql);
 
     /**
      * Asserts that executed SQL results in any deleted entities
-     * 
+     *
      * @param sql to execute
      */
     void assertDeleted(@NotNull @Language("SQL") String sql);
@@ -214,4 +217,33 @@ public interface JdbcConnection {
      * @return true if executed SQL results in any deleted entities
      */
     boolean checkDeleted(@Language("SQL") String sql);
+
+    static JdbcConnection forParams(String driverProtocol,
+                                    String host,
+                                    int port,
+                                    String database,
+                                    String username,
+                                    String password) {
+        var jdbcUrl = String.format("jdbc:%s://%s:%d/%s", driverProtocol, host, port, database);
+        var params = new JdbcConnectionImpl.ParamsImpl(jdbcUrl, host, port, database, username, password);
+        return new JdbcConnectionClosableImpl(params, null);
+    }
+
+    static JdbcConnection forContainer(JdbcDatabaseContainer<?> container) {
+        String jdbcUrl = container.getJdbcUrl();
+        int from = jdbcUrl.indexOf("//");
+        int to = jdbcUrl.indexOf("/", from + 2);
+        int port = Integer.parseInt(jdbcUrl.substring(from, to).split(":")[1]);
+        var params = new JdbcConnectionImpl.ParamsImpl(jdbcUrl, container.getHost(), port, container.getDatabaseName(),
+                container.getUsername(), container.getPassword());
+
+        String networkHost = container.getNetworkAliases().get(0);
+        Integer networkPort = container.getFirstMappedPort();
+        var networkJdbcUrl = String.format("%s//%s:%d/%s", jdbcUrl.substring(0, from), networkHost, networkPort,
+                container.getDatabaseName());
+        var network = new JdbcConnectionImpl.ParamsImpl(networkJdbcUrl, container.getHost(), port, container.getDatabaseName(),
+                container.getUsername(), container.getPassword());
+
+        return new JdbcConnectionClosableImpl(params, network);
+    }
 }

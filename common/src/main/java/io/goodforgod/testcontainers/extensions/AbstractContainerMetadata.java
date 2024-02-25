@@ -10,7 +10,6 @@ public abstract class AbstractContainerMetadata implements ContainerMetadata {
 
     private final boolean network;
     private final String alias;
-    private final String aliasOrDefault;
     private final String image;
     private final ContainerMode runMode;
 
@@ -20,7 +19,6 @@ public abstract class AbstractContainerMetadata implements ContainerMetadata {
         this.alias = Optional.ofNullable(getEnvValue("Alias", alias))
                 .filter(a -> !a.isBlank())
                 .orElse(null);
-        this.aliasOrDefault = Optional.ofNullable(this.alias).orElse(networkAliasDefault());
         this.image = Optional.ofNullable(getEnvValue("Image", image))
                 .filter(a -> !a.isBlank())
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -64,11 +62,6 @@ public abstract class AbstractContainerMetadata implements ContainerMetadata {
     @Override
     public @Nullable String networkAlias() {
         return alias;
-    }
-
-    @Override
-    public @NotNull String networkAliasOrDefault() {
-        return aliasOrDefault;
     }
 
     @Override
