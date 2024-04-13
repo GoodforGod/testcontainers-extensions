@@ -76,12 +76,14 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
-    private volatile boolean isClosed = false;
     private final Params params;
     private final Params network;
 
     private volatile FlywayJdbcMigrationEngine flywayJdbcMigrationEngine;
     private volatile LiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
+
+    private volatile boolean isClosed = false;
+    private volatile Connection connection;
 
     JdbcConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -162,11 +164,26 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     @NotNull
     @Override
-    public Connection open() {
+    public Connection get() {
         if (isClosed) {
             throw new IllegalStateException("JdbcConnection was closed");
         }
 
+        try {
+            if (connection == null) {
+                connection = openConnection();
+            } else if (connection.isClosed()) {
+                connection = openConnection();
+            }
+
+            return connection;
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @NotNull
+    private Connection openConnection() {
         try {
             logger.debug("Opening SQL connection...");
             return DriverManager.getConnection(params.jdbcUrl(), params.username(), params.username());
@@ -178,7 +195,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public void execute(@Language("SQL") @NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
@@ -241,7 +258,7 @@ class JdbcConnectionImpl implements JdbcConnection {
                                                          @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             return (rs.next())
@@ -257,7 +274,7 @@ class JdbcConnectionImpl implements JdbcConnection {
                                                       @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             final List<T> result = new ArrayList<>();
@@ -278,7 +295,7 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private void assertQuery(@Language("SQL") String sql, QueryAssert consumer) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             consumer.accept(rs);
@@ -323,7 +340,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public void assertInserted(@NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             if (rs == 0) {
@@ -352,7 +369,7 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private boolean checkQuery(@Language("SQL") String sql, QueryChecker checker) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             return checker.apply(rs);
@@ -394,7 +411,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public boolean checkInserted(@NotNull String sql) {
         logger.debug("Executing SQL: {}", sql);
-        try (var connection = open();
+        try (var connection = get();
                 var stmt = connection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             return rs != 0;
@@ -415,6 +432,15 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     void stop() {
         this.isClosed = true;
+
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                // do nothing
+            }
+            connection = null;
+        }
 
         if (flywayJdbcMigrationEngine != null) {
             flywayJdbcMigrationEngine.close();

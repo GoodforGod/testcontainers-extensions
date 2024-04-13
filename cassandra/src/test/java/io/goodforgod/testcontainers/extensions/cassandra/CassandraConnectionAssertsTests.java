@@ -11,7 +11,7 @@ import org.opentest4j.AssertionFailedError;
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD,
-                migrations = { "migration/setup.cql" }))
+                locations = { "migration/setup.cql" }))
 class CassandraConnectionAssertsTests {
 
     @Test

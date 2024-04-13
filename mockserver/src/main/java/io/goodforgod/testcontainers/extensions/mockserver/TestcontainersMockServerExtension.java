@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersMockServerExtension extends
-        AbstractTestcontainersExtension<MockServerConnection, MockServerContainer, MockserverMetadata> {
+        AbstractTestcontainersExtension<MockServerConnection, MockServerContainer, MockServerMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersMockServerExtension.class);
@@ -46,7 +46,7 @@ class TestcontainersMockServerExtension extends
     }
 
     @Override
-    protected MockServerContainer createContainerDefault(MockserverMetadata metadata) {
+    protected MockServerContainer createContainerDefault(MockServerMetadata metadata) {
         var image = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("mockserver/mockserver"));
 
@@ -71,9 +71,9 @@ class TestcontainersMockServerExtension extends
     }
 
     @NotNull
-    protected Optional<MockserverMetadata> findMetadata(@NotNull ExtensionContext context) {
+    protected Optional<MockServerMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersMockServer.class, context)
-                .map(a -> new MockserverMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode()));
+                .map(a -> new MockServerMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode()));
     }
 
     @Override

@@ -25,7 +25,7 @@ final class MockServerContext implements ContainerContext<MockServerConnection> 
         if (connection == null) {
             final Optional<MockServerConnection> connectionExternal = getConnectionExternal();
             if (connectionExternal.isEmpty() && !container.isRunning()) {
-                throw new IllegalStateException("MockserverConnection can't be create for container that is not running");
+                throw new IllegalStateException("MockServerConnection can't be create for container that is not running");
             }
 
             final MockServerConnection jdbcConnection = connectionExternal.orElseGet(() -> {

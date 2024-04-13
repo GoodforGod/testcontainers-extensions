@@ -202,6 +202,10 @@ public interface KafkaConnection extends AutoCloseable {
 
     @NotNull
     static KafkaConnection forContainer(@NotNull KafkaContainer container) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
         final Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
 

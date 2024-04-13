@@ -64,7 +64,7 @@ public interface JdbcConnection extends AutoCloseable {
      * @return new JDBC connection
      */
     @NotNull
-    Connection open();
+    Connection get();
 
     @NotNull
     JdbcMigrationEngine migrationEngine(@NotNull Migration.Engines engine);
@@ -230,6 +230,10 @@ public interface JdbcConnection extends AutoCloseable {
     }
 
     static JdbcConnection forContainer(JdbcDatabaseContainer<?> container) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
         String jdbcUrl = container.getJdbcUrl();
         int from = jdbcUrl.indexOf("//");
         int to = jdbcUrl.indexOf("/", from + 2);

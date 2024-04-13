@@ -20,7 +20,7 @@ import org.testcontainers.containers.MockServerContainer;
 public @interface TestcontainersMockServer {
 
     /**
-     * @return Mockserver image
+     * @return MockServer image
      *             <p>
      *             1) Image can have static value: "mockserver/mockserver:5.15.0"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"

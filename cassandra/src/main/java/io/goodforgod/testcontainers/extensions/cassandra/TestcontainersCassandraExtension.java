@@ -81,13 +81,13 @@ class TestcontainersCassandraExtension extends
 
     private void tryMigrateIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            new ScriptCassandraMigrationEngine(connection).migrate(Arrays.asList(annotation.migration().migrations()));
+            new ScriptCassandraMigrationEngine(connection).apply(Arrays.asList(annotation.migration().locations()));
         }
     }
 
     private void tryDropIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            new ScriptCassandraMigrationEngine(connection).drop(Arrays.asList(annotation.migration().migrations()));
+            new ScriptCassandraMigrationEngine(connection).drop(Arrays.asList(annotation.migration().locations()));
         }
     }
 

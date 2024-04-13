@@ -43,5 +43,5 @@ public @interface TestcontainersCassandra {
     Migration migration() default @Migration(engine = Migration.Engines.SCRIPTS,
             apply = Migration.Mode.NONE,
             drop = Migration.Mode.NONE,
-            migrations = {});
+            locations = {});
 }

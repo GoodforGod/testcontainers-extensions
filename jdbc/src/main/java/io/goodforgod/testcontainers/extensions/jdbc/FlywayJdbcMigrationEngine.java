@@ -39,7 +39,7 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
     }
 
     @Override
-    public void migrate(@NotNull List<String> locations) {
+    public void apply(@NotNull List<String> locations) {
         logger.debug("Starting schema migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 

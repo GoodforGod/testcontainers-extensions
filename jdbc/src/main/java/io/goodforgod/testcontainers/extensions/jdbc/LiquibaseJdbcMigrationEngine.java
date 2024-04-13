@@ -91,7 +91,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
     }
 
     @Override
-    public void migrate(@NotNull List<String> locations) {
+    public void apply(@NotNull List<String> locations) {
         logger.debug("Starting schema migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
@@ -127,7 +127,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
     private Database getDatabase() {
         try {
             if (this.database == null) {
-                Connection connection = jdbcConnection.open();
+                Connection connection = jdbcConnection.get();
                 var liquibaseConnection = new liquibase.database.jvm.JdbcConnection(connection);
                 this.database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(liquibaseConnection);
             }

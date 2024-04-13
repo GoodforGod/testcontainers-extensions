@@ -67,6 +67,9 @@ public interface CassandraConnection extends AutoCloseable {
     @NotNull
     CqlSession get();
 
+    @NotNull
+    CassandraMigrationEngine migrationEngine(@NotNull Migration.Engines engine);
+
     /**
      * @param keyspaceName to create
      */
@@ -183,6 +186,10 @@ public interface CassandraConnection extends AutoCloseable {
     boolean checkQueriesEquals(int expected, @NotNull @Language("CQL") String cql);
 
     static CassandraConnection forContainer(CassandraContainer<?> container) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
         var params = new CassandraConnectionImpl.ParamsImpl(container.getHost(),
                 container.getMappedPort(CassandraContainer.CQL_PORT),
                 container.getLocalDatacenter(), container.getUsername(), container.getPassword());

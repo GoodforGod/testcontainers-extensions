@@ -11,7 +11,7 @@ import org.junit.jupiter.api.*;
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_CLASS,
                 drop = Migration.Mode.PER_CLASS,
-                migrations = { "migration" }))
+                locations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CassandraSimplePerClassMigrationTests {
 

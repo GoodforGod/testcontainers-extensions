@@ -5,9 +5,9 @@ import io.goodforgod.testcontainers.extensions.ContainerMode;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
 @Internal
-final class MockserverMetadata extends AbstractContainerMetadata {
+final class MockServerMetadata extends AbstractContainerMetadata {
 
-    MockserverMetadata(boolean network, String alias, String image, ContainerMode runMode) {
+    MockServerMetadata(boolean network, String alias, String image, ContainerMode runMode) {
         super(network, alias, image, runMode);
     }
 }

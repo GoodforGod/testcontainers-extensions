@@ -22,13 +22,13 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
     private void tryMigrateIfRequired(JdbcMetadata metadata, ExtensionContext context) {
         JdbcMigrationEngine migrationEngine = getContainerContext(context).connection()
                 .migrationEngine(metadata.migration().engine());
-        migrationEngine.migrate(Arrays.asList(metadata.migration().migrations()));
+        migrationEngine.apply(Arrays.asList(metadata.migration().locations()));
     }
 
     private void tryDropIfRequired(JdbcMetadata metadata, ExtensionContext context) {
         JdbcMigrationEngine migrationEngine = getContainerContext(context).connection()
                 .migrationEngine(metadata.migration().engine());
-        migrationEngine.drop(Arrays.asList(metadata.migration().migrations()));
+        migrationEngine.drop(Arrays.asList(metadata.migration().locations()));
     }
 
     protected abstract ContainerContext<JdbcConnection> createContainerContext(Container container);

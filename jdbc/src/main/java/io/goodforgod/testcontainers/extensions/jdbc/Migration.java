@@ -32,7 +32,7 @@ public @interface Migration {
      * @return will be by default "classpath:db/migration" for Flyway and "db/changelog.sql"
      *             for Liquibase
      */
-    String[] migrations() default {};
+    String[] locations() default {};
 
     /**
      * Database migration engine implementation

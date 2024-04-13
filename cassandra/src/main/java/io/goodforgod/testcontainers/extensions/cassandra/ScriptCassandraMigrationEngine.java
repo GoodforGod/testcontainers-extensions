@@ -55,7 +55,7 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
     }
 
     @Override
-    public void migrate(@NotNull List<String> locations) {
+    public void apply(@NotNull List<String> locations) {
         if (locations.isEmpty()) {
             logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
                     getClass().getSimpleName(), connection);
