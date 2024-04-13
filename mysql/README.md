@@ -52,9 +52,8 @@ testRuntimeOnly "mysql:mysql-connector-java:8.0.33"
 
 ## Content
 - [Usage](#usage)
-- [Container](#container)
-  - [Connection](#container-connection)
-  - [Migration](#container-migration)
+- [Connection](#connection)
+  - [Migration](#connection-migration)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
@@ -66,15 +65,18 @@ testRuntimeOnly "mysql:mysql-connector-java:8.0.33"
 Test with container start in `PER_RUN` mode and migration per method will look like:
 
 ```java
-@TestcontainersMysql(mode = ContainerMode.PER_RUN,
+@TestcontainersMySQL(mode = ContainerMode.PER_RUN,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD))
 class ExampleTests {
 
+  @ConnectionMySQL
+  private JdbcConnection connection;
+
   @Test
-  void test(@ContainerMysqlConnection JdbcConnection connection) {
+  void test() {
     connection.execute("INSERT INTO users VALUES(1);");
     var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
     assertEquals(1, usersFound.size());
@@ -82,48 +84,42 @@ class ExampleTests {
 }
 ```
 
-## Container
+## Connection
 
-Library provides special `MySQLContainerExtra` with ability for migration and connection.
-It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+`JdbcConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
+You can inject connection via `@ConnectionOracle` as field or method argument or manually create it from container or manual settings.
 
 ```java
+class ExampleTests {
+
+    private static final MySQLContainer<?> container = new MySQLContainer<>();
+    
+    @Test
+    void test() {
+      container.start();
+      JdbcConnection connection = JdbcConnection.forContainer(container);
+      connection.execute("INSERT INTO users VALUES(1);");
+    }
+}
+```
+
+### Connection Migration
+
+`Migrations` allow easily migrate database between test executions and drop after tests.
+You can migrate container via `@TestcontainersOracle#migration` annotation parameter or manually using `JdbcConnection`.
+
+```java
+@TestcontainersOracle
 class ExampleTests {
 
     @Test
-    void test() {
-        try (var container = new MySQLContainerExtra<>(DockerImageName.parse("mysql:8.0-debian"))) {
-            container.start();
-        }
+    void test(@ConnectionOracle JdbcConnection connection) {
+      connection.migrationEngine(Migration.Engines.FLYWAY).apply("db/migration");
+      connection.execute("INSERT INTO users VALUES(1);");
+      connection.migrationEngine(Migration.Engines.FLYWAY).drop("db/migration");
     }
 }
 ```
-
-### Container Connection
-
-`JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
-
-```java
-class ExampleTests {
-
-  @Test
-  void test() {
-    try (var container = new MySQLContainerExtra<>(DockerImageName.parse("mysql:8.0-debian"))) {
-      container.start();
-      container.connection().assertQueriesNone("SELECT * FROM users;");
-    }
-  }
-}
-```
-
-### Container Migration
-
-`Migrations` allow easily migrate database between test executions and drop after tests.
-
-Annotation parameters:
-- `engine` - to use for migration.
-- `apply` - parameter configures migration mode.
-- `drop` - configures when to reset/drop/clear database.
 
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
@@ -131,7 +127,7 @@ Available migration engines:
 
 ## Annotation
 
-`@TestcontainersMysql` - allow **automatically start container** with specified image in different modes without the need to configure it.
+`@TestcontainersMySQL` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 
@@ -141,11 +137,11 @@ Available containers modes:
 
 Simple example on how to start container per class, **no need to configure** container:
 ```java
-@TestcontainersMysql(mode = ContainerMode.PER_CLASS)
+@TestcontainersMySQL(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
     @Test
-    void test(@ContainerMysqlConnection JdbcConnection connection) {
+    void test(@ConnectionMySQL JdbcConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -157,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMysql(image = "${MY_IMAGE_ENV|mysql:8.0-debian}")
+@TestcontainersMySQL(image = "${MY_IMAGE_ENV|mysql:8.0-debian}")
 class ExampleTests {
 
     @Test
@@ -175,22 +171,21 @@ Image syntax:
 
 ### Manual Container
 
-When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersMysql`,
-this can be done using `@ContainerMysql` annotation for container.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersMySQL`,
+this can be done using `@ContainerMySQL` annotation for container.
 
-Example:
 ```java
-@TestcontainersMysql(mode = ContainerMode.PER_CLASS)
+@TestcontainersMySQL(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
-    @ContainerMysql
+    @ContainerMySQL
     private static final MySQLContainer<?> container = new MySQLContainer<>()
             .withDatabaseName("user")
             .withUsername("user")
             .withPassword("user");
     
     @Test
-    void test(@ContainerMysqlConnection JdbcConnection connection) {
+    void test(@ConnectionMySQL JdbcConnection connection) {
         assertEquals("user", connection.params().database());
         assertEquals("user", connection.params().username());
         assertEquals("user", connection.params().password());
@@ -202,7 +197,7 @@ class ExampleTests {
 
 In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
 ```java
-@TestcontainersMysql(network = @Network(shared = true))
+@TestcontainersMySQL(network = @Network(shared = true))
 class ExampleTests {
 
     @Test
@@ -219,7 +214,7 @@ Alias can be extracted from environment variable also or default value can be pr
 
 In case specified environment variable is missing `default alias` will be created:
 ```java
-@TestcontainersMysql(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+@TestcontainersMySQL(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
 class ExampleTests {
 
     @Test
@@ -237,19 +232,18 @@ Image syntax:
 
 ### Annotation Connection
 
-`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerMysqlConnection` annotation.
+`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionMySQL` annotation.
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
-Example:
 ```java
-@TestcontainersMysql(mode = ContainerMode.PER_CLASS, image = "mysql:8.0-debian")
+@TestcontainersMySQL(mode = ContainerMode.PER_CLASS, image = "mysql:8.0-debian")
 class ExampleTests {
 
-    @ContainerMysqlConnection
-    private JdbcConnection connectionInField;
+    @ConnectionMySQL
+    private JdbcConnection connection;
 
     @Test
-    void test(@ContainerMysqlConnection JdbcConnection connection) {
+    void test() {
         connection.execute("CREATE TABLE users (id INT NOT NULL PRIMARY KEY);");
         connection.execute("INSERT INTO users VALUES(1);");
         connection.assertInserted("INSERT INTO users VALUES(2);");
@@ -286,6 +280,7 @@ Annotation parameters:
 - `engine` - to use for migration.
 - `apply` - parameter configures migration mode.
 - `drop` - configures when to reset/drop/clear database.
+- `locations` - configures locations where migrations are placed.
 
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/mysql-184127601.html)
@@ -301,7 +296,7 @@ CREATE TABLE IF NOT EXISTS users
 
 Test with container and migration per method will look like:
 ```java
-@TestcontainersMysql(mode = ContainerMode.PER_CLASS,
+@TestcontainersMySQL(mode = ContainerMode.PER_CLASS,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
@@ -309,7 +304,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ContainerMysqlConnection JdbcConnection connection) {
+    void test(@ConnectionMySQL JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
         assertEquals(1, usersFound.size());
