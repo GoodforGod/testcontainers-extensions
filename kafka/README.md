@@ -68,7 +68,7 @@ Test with container start in `PER_RUN` mode and topic reset per method will look
 
 ```java
 @TestcontainersKafka(mode = ContainerMode.PER_RUN,
-        topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
+        topics = @Topics(value = "my-topic-name", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
 
   @ContainerKafkaConnection 
