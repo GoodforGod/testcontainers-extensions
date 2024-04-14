@@ -130,7 +130,7 @@ class CassandraConnectionImpl implements CassandraConnection {
     }
 
     @NotNull
-    public CqlSession get() {
+    public CqlSession getConnection() {
         if (isClosed) {
             throw new IllegalStateException("JdbcConnection was closed");
         }
@@ -186,8 +186,8 @@ class CassandraConnectionImpl implements CassandraConnection {
     public void execute(@Language("CQL") @NotNull String cql) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = get().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            get().execute(boundStatement).wasApplied();
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            getConnection().execute(boundStatement).wasApplied();
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
         }
@@ -255,8 +255,8 @@ class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = get().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var row = get().execute(boundStatement).one();
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var row = getConnection().execute(boundStatement).one();
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))
                     : Optional.empty();
@@ -271,8 +271,8 @@ class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = get().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var rows = get().execute(boundStatement).all();
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var rows = getConnection().execute(boundStatement).all();
             final List<T> result = new ArrayList<>(rows.size());
             for (Row row : rows) {
                 result.add(extractor.apply(row));
@@ -292,8 +292,8 @@ class CassandraConnectionImpl implements CassandraConnection {
     private void assertQuery(@Language("CQL") String cql, QueryAssert consumer) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = get().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var rows = get().execute(boundStatement);
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var rows = getConnection().execute(boundStatement);
             consumer.accept(rows);
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -334,8 +334,8 @@ class CassandraConnectionImpl implements CassandraConnection {
     private boolean checkQuery(@Language("CQL") String cql, QueryChecker checker) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = get().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var rows = get().execute(boundStatement);
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var rows = getConnection().execute(boundStatement);
             return checker.apply(rows);
         } catch (Exception e) {
             throw new CassandraConnectionException(e);

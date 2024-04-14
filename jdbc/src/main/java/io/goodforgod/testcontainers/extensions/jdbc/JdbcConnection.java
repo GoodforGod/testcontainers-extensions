@@ -64,7 +64,7 @@ public interface JdbcConnection extends AutoCloseable {
      * @return new JDBC connection
      */
     @NotNull
-    Connection open();
+    Connection openConnection();
 
     @NotNull
     JdbcMigrationEngine migrationEngine(@NotNull Migration.Engines engine);

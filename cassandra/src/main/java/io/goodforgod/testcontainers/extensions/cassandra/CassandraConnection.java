@@ -65,7 +65,7 @@ public interface CassandraConnection extends AutoCloseable {
      * @return new Cassandra connection
      */
     @NotNull
-    CqlSession get();
+    CqlSession getConnection();
 
     @NotNull
     CassandraMigrationEngine migrationEngine(@NotNull Migration.Engines engine);

@@ -78,7 +78,7 @@ class RedisConnectionImpl implements RedisConnection {
     private final Params network;
 
     private volatile boolean isClosed = false;
-    private volatile RedisCommandsImpl jedis;
+    private volatile JedisCommandsImpl jedis;
 
     RedisConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -123,7 +123,7 @@ class RedisConnectionImpl implements RedisConnection {
     }
 
     @NotNull
-    private RedisCommands connection() {
+    private JedisConnection connection() {
         if (isClosed) {
             throw new IllegalStateException("RedisConnection was closed");
         }
@@ -144,7 +144,7 @@ class RedisConnectionImpl implements RedisConnection {
                     config.password(params().password());
                 }
 
-                jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
+                jedis = new JedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
             } catch (Exception e) {
                 throw new RedisConnectionException(e);
             }
@@ -154,7 +154,7 @@ class RedisConnectionImpl implements RedisConnection {
     }
 
     @NotNull
-    public RedisCommands commands() {
+    public JedisConnection getConnection() {
         return connection();
     }
 

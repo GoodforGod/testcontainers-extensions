@@ -94,7 +94,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            try (Connection connection = jdbcConnection.open()) {
+            try (Connection connection = jdbcConnection.openConnection()) {
                 try (var database = getLiquiDatabase(connection)) {
                     migrateLiquibase(database, locations);
                 }
@@ -102,7 +102,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                try (Connection connection = jdbcConnection.open()) {
+                try (Connection connection = jdbcConnection.openConnection()) {
                     try (var database = getLiquiDatabase(connection)) {
                         migrateLiquibase(database, locations);
                     }
@@ -125,7 +125,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            try (Connection connection = jdbcConnection.open()) {
+            try (Connection connection = jdbcConnection.openConnection()) {
                 try (var database = getLiquiDatabase(connection)) {
                     dropLiquibase(database, locations);
                 }
@@ -133,7 +133,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                try (Connection connection = jdbcConnection.open()) {
+                try (Connection connection = jdbcConnection.openConnection()) {
                     try (var database = getLiquiDatabase(connection)) {
                         dropLiquibase(database, locations);
                     }

@@ -6,9 +6,9 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisClientConfig;
 
 @Internal
-final class RedisCommandsImpl extends Jedis implements RedisCommands {
+final class JedisCommandsImpl extends Jedis implements JedisConnection {
 
-    RedisCommandsImpl(final HostAndPort hostPort, final JedisClientConfig config) {
+    JedisCommandsImpl(final HostAndPort hostPort, final JedisClientConfig config) {
         super(hostPort, config);
     }
 }

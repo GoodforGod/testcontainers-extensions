@@ -217,7 +217,7 @@ public interface KafkaConnection extends AutoCloseable {
     }
 
     @NotNull
-    static KafkaConnection forBootstrap(@NotNull String bootstrapServers) {
+    static KafkaConnection forBootstrapServers(@NotNull String bootstrapServers) {
         final Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         return new KafkaConnectionClosableImpl(properties, null);

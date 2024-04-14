@@ -50,7 +50,7 @@ public interface RedisConnection extends AutoCloseable {
      * @return new Redis connection
      */
     @NotNull
-    RedisCommands commands();
+    JedisConnection getConnection();
 
     void deleteAll();
 
