@@ -103,7 +103,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 Thread.sleep(250);
                 migrateLiquibase(getLiquiDatabase(), locations);
             } catch (InterruptedException ex) {
-                logger.error("Failed schema migration for engine '{}' for connection: {}",
+                logger.error("Failed migration apply for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);
 
                 throw new IllegalStateException(ex);
@@ -119,7 +119,19 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
         logger.debug("Starting schema dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
-        dropLiquibase(getLiquiDatabase(), locations);
+        try {
+            dropLiquibase(getLiquiDatabase(), locations);
+        } catch (Exception e) {
+            try {
+                Thread.sleep(250);
+                dropLiquibase(getLiquiDatabase(), locations);
+            } catch (InterruptedException ex) {
+                logger.error("Failed migration drop for engine '{}' for connection: {}",
+                        getClass().getSimpleName(), jdbcConnection);
+
+                throw new IllegalStateException(ex);
+            }
+        }
 
         logger.info("Finished schema dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
@@ -144,6 +156,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
             try {
                 liquiDatabase.close();
                 liquiDatabase = null;
+                liquiConnection = null;
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
