@@ -40,7 +40,7 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
 
     @Override
     public void apply(@NotNull List<String> locations) {
-        logger.debug("Starting schema migration for engine '{}' for connection: {}",
+        logger.debug("Starting migration migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
@@ -50,25 +50,25 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
                 Thread.sleep(250);
                 getFlyway(getDataSource(), locations).migrate();
             } catch (InterruptedException ex) {
-                logger.error("Failed schema migration for engine '{}' for connection: {}",
+                logger.error("Failed migration migration for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);
 
                 throw new IllegalStateException(ex);
             }
         }
 
-        logger.info("Finished schema migration for engine '{}' for connection: {}",
+        logger.info("Finished migration migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
     @Override
     public void drop(@NotNull List<String> locations) {
-        logger.debug("Starting schema dropping for engine '{}' for connection: {}",
+        logger.debug("Starting migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         getFlyway(getDataSource(), locations).clean();
 
-        logger.info("Finished schema dropping for engine '{}' for connection: {}",
+        logger.info("Finished migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 

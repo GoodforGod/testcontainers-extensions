@@ -25,9 +25,6 @@ class FlywayPerMethodMigrationTests {
     public void setupEach(@ContainerJdbcConnection JdbcConnection paramConnection) {
         paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
         assertNotNull(paramConnection);
-
-        paramConnection.migrationEngine(Migration.Engines.FLYWAY).apply("db/migration");
-        paramConnection.migrationEngine(Migration.Engines.FLYWAY).drop("db/migration");
     }
 
     @Order(1)

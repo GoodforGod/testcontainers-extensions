@@ -93,7 +93,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
 
     @Override
     public void apply(@NotNull List<String> locations) {
-        logger.debug("Starting schema migration for engine '{}' for connection: {}",
+        logger.debug("Starting migration apply for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
@@ -110,13 +110,13 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
             }
         }
 
-        logger.info("Finished schema migration for engine '{}' for connection: {}",
+        logger.info("Finished migration apply for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
     @Override
     public void drop(@NotNull List<String> locations) {
-        logger.debug("Starting schema dropping for engine '{}' for connection: {}",
+        logger.debug("Starting migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
@@ -133,7 +133,7 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
             }
         }
 
-        logger.info("Finished schema dropping for engine '{}' for connection: {}",
+        logger.info("Finished migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
@@ -154,11 +154,10 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
     public void close() {
         if (liquiDatabase != null) {
             try {
-                liquiDatabase.close();
                 liquiDatabase = null;
                 liquiConnection = null;
             } catch (Exception e) {
-                throw new IllegalStateException(e);
+                // do nothing
             }
         }
     }
