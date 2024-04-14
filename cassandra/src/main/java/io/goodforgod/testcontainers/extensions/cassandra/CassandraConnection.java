@@ -185,6 +185,9 @@ public interface CassandraConnection extends AutoCloseable {
      */
     boolean checkQueriesEquals(int expected, @NotNull @Language("CQL") String cql);
 
+    @Override
+    void close();
+
     static CassandraConnection forContainer(CassandraContainer<?> container) {
         if (!container.isRunning()) {
             throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");

@@ -372,7 +372,7 @@ class CassandraConnectionImpl implements CassandraConnection {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // do nothing
     }
 

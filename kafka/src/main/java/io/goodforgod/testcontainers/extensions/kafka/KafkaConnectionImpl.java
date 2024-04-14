@@ -85,7 +85,7 @@ class KafkaConnectionImpl implements KafkaConnection {
     private volatile KafkaProducer<byte[], byte[]> producer;
     private volatile Admin admin;
 
-    private final List<ConsumerImpl> consumers = new CopyOnWriteArrayList<>();
+    private final Map<String, ConsumerImpl> consumerByTopic = new ConcurrentHashMap<>();
     private final ParamsImpl params;
     @Nullable
     private final ParamsImpl paramsInNetwork;
@@ -320,8 +320,12 @@ class KafkaConnectionImpl implements KafkaConnection {
             messageQueue.clear();
         }
 
+        boolean isClosed() {
+            return !isActive.get();
+        }
+
         @Override
-        public void close() throws Exception {
+        public void close() {
             stop();
         }
 
@@ -452,10 +456,23 @@ class KafkaConnectionImpl implements KafkaConnection {
                     .collect(Collectors.toSet());
 
             final String id = UUID.randomUUID().toString().substring(0, 8);
-            var kafkaConsumer = getConsumer(id, params.properties());
-            var consumer = new ConsumerImpl(kafkaConsumer, id, topicPartition);
-            consumers.add(consumer);
-            return consumer;
+            final String consumerTopicKey = topics.stream()
+                    .sorted()
+                    .collect(Collectors.joining(":"));
+
+            final ConsumerImpl consumer = consumerByTopic.computeIfAbsent(consumerTopicKey, k -> {
+                var kafkaConsumer = getConsumer(id, params.properties());
+                return new ConsumerImpl(kafkaConsumer, id, topicPartition);
+            });
+
+            if (consumer.isClosed()) {
+                var kafkaConsumer = getConsumer(id, params.properties());
+                ConsumerImpl activeConsumer = new ConsumerImpl(kafkaConsumer, id, topicPartition);
+                consumerByTopic.put(consumerTopicKey, activeConsumer);
+                return activeConsumer;
+            } else {
+                return consumer;
+            }
         } catch (Exception e) {
             throw new KafkaConnectionException("Can't create KafkaConsumer", e);
         }
@@ -620,14 +637,14 @@ class KafkaConnectionImpl implements KafkaConnection {
     }
 
     void clear() {
-        for (var consumer : consumers) {
+        for (var consumer : consumerByTopic.values()) {
             try {
                 consumer.stop();
             } catch (Exception e) {
                 // do nothing
             }
         }
-        consumers.clear();
+        consumerByTopic.clear();
     }
 
     void stop() {
@@ -657,7 +674,7 @@ class KafkaConnectionImpl implements KafkaConnection {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // do nothing
     }
 

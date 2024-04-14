@@ -218,6 +218,9 @@ public interface JdbcConnection extends AutoCloseable {
      */
     boolean checkDeleted(@Language("SQL") String sql);
 
+    @Override
+    void close();
+
     static JdbcConnection forParams(String driverProtocol,
                                     String host,
                                     int port,

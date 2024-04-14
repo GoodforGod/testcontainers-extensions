@@ -423,7 +423,7 @@ class JdbcConnectionImpl implements JdbcConnection {
             hikariConfig.setMinimumIdle(1);
             hikariConfig.setMaximumPoolSize(25);
             hikariConfig.setPoolName("jdbc-connection");
-            hikariConfig.setLeakDetectionThreshold(2000);
+            hikariConfig.setLeakDetectionThreshold(10000);
             this.dataSource = new HikariDataSource(hikariConfig);
         }
 
@@ -454,7 +454,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // do nothing
     }
 

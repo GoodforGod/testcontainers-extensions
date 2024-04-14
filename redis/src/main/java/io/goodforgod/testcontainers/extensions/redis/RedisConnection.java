@@ -141,6 +141,9 @@ public interface RedisConnection extends AutoCloseable {
      */
     List<RedisValue> assertCountsEquals(long expected, @NotNull Collection<RedisKey> keys);
 
+    @Override
+    void close();
+
     static RedisConnection forContainer(RedisContainer<?> container) {
         if (!container.isRunning()) {
             throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");

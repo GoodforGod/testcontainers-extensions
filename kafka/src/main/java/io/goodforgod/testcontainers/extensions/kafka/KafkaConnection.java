@@ -198,6 +198,9 @@ public interface KafkaConnection extends AutoCloseable {
          * @return true if received exactly N events during specified time frame or false
          */
         boolean checkReceivedEqualsInTime(int expected, @NotNull Duration timeToWait);
+
+        @Override
+        void close();
     }
 
     @NotNull
@@ -231,4 +234,7 @@ public interface KafkaConnection extends AutoCloseable {
     static KafkaConnection forProperties(@NotNull Properties properties) {
         return new KafkaConnectionClosableImpl(properties, null);
     }
+
+    @Override
+    void close();
 }
