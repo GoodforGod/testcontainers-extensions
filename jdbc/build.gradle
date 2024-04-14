@@ -9,7 +9,7 @@ dependencies {
 
     implementation libs.junit.launcher
     implementation libs.junit.api
-    implementation "com.zaxxer:HikariCP:5.1.0"
+    implementation libs.hikari
 
     testImplementation libs.driver.postgres
     testImplementation libs.testcontainers.postgres
