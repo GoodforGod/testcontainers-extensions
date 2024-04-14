@@ -1,15 +1,17 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -83,7 +85,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     private volatile LiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
 
     private volatile boolean isClosed = false;
-    private volatile Connection connection;
+    private volatile HikariDataSource dataSource;
 
     JdbcConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -164,39 +166,22 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     @NotNull
     @Override
-    public Connection get() {
+    public Connection open() {
         if (isClosed) {
             throw new IllegalStateException("JdbcConnection was closed");
         }
 
         try {
-            if (connection == null) {
-                connection = openConnection();
-            } else if (connection.isClosed()) {
-                connection = openConnection();
-            }
-
-            return connection;
+            return dataSource().getConnection();
         } catch (SQLException e) {
             throw new IllegalStateException(e);
-        }
-    }
-
-    @NotNull
-    private Connection openConnection() {
-        try {
-            logger.debug("Opening SQL connection...");
-            return DriverManager.getConnection(params.jdbcUrl(), params.username(), params.username());
-        } catch (SQLException e) {
-            throw new JdbcConnectionException(e);
         }
     }
 
     @Override
     public void execute(@Language("SQL") @NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.createStatement()) {
+        try (var openedConnection = open(); var stmt = openedConnection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);
@@ -258,8 +243,7 @@ class JdbcConnectionImpl implements JdbcConnection {
                                                          @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        try (var openedConnection = open(); var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             return (rs.next())
                     ? Optional.ofNullable(extractor.apply(rs))
                     : Optional.empty();
@@ -273,8 +257,7 @@ class JdbcConnectionImpl implements JdbcConnection {
                                                       @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        try (var openedConnection = open(); var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             final List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(extractor.apply(rs));
@@ -293,8 +276,7 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private void assertQuery(@Language("SQL") String sql, QueryAssert consumer) {
         logger.debug("Executing SQL:\n{}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        try (var openedConnection = open(); var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             consumer.accept(rs);
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);
@@ -337,8 +319,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public void assertInserted(@NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.prepareStatement(sql)) {
+        try (var openedConnection = open(); var stmt = openedConnection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             if (rs == 0) {
                 Assertions.fail(String.format("Expected query to update but it didn't for SQL: %s", sql.replace("\n", " ")));
@@ -366,8 +347,7 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private boolean checkQuery(@Language("SQL") String sql, QueryChecker checker) {
         logger.debug("Executing SQL:\n{}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        try (var openedConnection = open(); var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             return checker.apply(rs);
         } catch (Exception e) {
             logger.warn("Failed executing SQL:\n{}\nDue to: {}", sql, e.getMessage(), e);
@@ -407,8 +387,7 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public boolean checkInserted(@NotNull String sql) {
         logger.debug("Executing SQL: {}", sql);
-        var openedConnection = get();
-        try (var stmt = openedConnection.prepareStatement(sql)) {
+        try (var openedConnection = open(); var stmt = openedConnection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             return rs != 0;
         } catch (SQLException e) {
@@ -426,16 +405,34 @@ class JdbcConnectionImpl implements JdbcConnection {
         return checkInserted(sql);
     }
 
+    DataSource dataSource() {
+        if (dataSource == null) {
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setJdbcUrl(params().jdbcUrl());
+            hikariConfig.setUsername(params().username());
+            hikariConfig.setPassword(params().password());
+            hikariConfig.setAutoCommit(true);
+            hikariConfig.setMinimumIdle(1);
+            hikariConfig.setMaximumPoolSize(25);
+            hikariConfig.setPoolName("jdbc-connection");
+            hikariConfig.setLeakDetectionThreshold(2000);
+            this.dataSource = new HikariDataSource(hikariConfig);
+        }
+
+        return this.dataSource;
+    }
+
     void stop() {
         this.isClosed = true;
 
-        if (connection != null) {
+        if (dataSource != null) {
             try {
-                connection.close();
-            } catch (SQLException e) {
+                dataSource.close();
+            } catch (Exception e) {
                 // do nothing
+            } finally {
+                dataSource = null;
             }
-            connection = null;
         }
 
         if (flywayJdbcMigrationEngine != null) {

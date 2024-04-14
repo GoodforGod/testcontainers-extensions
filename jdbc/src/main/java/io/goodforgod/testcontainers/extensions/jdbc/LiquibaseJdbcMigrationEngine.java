@@ -33,9 +33,6 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
 
     private final JdbcConnection jdbcConnection;
 
-    private volatile liquibase.database.jvm.JdbcConnection liquiConnection;
-    private volatile Database liquiDatabase;
-
     public LiquibaseJdbcMigrationEngine(JdbcConnection jdbcConnection) {
         this.jdbcConnection = jdbcConnection;
     }
@@ -97,12 +94,20 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            migrateLiquibase(getLiquiDatabase(), locations);
+            try (Connection connection = jdbcConnection.open()) {
+                try (var database = getLiquiDatabase(connection)) {
+                    migrateLiquibase(database, locations);
+                }
+            }
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                migrateLiquibase(getLiquiDatabase(), locations);
-            } catch (InterruptedException ex) {
+                try (Connection connection = jdbcConnection.open()) {
+                    try (var database = getLiquiDatabase(connection)) {
+                        migrateLiquibase(database, locations);
+                    }
+                }
+            } catch (Exception ex) {
                 logger.error("Failed migration apply for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);
 
@@ -120,12 +125,20 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            dropLiquibase(getLiquiDatabase(), locations);
+            try (Connection connection = jdbcConnection.open()) {
+                try (var database = getLiquiDatabase(connection)) {
+                    dropLiquibase(database, locations);
+                }
+            }
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                dropLiquibase(getLiquiDatabase(), locations);
-            } catch (InterruptedException ex) {
+                try (Connection connection = jdbcConnection.open()) {
+                    try (var database = getLiquiDatabase(connection)) {
+                        dropLiquibase(database, locations);
+                    }
+                }
+            } catch (Exception ex) {
                 logger.error("Failed migration drop for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);
 
@@ -137,14 +150,10 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
     }
 
-    private Database getLiquiDatabase() {
+    private Database getLiquiDatabase(Connection connection) {
         try {
-            if (this.liquiDatabase == null || this.liquiConnection == null || this.liquiConnection.isClosed()) {
-                Connection connection = jdbcConnection.get();
-                this.liquiConnection = new liquibase.database.jvm.JdbcConnection(connection);
-                this.liquiDatabase = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(this.liquiConnection);
-            }
-            return this.liquiDatabase;
+            var liquiConnection = new liquibase.database.jvm.JdbcConnection(connection);
+            return DatabaseFactory.getInstance().findCorrectDatabaseImplementation(liquiConnection);
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
         }
@@ -152,13 +161,6 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
 
     @Override
     public void close() {
-        if (liquiDatabase != null) {
-            try {
-                liquiDatabase = null;
-                liquiConnection = null;
-            } catch (Exception e) {
-                // do nothing
-            }
-        }
+        // do nothing
     }
 }

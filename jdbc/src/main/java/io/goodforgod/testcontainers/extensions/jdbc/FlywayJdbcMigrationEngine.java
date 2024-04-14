@@ -1,7 +1,5 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.sql.DataSource;
@@ -14,11 +12,9 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
 
     private static final Logger logger = LoggerFactory.getLogger(FlywayJdbcMigrationEngine.class);
 
-    private final JdbcConnection jdbcConnection;
+    private final JdbcConnectionImpl jdbcConnection;
 
-    private volatile HikariDataSource dataSource;
-
-    public FlywayJdbcMigrationEngine(JdbcConnection jdbcConnection) {
+    public FlywayJdbcMigrationEngine(JdbcConnectionImpl jdbcConnection) {
         this.jdbcConnection = jdbcConnection;
     }
 
@@ -72,26 +68,12 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
                 getClass().getSimpleName(), jdbcConnection);
     }
 
-    private HikariDataSource getDataSource() {
-        if (this.dataSource == null) {
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setJdbcUrl(jdbcConnection.params().jdbcUrl());
-            hikariConfig.setUsername(jdbcConnection.params().username());
-            hikariConfig.setPassword(jdbcConnection.params().password());
-            hikariConfig.setAutoCommit(true);
-            hikariConfig.setMinimumIdle(1);
-            hikariConfig.setMaximumPoolSize(10);
-            hikariConfig.setPoolName("flyway");
-            this.dataSource = new HikariDataSource(hikariConfig);
-        }
-        return this.dataSource;
+    private DataSource getDataSource() {
+        return this.jdbcConnection.dataSource();
     }
 
     @Override
     public void close() {
-        if (dataSource != null) {
-            dataSource.close();
-            dataSource = null;
-        }
+        // do nothing
     }
 }
