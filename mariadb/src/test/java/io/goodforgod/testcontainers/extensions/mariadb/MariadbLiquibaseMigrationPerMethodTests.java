@@ -3,16 +3,16 @@ package io.goodforgod.testcontainers.extensions.mariadb;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
-import io.goodforgod.testcontainers.extensions.jdbc.ContainerMariadbConnection;
+import io.goodforgod.testcontainers.extensions.jdbc.ConnectionMariaDB;
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcConnection;
 import io.goodforgod.testcontainers.extensions.jdbc.Migration;
-import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersMariadb;
+import io.goodforgod.testcontainers.extensions.jdbc.TestcontainersMariaDB;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@TestcontainersMariadb(mode = ContainerMode.PER_CLASS,
+@TestcontainersMariaDB(mode = ContainerMode.PER_CLASS,
         image = "mariadb:11.2-jammy",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
@@ -23,13 +23,13 @@ class MariadbLiquibaseMigrationPerMethodTests {
 
     @Order(1)
     @Test
-    void firstRun(@ContainerMariadbConnection JdbcConnection connection) {
+    void firstRun(@ConnectionMariaDB JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1);");
     }
 
     @Order(2)
     @Test
-    void secondRun(@ContainerMariadbConnection JdbcConnection connection) {
+    void secondRun(@ConnectionMariaDB JdbcConnection connection) {
         var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(1));
         assertTrue(usersFound.isEmpty());
     }

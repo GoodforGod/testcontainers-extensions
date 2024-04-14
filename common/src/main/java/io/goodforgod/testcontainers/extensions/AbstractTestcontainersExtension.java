@@ -3,14 +3,12 @@ package io.goodforgod.testcontainers.extensions;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
@@ -73,10 +71,6 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
             this.alias = alias;
         }
 
-        public String image() {
-            return image;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o)
@@ -101,7 +95,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         }
     }
 
-    static final Map<String, Map<SharedKey, ExtensionContainer<?, ?>>> CLASS_TO_SHARED_CONTAINERS = new ConcurrentHashMap<>();
+    static final Map<String, Map<SharedKey, ContainerContext<?>>> CLASS_TO_SHARED_CONTAINERS = new ConcurrentHashMap<>();
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -115,15 +109,15 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     protected abstract Optional<Metadata> findMetadata(ExtensionContext context);
 
-    protected abstract Container getContainerDefault(Metadata metadata);
-
-    protected abstract Connection getConnectionForContainer(Metadata metadata, Container container);
+    protected final Metadata getMetadata(ExtensionContext context) {
+        return findMetadata(context).orElseThrow(() -> new ExtensionConfigurationException("Extension annotation not found"));
+    }
 
     protected abstract ExtensionContext.Namespace getNamespace();
 
-    protected ExtensionContainer<Container, Connection> getExtensionContainer(Container container, Connection connection) {
-        return new ExtensionContainerImpl<>(container, connection);
-    }
+    protected abstract Container createContainerDefault(Metadata metadata);
+
+    protected abstract ContainerContext<Connection> createContainerContext(Container container);
 
     protected final ExtensionContext.Store getStorage(ExtensionContext context) {
         if (context.getParent().isPresent() && context.getParent().get().getParent().isPresent()) {
@@ -135,20 +129,9 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         }
     }
 
-    protected final Metadata getMetadata(ExtensionContext context) {
-        return findMetadata(context)
-                .orElseThrow(() -> new ExtensionConfigurationException("Extension annotation not found"));
-    }
-
-    protected final Connection getConnectionCurrent(ExtensionContext context) {
-        return getStorage(context).get(getConnectionType(), getConnectionType());
-    }
-
-    protected final Container getContainerCurrent(ExtensionContext context) {
+    protected ContainerContext<Connection> getContainerContext(ExtensionContext context) {
         Metadata metadata = getMetadata(context);
-        ExtensionContainer<Container, Connection> extensionContainer = getStorage(context).get(metadata.runMode(),
-                ExtensionContainer.class);
-        return extensionContainer.container();
+        return getStorage(context).get(metadata.runMode(), ContainerContext.class);
     }
 
     protected <T extends Annotation> Optional<T> findAnnotation(Class<T> annotationType, ExtensionContext context) {
@@ -170,63 +153,109 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
-    protected Optional<Container> getContainerFromField(ExtensionContext context) {
+    protected Optional<Container> findContainerFromField(ExtensionContext context) {
         logger.debug("Looking for {} Container...", getContainerType().getSimpleName());
-        final Optional<Class<?>> testClass = context.getTestClass();
-        if (testClass.isEmpty()) {
+        if (context.getTestClass().isEmpty() || context.getTestInstance().isEmpty()) {
             return Optional.empty();
         }
 
-        return ReflectionUtils.findFields(testClass.get(),
+        final Optional<Container> container = findContainerInClassField(context.getTestInstance().get());
+        if (container.isPresent()) {
+            return container;
+        } else if (context.getTestClass().filter(c -> c.isAnnotationPresent(Nested.class)).isPresent()) {
+            return findParentTestClassIfNested(context).flatMap(this::findContainerInClassField);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<Object> findParentTestClassIfNested(ExtensionContext context) {
+        if (context.getTestClass().filter(c -> c.isAnnotationPresent(Nested.class)).isPresent()) {
+            return context.getTestInstance()
+                    .flatMap(instance -> findParentTestClass(instance.getClass(), context)
+                            .flatMap(aClass -> Arrays.stream(instance.getClass().getDeclaredFields())
+                                    .filter(f -> f.getType().equals(aClass))
+                                    .findFirst()
+                                    .map(f -> {
+                                        try {
+                                            f.setAccessible(true);
+                                            return f.get(instance);
+                                        } catch (IllegalAccessException e) {
+                                            throw new IllegalStateException(e);
+                                        }
+                                    })));
+        }
+
+        return Optional.empty();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<Container> findContainerInClassField(Object testClassInstance) {
+        return ReflectionUtils.findFields(testClassInstance.getClass(),
                 f -> !f.isSynthetic() && f.getAnnotation(getContainerAnnotation()) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
                 .stream()
                 .findFirst()
-                .flatMap(field -> context.getTestInstance()
-                        .map(instance -> {
-                            try {
-                                field.setAccessible(true);
-                                Object possibleContainer = field.get(instance);
-                                if (getContainerType().isAssignableFrom(possibleContainer.getClass())) {
-                                    logger.debug("Found {} Container in field: {}", getContainerType().getSimpleName(),
-                                            field.getName());
-                                    return ((Container) possibleContainer);
-                                } else {
-                                    throw new IllegalArgumentException(String.format(
-                                            "Field '%s' annotated with @%s value must be instance of %s",
-                                            field.getName(), getContainerAnnotation().getSimpleName(), getContainerType()));
-                                }
-                            } catch (IllegalAccessException e) {
-                                throw new IllegalStateException(
-                                        String.format("Failed retrieving value from field '%s' annotated with @%s",
-                                                field.getName(), getContainerAnnotation().getSimpleName()),
-                                        e);
-                            }
-                        }));
+                .map(field -> {
+                    try {
+                        field.setAccessible(true);
+                        Object possibleContainer = field.get(testClassInstance);
+                        if (getContainerType().isAssignableFrom(possibleContainer.getClass())) {
+                            logger.debug("Found {} Container in field: {}", getContainerType().getSimpleName(),
+                                    field.getName());
+                            return ((Container) possibleContainer);
+                        } else {
+                            throw new IllegalArgumentException(String.format(
+                                    "Field '%s' annotated with @%s value must be instance of %s",
+                                    field.getName(), getContainerAnnotation().getSimpleName(), getContainerType()));
+                        }
+                    } catch (IllegalAccessException e) {
+                        throw new IllegalStateException(
+                                String.format("Failed retrieving value from field '%s' annotated with @%s",
+                                        field.getName(), getContainerAnnotation().getSimpleName()),
+                                e);
+                    }
+                });
     }
 
-    protected void injectConnection(Connection connection, ExtensionContext context) {
+    private static Optional<Class<?>> findParentTestClass(Class<?> childTestClass, ExtensionContext context) {
+        return context.getTestClass()
+                .filter(c -> !c.equals(childTestClass))
+                .or(() -> context.getParent()
+                        .flatMap(parentContext -> findParentTestClass(childTestClass, parentContext)));
+    }
+
+    protected void injectContext(ContainerContext<Connection> containerContext, ExtensionContext context) {
+        context.getTestInstance().ifPresent(instance -> injectContextIntoInstance(containerContext, instance));
+
+        if (context.getTestClass().filter(c -> c.isAnnotationPresent(Nested.class)).isPresent()) {
+            findParentTestClassIfNested(context).ifPresent(instance -> injectContextIntoInstance(containerContext, instance));
+        }
+    }
+
+    protected void injectContextIntoInstance(ContainerContext<Connection> containerContext, Object testClassInstance) {
         Class<? extends Annotation> connectionAnnotation = getConnectionAnnotation();
-        List<Field> connectionFields = ReflectionUtils.findFields(context.getRequiredTestClass(),
+        List<Field> connectionFields = ReflectionUtils.findFields(testClassInstance.getClass(),
                 f -> !f.isSynthetic()
                         && !Modifier.isFinal(f.getModifiers())
                         && !Modifier.isStatic(f.getModifiers())
                         && f.getAnnotation(connectionAnnotation) != null,
                 ReflectionUtils.HierarchyTraversalMode.TOP_DOWN);
 
-        logger.debug("Starting field injection for connection: {}", connection);
-        context.getTestInstance().ifPresent(instance -> {
-            for (Field field : connectionFields) {
-                try {
-                    field.setAccessible(true);
-                    field.set(instance, connection);
-                } catch (IllegalAccessException e) {
-                    throw new IllegalStateException(String.format("Field '%s' annotated with @%s can't set connection",
-                            field.getName(), connectionAnnotation.getSimpleName()), e);
-                }
-            }
-        });
+        logger.debug("Starting field injection for connection: {}", containerContext.connection());
+        for (Field field : connectionFields) {
+            injectContextIntoField(containerContext, field, testClassInstance);
+        }
+    }
+
+    protected void injectContextIntoField(ContainerContext<Connection> containerContext, Field field, Object testClassInstance) {
+        try {
+            field.setAccessible(true);
+            field.set(testClassInstance, containerContext.connection());
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(String.format("Field '%s' annotated with @%s can't set connection",
+                    field.getName(), getConnectionAnnotation().getSimpleName()), e);
+        }
     }
 
     @Override
@@ -251,9 +280,9 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         CallMode callMode = getCallMode(parameterContext);
-        Connection connection = getConnectionCurrent(extensionContext);
-        if (connection != null) {
-            return connection;
+        ContainerContext<Connection> containerContext = getContainerContext(extensionContext);
+        if (containerContext != null) {
+            return containerContext.connection();
         } else {
             Metadata metadata = getMetadata(extensionContext);
             if (metadata.runMode() == ContainerMode.PER_RUN || metadata.runMode() == ContainerMode.PER_CLASS) {
@@ -276,7 +305,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                 beforeEach(extensionContext);
             }
 
-            return Optional.ofNullable(getConnectionCurrent(extensionContext))
+            return Optional.ofNullable(getContainerContext(extensionContext).connection())
                     .orElseThrow(() -> new ParameterResolutionException(String.format(
                             "Parameter named '%s' with type '%s' can't be resolved cause it probably isn't initialized yet, please check extension annotation execution order",
                             parameterContext.getParameter().getName(), getConnectionType())));
@@ -300,10 +329,9 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public void beforeAll(ExtensionContext context) {
         final Metadata metadata = getMetadata(context);
         final ExtensionContext.Store storage = getStorage(context);
-        final Connection storageConnection = getConnectionCurrent(context);
-        if (storageConnection == null) {
+        if (getContainerContext(context) == null) {
             if (metadata.runMode() == ContainerMode.PER_RUN) {
-                final Optional<Container> containerFromField = getContainerFromField(context);
+                final Optional<Container> containerFromField = findContainerFromField(context);
                 final SharedKey sharedKey = containerFromField
                         .map(c -> ((SharedKey) new SharedContainerInstance(c)))
                         .orElseGet(() -> {
@@ -327,37 +355,34 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                         getClass().getCanonicalName(),
                         k -> new ConcurrentHashMap<>());
 
-                var extensionContainer = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
+                var containerContext = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
                     Container container = containerFromField.orElseGet(() -> {
                         logger.debug("Getting default container for image: {}", metadata.image());
-                        return getContainerDefault(metadata);
+                        return createContainerDefault(metadata);
                     });
 
-                    logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                    container.withReuse(true).start();
-                    logger.info("Started in mode '{}' container: {}", metadata.runMode(),
-                            container.getDockerImageName());
-                    Connection connection = getConnectionForContainer(metadata, container);
-                    return getExtensionContainer(container, connection);
+                    container.withReuse(true);
+                    ContainerContext<Connection> conContext = createContainerContext(container);
+                    logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), conContext);
+                    conContext.start();
+                    logger.info("Started in mode '{}' container: {}", metadata.runMode(), conContext);
+                    return conContext;
                 });
 
-                storage.put(metadata.runMode(), extensionContainer);
-                storage.put(getConnectionType(), extensionContainer.connection());
-                injectConnection((Connection) extensionContainer.connection(), context);
+                storage.put(metadata.runMode(), containerContext);
+                injectContext((ContainerContext<Connection>) containerContext, context);
             } else if (metadata.runMode() == ContainerMode.PER_CLASS) {
-                Container container = getContainerFromField(context).orElseGet(() -> {
+                Container container = findContainerFromField(context).orElseGet(() -> {
                     logger.debug("Getting default container for image: {}", metadata.image());
-                    return getContainerDefault(metadata);
+                    return createContainerDefault(metadata);
                 });
 
-                logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                container.start();
-                logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                Connection connection = getConnectionForContainer(metadata, container);
-                ExtensionContainer<Container, Connection> extensionContainer = getExtensionContainer(container, connection);
-                storage.put(metadata.runMode(), extensionContainer);
-                storage.put(getConnectionType(), connection);
-                injectConnection(connection, context);
+                ContainerContext<Connection> containerContext = createContainerContext(container);
+                logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), containerContext);
+                containerContext.start();
+                logger.info("Started in mode '{}' container: {}", metadata.runMode(), containerContext);
+                storage.put(metadata.runMode(), containerContext);
+                injectContext(containerContext, context);
             }
         }
     }
@@ -366,34 +391,31 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
     public void beforeEach(ExtensionContext context) {
         Metadata metadata = getMetadata(context);
         ExtensionContext.Store storage = getStorage(context);
-        Connection storageConnection = getConnectionCurrent(context);
-        if (storageConnection == null) {
+        if (getContainerContext(context) == null) {
             if (metadata.runMode() == ContainerMode.PER_METHOD) {
-                Container container = getContainerFromField(context).orElseGet(() -> {
+                Container container = findContainerFromField(context).orElseGet(() -> {
                     logger.debug("Getting default container for image: {}", metadata.image());
-                    return getContainerDefault(metadata);
+                    return createContainerDefault(metadata);
                 });
 
-                logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
+                ContainerContext<Connection> containerContext = createContainerContext(container);
+                logger.debug("Starting in mode '{}' container: {}", metadata.runMode(), containerContext);
                 container.start();
-                logger.info("Started in mode '{}' container: {}", metadata.runMode(), container.getDockerImageName());
-                Connection connection = getConnectionForContainer(metadata, container);
-                ExtensionContainer<Container, Connection> extensionContainer = getExtensionContainer(container, connection);
-                storage.put(metadata.runMode(), extensionContainer);
-                storage.put(getConnectionType(), connection);
+                logger.info("Started in mode '{}' container: {}", metadata.runMode(), containerContext);
+                storage.put(metadata.runMode(), containerContext);
             }
         }
 
         TestInstance.Lifecycle lifecycle = context.getTestInstanceLifecycle().orElse(TestInstance.Lifecycle.PER_METHOD);
         if (lifecycle == TestInstance.Lifecycle.PER_METHOD) {
-            Connection connection = getConnectionCurrent(context);
-            if (connection != null) {
-                injectConnection(connection, context);
+            var containerContext = getContainerContext(context);
+            if (containerContext != null) {
+                injectContext(containerContext, context);
             }
         } else if (metadata.runMode() == ContainerMode.PER_METHOD) {
-            Connection connection = getConnectionCurrent(context);
-            if (connection != null) {
-                injectConnection(connection, context);
+            var containerContext = getContainerContext(context);
+            if (containerContext != null) {
+                injectContext(containerContext, context);
             }
         }
     }
@@ -403,14 +425,11 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
         Metadata metadata = getMetadata(context);
         if (metadata.runMode() == ContainerMode.PER_METHOD) {
             ExtensionContext.Store storage = getStorage(context);
-            final ExtensionContainer<Container, Connection> extensionContainer = storage.get(metadata.runMode(),
-                    ExtensionContainer.class);
-            if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' container: {}",
-                        metadata.runMode(), extensionContainer.container().getDockerImageName());
-                extensionContainer.stop();
-                logger.info("Stopped in mode '{}' container: {}",
-                        metadata.runMode(), extensionContainer.container().getDockerImageName());
+            final ContainerContext<Connection> containerContext = getContainerContext(context);
+            if (containerContext != null) {
+                logger.debug("Stopping in mode '{}' container: {}", metadata.runMode(), containerContext);
+                containerContext.stop();
+                logger.info("Stopped in mode '{}' container: {}", metadata.runMode(), containerContext);
 
                 storage.remove(getConnectionType());
                 storage.remove(metadata.runMode());
@@ -420,17 +439,13 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
     @Override
     public void afterAll(ExtensionContext context) {
-        ExtensionContext.Store storage = getStorage(context);
         Metadata metadata = getMetadata(context);
         if (metadata.runMode() == ContainerMode.PER_CLASS) {
-            final ExtensionContainer<Container, Connection> extensionContainer = storage.get(metadata.runMode(),
-                    ExtensionContainer.class);
-            if (extensionContainer != null) {
-                logger.debug("Stopping in mode '{}' container: {}",
-                        metadata.runMode(), extensionContainer.container().getDockerImageName());
-                extensionContainer.stop();
-                logger.info("Stopped in mode '{}' container: {}",
-                        metadata.runMode(), extensionContainer.container().getDockerImageName());
+            final ContainerContext<Connection> containerContext = getContainerContext(context);
+            if (containerContext != null) {
+                logger.debug("Stopping in mode '{}' container: {}", metadata.runMode(), containerContext);
+                containerContext.stop();
+                logger.info("Stopped in mode '{}' container: {}", metadata.runMode(), containerContext);
             }
         }
     }

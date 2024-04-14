@@ -31,7 +31,7 @@ public @interface Migration {
     /**
      * @return path for resource directory with scripts or scripts itself
      */
-    String[] migrations();
+    String[] locations();
 
     /**
      * Database migration engine implementation

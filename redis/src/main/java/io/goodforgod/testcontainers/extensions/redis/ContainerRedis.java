@@ -3,7 +3,7 @@ package io.goodforgod.testcontainers.extensions.redis;
 import java.lang.annotation.*;
 
 /**
- * Indicates that annotated field containers {@link RedisContainerExtra} instance
+ * Indicates that annotated field containers {@link RedisContainer} instance
  * that should be used by {@link TestcontainersRedis} rather than creating default container
  */
 @Documented

@@ -33,8 +33,6 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
 
     private final JdbcConnection jdbcConnection;
 
-    private volatile Database database;
-
     public LiquibaseJdbcMigrationEngine(JdbcConnection jdbcConnection) {
         this.jdbcConnection = jdbcConnection;
     }
@@ -91,47 +89,67 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
     }
 
     @Override
-    public void migrate(@NotNull List<String> locations) {
-        logger.debug("Starting schema migration for engine '{}' for connection: {}",
+    public void apply(@NotNull List<String> locations) {
+        logger.debug("Starting migration apply for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            migrateLiquibase(getDatabase(), locations);
+            Connection connection = jdbcConnection.openConnection();
+            try (var database = getLiquiDatabase(connection)) {
+                migrateLiquibase(database, locations);
+            }
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                migrateLiquibase(getDatabase(), locations);
-            } catch (InterruptedException ex) {
-                logger.error("Failed schema migration for engine '{}' for connection: {}",
+                Connection connection = jdbcConnection.openConnection();
+                try (var database = getLiquiDatabase(connection)) {
+                    migrateLiquibase(database, locations);
+                }
+            } catch (Exception ex) {
+                logger.error("Failed migration apply for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);
 
                 throw new IllegalStateException(ex);
             }
         }
 
-        logger.info("Finished schema migration for engine '{}' for connection: {}",
+        logger.info("Finished migration apply for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
     @Override
     public void drop(@NotNull List<String> locations) {
-        logger.debug("Starting schema dropping for engine '{}' for connection: {}",
+        logger.debug("Starting migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
-        dropLiquibase(getDatabase(), locations);
+        try {
+            Connection connection = jdbcConnection.openConnection();
+            try (var database = getLiquiDatabase(connection)) {
+                dropLiquibase(database, locations);
+            }
+        } catch (Exception e) {
+            try {
+                Thread.sleep(250);
+                Connection connection = jdbcConnection.openConnection();
+                try (var database = getLiquiDatabase(connection)) {
+                    dropLiquibase(database, locations);
+                }
+            } catch (Exception ex) {
+                logger.error("Failed migration drop for engine '{}' for connection: {}",
+                        getClass().getSimpleName(), jdbcConnection);
 
-        logger.info("Finished schema dropping for engine '{}' for connection: {}",
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        logger.info("Finished migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
-    private Database getDatabase() {
+    private Database getLiquiDatabase(Connection connection) {
         try {
-            if (this.database == null) {
-                Connection connection = jdbcConnection.open();
-                var liquibaseConnection = new liquibase.database.jvm.JdbcConnection(connection);
-                this.database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(liquibaseConnection);
-            }
-            return this.database;
+            var liquiConnection = new liquibase.database.jvm.JdbcConnection(connection);
+            return DatabaseFactory.getInstance().findCorrectDatabaseImplementation(liquiConnection);
         } catch (DatabaseException e) {
             throw new IllegalStateException(e);
         }
@@ -139,13 +157,6 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
 
     @Override
     public void close() {
-        if (database != null) {
-            try {
-                database.close();
-                database = null;
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        }
+        // do nothing
     }
 }

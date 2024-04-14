@@ -1,7 +1,5 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.sql.DataSource;
@@ -14,11 +12,9 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
 
     private static final Logger logger = LoggerFactory.getLogger(FlywayJdbcMigrationEngine.class);
 
-    private final JdbcConnection jdbcConnection;
+    private final JdbcConnectionImpl jdbcConnection;
 
-    private volatile HikariDataSource dataSource;
-
-    public FlywayJdbcMigrationEngine(JdbcConnection jdbcConnection) {
+    public FlywayJdbcMigrationEngine(JdbcConnectionImpl jdbcConnection) {
         this.jdbcConnection = jdbcConnection;
     }
 
@@ -39,8 +35,8 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
     }
 
     @Override
-    public void migrate(@NotNull List<String> locations) {
-        logger.debug("Starting schema migration for engine '{}' for connection: {}",
+    public void apply(@NotNull List<String> locations) {
+        logger.debug("Starting migration migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
@@ -50,48 +46,34 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
                 Thread.sleep(250);
                 getFlyway(getDataSource(), locations).migrate();
             } catch (InterruptedException ex) {
-                logger.error("Failed schema migration for engine '{}' for connection: {}",
+                logger.error("Failed migration migration for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);
 
                 throw new IllegalStateException(ex);
             }
         }
 
-        logger.info("Finished schema migration for engine '{}' for connection: {}",
+        logger.info("Finished migration migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
     @Override
     public void drop(@NotNull List<String> locations) {
-        logger.debug("Starting schema dropping for engine '{}' for connection: {}",
+        logger.debug("Starting migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
         getFlyway(getDataSource(), locations).clean();
 
-        logger.info("Finished schema dropping for engine '{}' for connection: {}",
+        logger.info("Finished migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
     }
 
-    private HikariDataSource getDataSource() {
-        if (this.dataSource == null) {
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setJdbcUrl(jdbcConnection.params().jdbcUrl());
-            hikariConfig.setUsername(jdbcConnection.params().username());
-            hikariConfig.setPassword(jdbcConnection.params().password());
-            hikariConfig.setAutoCommit(true);
-            hikariConfig.setMinimumIdle(2);
-            hikariConfig.setMaximumPoolSize(10);
-            hikariConfig.setPoolName("flyway");
-            this.dataSource = new HikariDataSource(hikariConfig);
-        }
-        return this.dataSource;
+    private DataSource getDataSource() {
+        return this.jdbcConnection.dataSource();
     }
 
     @Override
     public void close() {
-        if (dataSource != null) {
-            dataSource.close();
-            dataSource = null;
-        }
+        // do nothing
     }
 }

@@ -2,7 +2,7 @@ package io.goodforgod.testcontainers.extensions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.goodforgod.testcontainers.extensions.example.ContainerRedisConnection;
+import io.goodforgod.testcontainers.extensions.example.ConnectionRedis;
 import io.goodforgod.testcontainers.extensions.example.RedisConnection;
 import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.MethodOrderer;
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS)
 abstract class ContainerPerClassAbstractTests {
 
-    @ContainerRedisConnection
+    @ConnectionRedis
     protected RedisConnection sameConnectionParent;
 
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -23,14 +23,14 @@ abstract class ContainerPerClassAbstractTests {
 
         private static RedisConnection firstConnection;
 
-        TestClassChild(@ContainerRedisConnection RedisConnection sameConnectionChild) {
+        TestClassChild(@ConnectionRedis RedisConnection sameConnectionChild) {
             this.sameConnectionChild = sameConnectionChild;
             assertNotNull(sameConnectionChild);
         }
 
         @Order(1)
         @Test
-        void firstConnection(@ContainerRedisConnection RedisConnection connection) {
+        void firstConnection(@ConnectionRedis RedisConnection connection) {
             assertNull(firstConnection);
             assertNotNull(connection);
             assertNotNull(connection.params().uri());
@@ -46,7 +46,7 @@ abstract class ContainerPerClassAbstractTests {
 
         @Order(2)
         @Test
-        void secondConnection(@ContainerRedisConnection RedisConnection connection) {
+        void secondConnection(@ConnectionRedis RedisConnection connection) {
             assertNotNull(connection);
             assertNotNull(connection.params().uri());
             assertTrue(connection.paramsInNetwork().isPresent());

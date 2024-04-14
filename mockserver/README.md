@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.6"
+testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.10.0"
 ```
 
 **Maven**
@@ -25,15 +25,14 @@ testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.6"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mockserver</artifactId>
-    <version>0.9.6</version>
+    <version>0.10.0</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ## Content
 - [Usage](#usage)
-- [Container](#container)
-  - [Connection](#container-connection)
+- [Connection](#connection)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
@@ -44,11 +43,14 @@ testImplementation "io.goodforgod:testcontainers-extensions-mockserver:0.9.6"
 Test with container start in `PER_RUN` mode will look like:
 
 ```java
-@TestcontainersMockserver(mode = ContainerMode.PER_RUN)
+@TestcontainersMockServer(mode = ContainerMode.PER_RUN)
 class ExampleTests {
 
+  @ContainerMockServerConnection
+  private MockServerConnection connection;
+
   @Test
-  void test(@ContainerMockserverConnection MockserverConnection connection) {
+  void test() {
     connection.client().when(HttpRequest.request()
                     .withMethod("GET")
                     .withPath("/get"))
@@ -59,48 +61,32 @@ class ExampleTests {
 }
 ```
 
-## Container
+## Connection
 
-Library provides special `MockServerContainerExtra` with ability for migration and connection.
-It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
-
-```java
-class ExampleTests {
-
-    @Test
-    void test() {
-        try (var container = new MockServerContainerExtra(DockerImageName.parse("mockserver/mockserver:5.15.0"))) {
-            container.start();
-        }
-    }
-}
-```
-
-### Container Connection
-
-`MockserverConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+`MockServerConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
+You can inject connection via `@ConnectionMockServer` as field or method argument or manually create it from container or manual settings.
 
 ```java
 class ExampleTests {
 
+  @ContainerMockServerConnection 
+  private MockServerConnection connection;
+  
   @Test
   void test() {
-    try (var container = new MockServerContainerExtra(DockerImageName.parse("mockserver/mockserver:5.15.0"))) {
-      container.start();
-      container.connection().client().when(HttpRequest.request()
-                      .withMethod("GET")
-                      .withPath("/get"))
-              .respond(HttpResponse.response()
-                      .withStatusCode(200)
-                      .withBody("OK"));
-    }
+    connection().client().when(HttpRequest.request()
+                    .withMethod("GET")
+                    .withPath("/get"))
+            .respond(HttpResponse.response()
+                    .withStatusCode(200)
+                    .withBody("OK"));
   }
 }
 ```
 
 ## Annotation
 
-`@TestcontainersMockserver` - allow **automatically start container** with specified image in different modes without the need to configure it.
+`@TestcontainersMockServer` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 
@@ -110,11 +96,11 @@ Available containers modes:
 
 Simple example on how to start container per class, **no need to configure** container:
 ```java
-@TestcontainersMockserver(mode = ContainerMode.PER_CLASS)
+@TestcontainersMockServer(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
     @Test
-    void test(@ContainerMockserverConnection MockserverConnection connection) {
+    void test(@ContainerMockServerConnection MockServerConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -126,7 +112,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMockserver(image = "${MY_IMAGE_ENV|mockserver/mockserver:5.15.0}")
+@TestcontainersMockServer(image = "${MY_IMAGE_ENV|mockserver/mockserver:5.15.0}")
 class ExampleTests {
 
     @Test
@@ -144,22 +130,19 @@ Image syntax:
 
 ### Manual Container
 
-When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersMockserver`,
-this can be done using `@ContainerMockserver` annotation for container.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersMockServer`,
+this can be done using `@ContainerMockServer` annotation for container.
 
 Example:
 ```java
-@TestcontainersMockserver(mode = ContainerMode.PER_CLASS)
+@TestcontainersMockServer(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
-    @ContainerMockserver
-    private static final MockServerContainer container = new MockServerContainer()
-            .withNetworkAliases("mymockserver")
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainer.class)))
-            .withNetwork(Network.SHARED);
+    @ContainerMockServer
+    private static final MockServerContainer container = new MockServerContainer().withNetworkAliases("mymockserver");
     
     @Test
-    void test(@ContainerMockserverConnection MockserverConnection connection) {
+    void test(@ContainerMockServerConnection MockServerConnection connection) {
         assertEquals("mymockserver", connection.paramsInNetwork().get().host());
     }
 }
@@ -169,7 +152,7 @@ class ExampleTests {
 
 In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
 ```java
-@TestcontainersMockserver(network = @Network(shared = true))
+@TestcontainersMockServer(network = @Network(shared = true))
 class ExampleTests {
 
     @Test
@@ -186,7 +169,7 @@ Alias can be extracted from environment variable also or default value can be pr
 
 In case specified environment variable is missing `default alias` will be created:
 ```java
-@TestcontainersMockserver(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+@TestcontainersMockServer(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
 class ExampleTests {
 
     @Test
@@ -204,19 +187,19 @@ Image syntax:
 
 ### Annotation Connection
 
-`MockserverConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerMockserverConnection` annotation.
-`MockserverConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+`MockServerConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerMockServerConnection` annotation.
+`MockServerConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
 ```java
-@TestcontainersMockserver(mode = ContainerMode.PER_CLASS, image = "mockserver/mockserver:5.15.0")
+@TestcontainersMockServer(mode = ContainerMode.PER_CLASS, image = "mockserver/mockserver:5.15.0")
 class ExampleTests {
 
-    @ContainerMockserverConnection
-    private MockserverConnection connectionInField;
+    @ContainerMockServerConnection
+    private MockServerConnection connection;
 
     @Test
-    void test(@ContainerMockserverConnection MockserverConnection connection) {
+    void test() {
         connection.client().when(HttpRequest.request()
                         .withMethod("GET")
                         .withPath("/get"))
@@ -229,12 +212,12 @@ class ExampleTests {
 
 ### External Connection
 
-In case you want to use some external Mockserver instance that is running in CI or other place for tests (due to docker limitations or other), 
-you can use special *environment variables* and extension will use them to propagate connection and no Mockserver containers will be running in such case.
+In case you want to use some external MockServer instance that is running in CI or other place for tests (due to docker limitations or other), 
+you can use special *environment variables* and extension will use them to propagate connection and no MockServer containers will be running in such case.
 
 Special environment variables:
-- `EXTERNAL_TEST_MOCKSERVER_HOST` - Mockserver instance host.
-- `EXTERNAL_TEST_MOCKSERVER_PORT` - Mockserver instance port.
+- `EXTERNAL_TEST_MOCKSERVER_HOST` - MockServer instance host.
+- `EXTERNAL_TEST_MOCKSERVER_PORT` - MockServer instance port.
 
 ## License
 

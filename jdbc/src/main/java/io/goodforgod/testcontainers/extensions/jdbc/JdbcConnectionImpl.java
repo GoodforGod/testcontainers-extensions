@@ -1,15 +1,17 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -18,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Internal
-final class JdbcConnectionImpl implements JdbcConnection {
+class JdbcConnectionImpl implements JdbcConnection {
 
-    private static final class ParamsImpl implements JdbcConnection.Params {
+    static final class ParamsImpl implements JdbcConnection.Params {
 
         private final String jdbcUrl;
         private final String host;
@@ -76,9 +78,14 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
-    private volatile boolean isClosed = false;
     private final Params params;
     private final Params network;
+
+    private volatile FlywayJdbcMigrationEngine flywayJdbcMigrationEngine;
+    private volatile LiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
+
+    private volatile boolean isClosed = false;
+    private volatile HikariDataSource dataSource;
 
     JdbcConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -116,9 +123,7 @@ final class JdbcConnectionImpl implements JdbcConnection {
         return new JdbcConnectionImpl(params, network);
     }
 
-    static JdbcConnection forExternal(String jdbcUrl,
-                                      String username,
-                                      String password) {
+    static JdbcConnection forExternal(String jdbcUrl, String username, String password) {
         final URI uri = URI.create(jdbcUrl);
         var host = uri.getHost();
         var port = uri.getPort();
@@ -133,6 +138,23 @@ final class JdbcConnectionImpl implements JdbcConnection {
     }
 
     @Override
+    public @NotNull JdbcMigrationEngine migrationEngine(Migration.@NotNull Engines engine) {
+        if (engine == Migration.Engines.FLYWAY) {
+            if (flywayJdbcMigrationEngine == null) {
+                this.flywayJdbcMigrationEngine = new FlywayJdbcMigrationEngine(this);
+            }
+            return this.flywayJdbcMigrationEngine;
+        } else if (engine == Migration.Engines.LIQUIBASE) {
+            if (liquibaseJdbcMigrationEngine == null) {
+                this.liquibaseJdbcMigrationEngine = new LiquibaseJdbcMigrationEngine(this);
+            }
+            return this.liquibaseJdbcMigrationEngine;
+        } else {
+            throw new UnsupportedOperationException("Unsupported engine: " + engine);
+        }
+    }
+
+    @Override
     public @NotNull Params params() {
         return params;
     }
@@ -144,24 +166,22 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
     @NotNull
     @Override
-    public Connection open() {
+    public Connection openConnection() {
         if (isClosed) {
             throw new IllegalStateException("JdbcConnection was closed");
         }
 
         try {
-            logger.debug("Opening SQL connection...");
-            return DriverManager.getConnection(params.jdbcUrl(), params.username(), params.username());
+            return dataSource().getConnection();
         } catch (SQLException e) {
-            throw new JdbcConnectionException(e);
+            throw new IllegalStateException(e);
         }
     }
 
     @Override
     public void execute(@Language("SQL") @NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
-                var stmt = connection.createStatement()) {
+        try (var openedConnection = openConnection(); var stmt = openedConnection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);
@@ -223,8 +243,8 @@ final class JdbcConnectionImpl implements JdbcConnection {
                                                          @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
-                var stmt = connection.prepareStatement(sql);
+        try (var openedConnection = openConnection();
+                var stmt = openedConnection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             return (rs.next())
                     ? Optional.ofNullable(extractor.apply(rs))
@@ -239,8 +259,8 @@ final class JdbcConnectionImpl implements JdbcConnection {
                                                       @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
-                var stmt = connection.prepareStatement(sql);
+        try (var openedConnection = openConnection();
+                var stmt = openedConnection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             final List<T> result = new ArrayList<>();
             while (rs.next()) {
@@ -260,8 +280,8 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
     private void assertQuery(@Language("SQL") String sql, QueryAssert consumer) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
-                var stmt = connection.prepareStatement(sql);
+        try (var openedConnection = openConnection();
+                var stmt = openedConnection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             consumer.accept(rs);
         } catch (SQLException e) {
@@ -305,8 +325,7 @@ final class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public void assertInserted(@NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
-                var stmt = connection.prepareStatement(sql)) {
+        try (var openedConnection = openConnection(); var stmt = openedConnection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             if (rs == 0) {
                 Assertions.fail(String.format("Expected query to update but it didn't for SQL: %s", sql.replace("\n", " ")));
@@ -334,8 +353,8 @@ final class JdbcConnectionImpl implements JdbcConnection {
 
     private boolean checkQuery(@Language("SQL") String sql, QueryChecker checker) {
         logger.debug("Executing SQL:\n{}", sql);
-        try (var connection = open();
-                var stmt = connection.prepareStatement(sql);
+        try (var openedConnection = openConnection();
+                var stmt = openedConnection.prepareStatement(sql);
                 var rs = stmt.executeQuery()) {
             return checker.apply(rs);
         } catch (Exception e) {
@@ -376,8 +395,7 @@ final class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public boolean checkInserted(@NotNull String sql) {
         logger.debug("Executing SQL: {}", sql);
-        try (var connection = open();
-                var stmt = connection.prepareStatement(sql)) {
+        try (var openedConnection = openConnection(); var stmt = openedConnection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             return rs != 0;
         } catch (SQLException e) {
@@ -395,8 +413,49 @@ final class JdbcConnectionImpl implements JdbcConnection {
         return checkInserted(sql);
     }
 
-    void close() {
+    DataSource dataSource() {
+        if (dataSource == null) {
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setJdbcUrl(params().jdbcUrl());
+            hikariConfig.setUsername(params().username());
+            hikariConfig.setPassword(params().password());
+            hikariConfig.setAutoCommit(true);
+            hikariConfig.setMinimumIdle(1);
+            hikariConfig.setMaximumPoolSize(25);
+            hikariConfig.setPoolName("jdbc-connection");
+            hikariConfig.setLeakDetectionThreshold(10000);
+            this.dataSource = new HikariDataSource(hikariConfig);
+        }
+
+        return this.dataSource;
+    }
+
+    void stop() {
         this.isClosed = true;
+
+        if (dataSource != null) {
+            try {
+                dataSource.close();
+            } catch (Exception e) {
+                // do nothing
+            } finally {
+                dataSource = null;
+            }
+        }
+
+        if (flywayJdbcMigrationEngine != null) {
+            flywayJdbcMigrationEngine.close();
+            flywayJdbcMigrationEngine = null;
+        }
+        if (liquibaseJdbcMigrationEngine != null) {
+            liquibaseJdbcMigrationEngine.close();
+            liquibaseJdbcMigrationEngine = null;
+        }
+    }
+
+    @Override
+    public void close() {
+        // do nothing
     }
 
     @Override

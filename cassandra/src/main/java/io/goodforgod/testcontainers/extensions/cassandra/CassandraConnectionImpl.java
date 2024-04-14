@@ -21,9 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Internal
-final class CassandraConnectionImpl implements CassandraConnection {
+class CassandraConnectionImpl implements CassandraConnection {
 
-    private static final class ParamsImpl implements Params {
+    static final class ParamsImpl implements Params {
 
         private final String host;
         private final int port;
@@ -84,6 +84,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private final Params params;
     private final Params network;
 
+    private volatile boolean isClosed = false;
     private volatile CqlSession connection;
 
     CassandraConnectionImpl(Params params, Params network) {
@@ -114,7 +115,7 @@ final class CassandraConnectionImpl implements CassandraConnection {
                                            String datacenter,
                                            String username,
                                            String password) {
-        var params = new ParamsImpl(host, port, datacenter, username, password);
+        var params = new CassandraConnectionImpl.ParamsImpl(host, port, datacenter, username, password);
         return new CassandraConnectionImpl(params, null);
     }
 
@@ -129,12 +130,11 @@ final class CassandraConnectionImpl implements CassandraConnection {
     }
 
     @NotNull
-    public CqlSession get() {
-        return connection();
-    }
+    public CqlSession getConnection() {
+        if (isClosed) {
+            throw new IllegalStateException("JdbcConnection was closed");
+        }
 
-    @NotNull
-    private CqlSession connection() {
         if (connection == null) {
             connection = openConnection();
         } else if (connection.isClosed()) {
@@ -168,6 +168,15 @@ final class CassandraConnectionImpl implements CassandraConnection {
     }
 
     @Override
+    public @NotNull CassandraMigrationEngine migrationEngine(Migration.@NotNull Engines engine) {
+        if (engine == Migration.Engines.SCRIPTS) {
+            return new ScriptCassandraMigrationEngine(this);
+        }
+
+        throw new UnsupportedOperationException("Unsupported engine: " + engine);
+    }
+
+    @Override
     public void createKeyspace(@NotNull String keyspaceName) {
         execute("CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
                 + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};");
@@ -177,8 +186,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     public void execute(@Language("CQL") @NotNull String cql) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            connection().execute(boundStatement).wasApplied();
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            getConnection().execute(boundStatement).wasApplied();
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
         }
@@ -246,8 +255,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var row = connection().execute(boundStatement).one();
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var row = getConnection().execute(boundStatement).one();
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))
                     : Optional.empty();
@@ -262,8 +271,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var rows = connection().execute(boundStatement).all();
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var rows = getConnection().execute(boundStatement).all();
             final List<T> result = new ArrayList<>(rows.size());
             for (Row row : rows) {
                 result.add(extractor.apply(row));
@@ -283,8 +292,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private void assertQuery(@Language("CQL") String cql, QueryAssert consumer) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var rows = connection().execute(boundStatement);
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var rows = getConnection().execute(boundStatement);
             consumer.accept(rows);
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -325,8 +334,8 @@ final class CassandraConnectionImpl implements CassandraConnection {
     private boolean checkQuery(@Language("CQL") String cql, QueryChecker checker) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = connection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
-            var rows = connection().execute(boundStatement);
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var rows = getConnection().execute(boundStatement);
             return checker.apply(rows);
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -354,6 +363,19 @@ final class CassandraConnectionImpl implements CassandraConnection {
         });
     }
 
+    void stop() {
+        this.isClosed = true;
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
+    }
+
+    @Override
+    public void close() {
+        // do nothing
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -372,12 +394,5 @@ final class CassandraConnectionImpl implements CassandraConnection {
     @Override
     public String toString() {
         return params().toString();
-    }
-
-    void close() {
-        if (connection != null) {
-            connection.close();
-            connection = null;
-        }
     }
 }

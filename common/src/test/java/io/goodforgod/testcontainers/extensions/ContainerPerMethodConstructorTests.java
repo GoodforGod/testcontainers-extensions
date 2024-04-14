@@ -2,7 +2,7 @@ package io.goodforgod.testcontainers.extensions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.goodforgod.testcontainers.extensions.example.ContainerRedisConnection;
+import io.goodforgod.testcontainers.extensions.example.ConnectionRedis;
 import io.goodforgod.testcontainers.extensions.example.RedisConnection;
 import io.goodforgod.testcontainers.extensions.example.TestcontainersRedis;
 import org.junit.jupiter.api.*;
@@ -16,14 +16,14 @@ class ContainerPerMethodConstructorTests {
 
     private static RedisConnection firstConnection;
 
-    ContainerPerMethodConstructorTests(@ContainerRedisConnection RedisConnection diffPerMethod) {
+    ContainerPerMethodConstructorTests(@ConnectionRedis RedisConnection diffPerMethod) {
         this.diffPerMethod = diffPerMethod;
         assertNotNull(diffPerMethod);
     }
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerRedisConnection RedisConnection connection) {
+    void firstConnection(@ConnectionRedis RedisConnection connection) {
         assertNull(firstConnection);
         assertNotNull(connection);
         assertNotNull(connection.params().uri());
@@ -34,7 +34,7 @@ class ContainerPerMethodConstructorTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerRedisConnection RedisConnection connection) {
+    void secondConnection(@ConnectionRedis RedisConnection connection) {
         assertNotNull(connection);
         assertNotNull(connection.params().uri());
         assertNotNull(diffPerMethod);

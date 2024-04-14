@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.9.6"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.10.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.9.6"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.9.6</version>
+    <version>0.10.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -52,9 +52,8 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 
 ## Content
 - [Usage](#usage)
-- [Container](#container)
-  - [Connection](#container-connection)
-  - [Migration](#container-migration)
+- [Connection](#connection)
+  - [Migration](#connection-migration)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
@@ -66,15 +65,18 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 Test with container start in `PER_RUN` mode and migration per method will look like:
 
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_RUN,
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD))
 class ExampleTests {
 
+  @ConnectionPostgreSQL
+  private JdbcConnection connection;
+
   @Test
-  void test(@ContainerPostgresConnection JdbcConnection connection) {
+  void test() {
     connection.execute("INSERT INTO users VALUES(1);");
     var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
     assertEquals(1, usersFound.size());
@@ -82,48 +84,42 @@ class ExampleTests {
 }
 ```
 
-## Container
+## Connection
 
-Library provides special `PostgreSQLContainerExtra` with ability for migration and connection.
-It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+`JdbcConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
+You can inject connection via `@ConnectionPostgreSQL` as field or method argument or manually create it from container or manual settings.
 
 ```java
+class ExampleTests {
+
+    private static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>();
+    
+    @Test
+    void test() {
+      container.start();
+      JdbcConnection connection = JdbcConnection.forContainer(container);
+      connection.execute("INSERT INTO users VALUES(1);");
+    }
+}
+```
+
+### Connection Migration
+
+`Migrations` allow easily migrate database between test executions and drop after tests.
+You can migrate container via `@TestcontainersPostgreSQL#migration` annotation parameter or manually using `JdbcConnection`.
+
+```java
+@TestcontainersPostgreSQL
 class ExampleTests {
 
     @Test
-    void test() {
-        try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.6-alpine"))) {
-            container.start();
-        }
+    void test(@ConnectionPostgreSQL JdbcConnection connection) {
+      connection.migrationEngine(Migration.Engines.FLYWAY).apply("db/migration");
+      connection.execute("INSERT INTO users VALUES(1);");
+      connection.migrationEngine(Migration.Engines.FLYWAY).drop("db/migration");
     }
 }
 ```
-
-### Container Connection
-
-`JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
-
-```java
-class ExampleTests {
-
-  @Test
-  void test() {
-    try (var container = new PostgreSQLContainerExtra<>(DockerImageName.parse("postgres:15.6-alpine"))) {
-      container.start();
-      container.connection().assertQueriesNone("SELECT * FROM users;");
-    }
-  }
-}
-```
-
-### Container Migration
-
-`Migrations` allow easily migrate database between test executions and drop after tests.
-
-Annotation parameters:
-- `engine` - to use for migration.
-- `apply` - parameter configures migration mode.
-- `drop` - configures when to reset/drop/clear database.
 
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
@@ -131,7 +127,7 @@ Available migration engines:
 
 ## Annotation
 
-`@TestcontainersPostgres` - allow **automatically start container** with specified image in different modes without the need to configure it.
+`@TestcontainersPostgreSQL` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 
@@ -141,11 +137,11 @@ Available containers modes:
 
 Simple example on how to start container per class, **no need to configure** container:
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS)
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
     @Test
-    void test(@ContainerPostgresConnection JdbcConnection connection) {
+    void test(@ConnectionPostgreSQL JdbcConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -157,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgres(image = "${MY_IMAGE_ENV|postgres:15.6-alpine}")
+@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:15.6-alpine}")
 class ExampleTests {
 
     @Test
@@ -175,22 +171,21 @@ Image syntax:
 
 ### Manual Container
 
-When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersPostgres`,
-this can be done using `@ContainerPostgres` annotation for container.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersPostgreSQL`,
+this can be done using `@ContainerPostgreSQL` annotation for container.
 
-Example:
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS)
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
-    @ContainerPostgres
+    @ContainerPostgreSQL
     private static final PostgreSQLContainer<?> container = new PostgreSQLContainer<>()
             .withDatabaseName("user")
             .withUsername("user")
             .withPassword("user");
     
     @Test
-    void test(@ContainerPostgresConnection JdbcConnection connection) {
+    void test(@ConnectionPostgreSQL JdbcConnection connection) {
         assertEquals("user", connection.params().database());
         assertEquals("user", connection.params().username());
         assertEquals("user", connection.params().password());
@@ -202,7 +197,7 @@ class ExampleTests {
 
 In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
 ```java
-@TestcontainersPostgres(network = @Network(shared = true))
+@TestcontainersPostgreSQL(network = @Network(shared = true))
 class ExampleTests {
 
     @Test
@@ -219,7 +214,7 @@ Alias can be extracted from environment variable also or default value can be pr
 
 In case specified environment variable is missing `default alias` will be created:
 ```java
-@TestcontainersPostgres(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+@TestcontainersPostgreSQL(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
 class ExampleTests {
 
     @Test
@@ -237,19 +232,18 @@ Image syntax:
 
 ### Annotation Connection
 
-`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerPostgresConnection` annotation.
+`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionPostgreSQL` annotation.
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
-Example:
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS, image = "postgres:15.6-alpine")
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:15.6-alpine")
 class ExampleTests {
 
-    @ContainerPostgresConnection
-    private JdbcConnection connectionInField;
+    @ConnectionPostgreSQL
+    private JdbcConnection connection;
 
     @Test
-    void test(@ContainerPostgresConnection JdbcConnection connection) {
+    void test() {
         connection.execute("CREATE TABLE users (id INT NOT NULL PRIMARY KEY);");
         connection.execute("INSERT INTO users VALUES(1);");
         connection.assertInserted("INSERT INTO users VALUES(2);");
@@ -286,6 +280,7 @@ Annotation parameters:
 - `engine` - to use for migration.
 - `apply` - parameter configures migration mode.
 - `drop` - configures when to reset/drop/clear database.
+- `locations` - configures locations where migrations are placed.
 
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html)
@@ -301,7 +296,7 @@ CREATE TABLE IF NOT EXISTS users
 
 Test with container and migration per method will look like:
 ```java
-@TestcontainersPostgres(mode = ContainerMode.PER_CLASS,
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
@@ -309,7 +304,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ContainerPostgresConnection JdbcConnection connection) {
+    void test(@ConnectionPostgreSQL JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
         assertEquals(1, usersFound.size());

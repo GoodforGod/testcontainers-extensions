@@ -11,31 +11,31 @@ import org.junit.jupiter.api.*;
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_CLASS,
                 drop = Migration.Mode.PER_CLASS,
-                migrations = { "migration" }))
+                locations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CassandraSimplePerClassMigrationTests {
 
     @BeforeAll
-    public static void setupAll(@ContainerCassandraConnection CassandraConnection paramConnection) {
+    public static void setupAll(@ConnectionCassandra CassandraConnection paramConnection) {
         paramConnection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0));
         assertNotNull(paramConnection);
     }
 
     @BeforeEach
-    public void setupEach(@ContainerCassandraConnection CassandraConnection paramConnection) {
+    public void setupEach(@ConnectionCassandra CassandraConnection paramConnection) {
         paramConnection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0));
         assertNotNull(paramConnection);
     }
 
     @Order(1)
     @Test
-    void firstRun(@ContainerCassandraConnection CassandraConnection connection) {
+    void firstRun(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
     }
 
     @Order(2)
     @Test
-    void secondRun(@ContainerCassandraConnection CassandraConnection connection) {
+    void secondRun(@ConnectionCassandra CassandraConnection connection) {
         var usersFound = connection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0)).orElse(null);
         assertEquals(1, usersFound);
     }

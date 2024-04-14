@@ -7,11 +7,12 @@ import java.util.List;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
+import org.testcontainers.containers.CassandraContainer;
 
 /**
- * Describes active Cassandra connection of currently running {@link CassandraContainerExtra}
+ * Describes active Cassandra connection of currently running {@link CassandraContainer}
  */
-public interface CassandraConnection {
+public interface CassandraConnection extends AutoCloseable {
 
     @FunctionalInterface
     interface RowMapper<R, E extends Throwable> {
@@ -64,7 +65,10 @@ public interface CassandraConnection {
      * @return new Cassandra connection
      */
     @NotNull
-    CqlSession get();
+    CqlSession getConnection();
+
+    @NotNull
+    CassandraMigrationEngine migrationEngine(@NotNull Migration.Engines engine);
 
     /**
      * @param keyspaceName to create
@@ -180,4 +184,30 @@ public interface CassandraConnection {
      * @return true if executed CQL results in exact number of expected rows
      */
     boolean checkQueriesEquals(int expected, @NotNull @Language("CQL") String cql);
+
+    @Override
+    void close();
+
+    static CassandraConnection forContainer(CassandraContainer<?> container) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
+        var params = new CassandraConnectionImpl.ParamsImpl(container.getHost(),
+                container.getMappedPort(CassandraContainer.CQL_PORT),
+                container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+        final Params network = new CassandraConnectionImpl.ParamsImpl(container.getNetworkAliases().get(0),
+                CassandraContainer.CQL_PORT,
+                container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+        return new CassandraConnectionClosableImpl(params, network);
+    }
+
+    static CassandraConnection forParams(String host,
+                                         int port,
+                                         String datacenter,
+                                         String username,
+                                         String password) {
+        var params = new CassandraConnectionImpl.ParamsImpl(host, port, datacenter, username, password);
+        return new CassandraConnectionClosableImpl(params, null);
+    }
 }

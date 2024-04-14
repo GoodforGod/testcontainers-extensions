@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.9.6"
+testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.10.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.9.6"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-kafka</artifactId>
-    <version>0.9.6</version>
+    <version>0.10.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -52,8 +52,7 @@ testRuntimeOnly "org.apache.kafka:kafka-clients:3.5.1"
 
 ## Content
 - [Usage](#usage)
-- [Container](#container)
-  - [Connection](#container-connection)
+- [Connection](#connection)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Setup topics](#annotation-topics)
@@ -69,50 +68,41 @@ Test with container start in `PER_RUN` mode and topic reset per method will look
 
 ```java
 @TestcontainersKafka(mode = ContainerMode.PER_RUN,
-        topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
+        topics = @Topics(value = "my-topic-name", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
 
+  @ContainerKafkaConnection 
+  private KafkaConnection connection;
+  
   @Test
-  void test(@ContainerKafkaConnection KafkaConnection connection) {
-    connection.send("my-topic-name", Event.ofValue("{\"name\":\"User\"}"));
+  void test() {
+    var consumer = connection.subscribe("my-topic-name");
+    connection.send("my-topic-name", Event.ofValue("value1"), Event.ofValue("value2"));
+    consumer.assertReceivedAtLeast(2, Duration.ofSeconds(5));
   }
 }
 ```
 
-## Container
+## Connection
 
-Library provides special `KafkaContainerExtra` with ability for migration and connection.
-It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+`KafkaConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
+You can inject connection via `@ConnectionKafka` as field or method argument or manually create it from container or manual settings.
 
-```java
-class ExampleTests {
-
-    @Test
-    void test() {
-        try (var container = new KafkaContainerExtra(DockerImageName.parse("cp-kafka:7.5.3"))) {
-            container.start();
-        }
-    }
-}
-```
-
-### Container Connection
-
-`RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+`KafkaConnection` allow you to create consumers and send messages to Kafka for easier testing and asserting.
 
 ```java
 class ExampleTests {
+
+  private static final KafkaContainer container = new KafkaContainer();
 
   @Test
   void test() {
-    try (var container = new KafkaContainerExtra(DockerImageName.parse("cp-kafka:7.5.3"))) {
       container.start();
-      var connection = container.connection();
-      
+      KafkaConnection connection = KafkaConnection.forContainer(container);
+
       var consumer = connection.subscribe("my-topic-name");
       connection.send("my-topic-name", Event.ofValue("value1"), Event.ofValue("value2"));
       consumer.assertReceivedAtLeast(2, Duration.ofSeconds(5));
-    }
   }
 }
 ```
@@ -172,9 +162,7 @@ Example:
 class ExampleTests {
 
     @ContainerKafka
-    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.3"))
-          .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(KafkaContainer.class)))
-          .withNetwork(Network.SHARED);
+    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.3"));
 
     @Test
     void checkParams(@ContainerKafkaConnection KafkaConnection connection) {

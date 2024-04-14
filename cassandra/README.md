@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.9.6"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.10.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.9.6"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.9.6</version>
+    <version>0.10.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -53,10 +53,9 @@ testImplementation "com.datastax.oss:java-driver-core:4.17.0"
 ## Content
 - [Usage](#usage)
 - [Old Driver](#container-old-driver)
-- [Container](#container)
-  - [Connection](#container-connection)
-  - [Migration](#container-migration)
-- [Annotation](#container)
+- [Connection](#connection)
+  - [Migration](#connection-migration)
+- [Annotation](#annotation)
   - [Manual](#manual-container)
   - [Network](#network)
   - [Connection](#annotation-connection)
@@ -78,7 +77,7 @@ Test with container start in `PER_RUN` mode and migration per method will look l
 class ExampleTests {
 
     @Test
-    void test(@ContainerCassandraConnection CassandraConnection connection) {
+    void test(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
         assertEquals(1, usersFound.size());
@@ -93,63 +92,39 @@ class ExampleTests {
 Library excludes [com.datastax.cassandra:cassandra-driver-core](https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core/3.10.0)
 old driver from dependency leaking due to lots of vulnerabilities, if you require it add such dependency manually yourself.
 
-## Container
+## Connection
 
-Library provides special `CassandraContainerExtra` with ability for migration and connection.
-It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
+`CassandraConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
+You can inject connection via `@ConnectionCassandra` as field or method argument or manually create it from container or manual settings.
 
 ```java
 class ExampleTests {
 
+    private static final CassandraContainer<?> container = new CassandraContainer<>();
+    
     @Test
     void test() {
-        try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
-            container.start();
-        }
-    }
-}
-```
-
-### Container Connection
-
-`CassandraConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
-
-```java
-class ExampleTests {
-
-  @Test
-  void test() {
-    try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
       container.start();
-      container.connection().assertQueriesNone("SELECT * FROM cassandra.users;");
+      CassandraConnection connection = CassandraConnection.forContainer(container);
+      connection.execute("INSERT INTO users VALUES(1);");
     }
-  }
 }
 ```
 
-### Container Migration
+### Connection Migration
 
 `Migrations` allow easily migrate database between test executions and drop after tests.
-
-Annotation parameters:
-- `engine` - to use for migration.
-- `apply` - parameter configures migration mode.
-- `drop` - configures when to reset/drop/clear database.
-
-Available migration engines:
-- Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all cassandra
+You can migrate container via `@TestcontainersCassandra#migration` annotation parameter or manually using `CassandraConnection`.
 
 ```java
+@TestcontainersMariaDB
 class ExampleTests {
 
     @Test
-    void test() {
-        try (var container = new CassandraContainerExtra<>(DockerImageName.parse("cassandra:4.1"))) {
-            container.start();
-            container.migrate(Migration.Engines.SCRIPTS, List.of("migration"));
-            container.connection().assertQueriesNone("SELECT * FROM cassandra.users;");
-            container.drop(Migration.Engines.SCRIPTS, List.of("migration"));
-        }
+    void test(@ConnectionCassandra CassandraConnection connection) {
+      connection.migrationEngine(Migration.Engines.SCRIPTS).apply("migration/setup.cql");
+      connection.execute("INSERT INTO users VALUES(1);");
+      connection.migrationEngine(Migration.Engines.SCRIPTS).drop("migration/setup.cql");
     }
 }
 ```
@@ -172,7 +147,7 @@ Simple example on how to start container per class, **no need to configure** con
 class ExampleTests {
 
     @Test
-    void test(@ContainerCassandraConnection CassandraConnection connection) {
+    void test(@ConnectionCassandra CassandraConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -212,12 +187,10 @@ class ExampleTests {
 
     @ContainerCassandra
     private static final CassandraContainer<?> container = new CassandraContainer<>()
-            .withEnv("CASSANDRA_DC", "mydc")
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class)))
-            .withNetwork(Network.SHARED);
+            .withEnv("CASSANDRA_DC", "mydc");
     
     @Test
-    void test(@ContainerCassandraConnection CassandraConnection connection) {
+    void test(@ConnectionCassandra CassandraConnection connection) {
       assertEquals("mydc", connection.params().datacenter());
     }
 }
@@ -262,7 +235,7 @@ Image syntax:
 
 ### Annotation Connection
 
-`CassandraConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerCassandraConnection` annotation.
+`CassandraConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionCassandra` annotation.
 `CassandraConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
@@ -270,11 +243,11 @@ Example:
 @TestcontainersCassandra(mode = ContainerMode.PER_CLASS, image = "cassandra:4.1")
 class ExampleTests {
 
-    @ContainerCassandraConnection
-    private CassandraConnection connectionInField;
+    @ConnectionCassandra
+    private CassandraConnection connection;
 
     @Test
-    void test(@ContainerCassandraConnection CassandraConnection connection) {
+    void test() {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
@@ -291,6 +264,7 @@ Annotation parameters:
 - `engine` - to use for migration.
 - `apply` - parameter configures migration mode.
 - `drop` - configures when to reset/drop/clear database.
+- `locations` - configures locations where migrations are placed.
 
 Available migration engines:
 - Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all cassandra
@@ -318,7 +292,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ContainerCassandraConnection CassandraConnection connection) {
+    void test(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
         connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));

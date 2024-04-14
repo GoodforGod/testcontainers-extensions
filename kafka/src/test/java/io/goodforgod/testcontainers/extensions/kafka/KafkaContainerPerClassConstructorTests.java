@@ -14,13 +14,13 @@ class KafkaContainerPerClassConstructorTests {
 
     private static KafkaConnection firstConnection;
 
-    KafkaContainerPerClassConstructorTests(@ContainerKafkaConnection KafkaConnection sameConnection) {
+    KafkaContainerPerClassConstructorTests(@ConnectionKafka KafkaConnection sameConnection) {
         this.sameConnection = sameConnection;
         assertNotNull(sameConnection);
     }
 
     @BeforeAll
-    public static void setupAll(@ContainerKafkaConnection KafkaConnection paramConnection) {
+    public static void setupAll(@ConnectionKafka KafkaConnection paramConnection) {
         var consumer = paramConnection.subscribe("my-topic");
         paramConnection.send("my-topic", Event.ofValue("my-value"));
         consumer.assertReceivedAtLeast(1);
@@ -28,7 +28,7 @@ class KafkaContainerPerClassConstructorTests {
     }
 
     @BeforeEach
-    public void setupEach(@ContainerKafkaConnection KafkaConnection paramConnection) {
+    public void setupEach(@ConnectionKafka KafkaConnection paramConnection) {
         var consumer = paramConnection.subscribe("my-topic");
         paramConnection.send("my-topic", Event.ofValue("my-value"));
         consumer.assertReceivedAtLeast(1);
@@ -37,7 +37,7 @@ class KafkaContainerPerClassConstructorTests {
 
     @Order(1)
     @Test
-    void firstConnection(@ContainerKafkaConnection KafkaConnection connection) {
+    void firstConnection(@ConnectionKafka KafkaConnection connection) {
         assertNull(firstConnection);
         assertNotNull(connection);
         assertNotNull(sameConnection);
@@ -47,7 +47,7 @@ class KafkaContainerPerClassConstructorTests {
 
     @Order(2)
     @Test
-    void secondConnection(@ContainerKafkaConnection KafkaConnection connection) {
+    void secondConnection(@ConnectionKafka KafkaConnection connection) {
         assertNotNull(connection);
         assertNotNull(firstConnection);
         assertNotNull(sameConnection);

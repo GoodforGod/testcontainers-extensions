@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.example;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
+import io.goodforgod.testcontainers.extensions.ContainerContext;
 import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.Optional;
@@ -26,7 +27,7 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
     }
 
     protected Class<? extends Annotation> getConnectionAnnotation() {
-        return ContainerRedisConnection.class;
+        return ConnectionRedis.class;
     }
 
     @Override
@@ -35,15 +36,20 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
     }
 
     @Override
-    protected RedisContainer getContainerDefault(RedisMetadata metadata) {
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
+    }
+
+    @Override
+    protected RedisContainer createContainerDefault(RedisMetadata metadata) {
         var dockerImage = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("redis"));
 
+        String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "redis-" + System.currentTimeMillis());
         var container = new RedisContainer(dockerImage)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
-                        .withMdc("image", metadata.image())
-                        .withMdc("alias", metadata.networkAliasOrDefault()))
-                .withNetworkAliases(metadata.networkAliasOrDefault())
+                        .withMdc("image", metadata.image()))
+                .withNetworkAliases(alias)
                 .waitingFor(Wait.forListeningPort())
                 .withStartupTimeout(Duration.ofMinutes(5));
 
@@ -55,35 +61,14 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
     }
 
     @Override
-    protected ExtensionContext.Namespace getNamespace() {
-        return NAMESPACE;
+    protected ContainerContext<RedisConnection> createContainerContext(RedisContainer container) {
+        return new RedisContext(container);
     }
 
     @NotNull
     protected Optional<RedisMetadata> findMetadata(@NotNull ExtensionContext context) {
         return findAnnotation(TestcontainersRedis.class, context)
                 .map(a -> new RedisMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode()));
-    }
-
-    @NotNull
-    protected RedisConnection getConnectionForContainer(@NotNull RedisMetadata metadata, @NotNull RedisContainer container) {
-        final String alias = Optional.ofNullable(metadata.networkAliasOrDefault())
-                .filter(a -> !a.isBlank())
-                .or(() -> container.getNetworkAliases().stream()
-                        .filter(a -> a.startsWith("redis"))
-                        .findFirst()
-                        .or(() -> (container.getNetworkAliases().isEmpty())
-                                ? Optional.empty()
-                                : Optional.of(container.getNetworkAliases().get(container.getNetworkAliases().size() - 1))))
-                .orElse(null);
-
-        return RedisConnectionImpl.forContainer(container.getHost(),
-                container.getMappedPort(RedisContainer.PORT),
-                alias,
-                RedisContainer.PORT,
-                container.getDatabase(),
-                container.getUser(),
-                container.getPassword());
     }
 
     @NotNull

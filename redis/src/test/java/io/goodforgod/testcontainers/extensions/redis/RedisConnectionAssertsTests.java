@@ -11,7 +11,7 @@ import org.opentest4j.AssertionFailedError;
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.0-alpine")
 class RedisConnectionAssertsTests {
 
-    @ContainerRedisConnection
+    @ConnectionRedis
     private RedisConnection connection;
 
     @BeforeEach
@@ -21,15 +21,15 @@ class RedisConnectionAssertsTests {
 
     @Test
     void countPrefix() {
-        connection.commands().set("11", "1");
-        connection.commands().set("12", "2");
+        connection.getConnection().set("11", "1");
+        connection.getConnection().set("12", "2");
         assertEquals(2, connection.countPrefix(RedisKey.of("1")));
     }
 
     @Test
     void assertCountsPrefixNoneWhenMore() {
-        connection.commands().set("11", "1");
-        connection.commands().set("12", "2");
+        connection.getConnection().set("11", "1");
+        connection.getConnection().set("12", "2");
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsPrefixNone(RedisKey.of("1")));
     }
 
@@ -45,14 +45,14 @@ class RedisConnectionAssertsTests {
 
     @Test
     void assertCountsPrefixAtLeastWhenMore() {
-        connection.commands().set("11", "1");
-        connection.commands().set("12", "2");
+        connection.getConnection().set("11", "1");
+        connection.getConnection().set("12", "2");
         assertDoesNotThrow(() -> connection.assertCountsPrefixAtLeast(1, RedisKey.of("1")));
     }
 
     @Test
     void assertCountsPrefixAtLeastWhenEquals() {
-        connection.commands().set("11", "1");
+        connection.getConnection().set("11", "1");
         assertDoesNotThrow(() -> connection.assertCountsPrefixAtLeast(1, RedisKey.of("1")));
     }
 
@@ -63,15 +63,15 @@ class RedisConnectionAssertsTests {
 
     @Test
     void count() {
-        connection.commands().set("11", "1");
-        connection.commands().set("12", "2");
+        connection.getConnection().set("11", "1");
+        connection.getConnection().set("12", "2");
         assertEquals(1, connection.count(RedisKey.of("11")));
     }
 
     @Test
     void assertCountsNoneWhenMore() {
-        connection.commands().set("11", "1");
-        connection.commands().set("12", "2");
+        connection.getConnection().set("11", "1");
+        connection.getConnection().set("12", "2");
         var k1 = RedisKey.of("11");
         var k2 = RedisKey.of("12");
         assertNotEquals(k1, k2);
@@ -92,15 +92,15 @@ class RedisConnectionAssertsTests {
 
     @Test
     void assertCountsAtLeastWhenOther() {
-        connection.commands().set("11", "{\"a\":1}");
-        connection.commands().set("12", "{\"a\":2}");
+        connection.getConnection().set("11", "{\"a\":1}");
+        connection.getConnection().set("12", "{\"a\":2}");
         assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, RedisKey.of("11", "22")));
     }
 
     @Test
     void assertCountsAtLeastWhenMore() {
-        connection.commands().set("11", "{\"a\":1}");
-        connection.commands().set("12", "{\"a\":2}");
+        connection.getConnection().set("11", "{\"a\":1}");
+        connection.getConnection().set("12", "{\"a\":2}");
         var values = assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, RedisKey.of("11", "12")));
         assertEquals(2, values.size());
         assertNotEquals(values.get(0), values.get(1));
@@ -112,7 +112,7 @@ class RedisConnectionAssertsTests {
 
     @Test
     void assertCountsAtLeastWhenEquals() {
-        connection.commands().set("11", "1");
+        connection.getConnection().set("11", "1");
         assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, RedisKey.of("11")));
     }
 

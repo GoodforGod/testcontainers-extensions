@@ -5,9 +5,10 @@ import io.goodforgod.testcontainers.extensions.Network;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.CassandraContainer;
 
 /**
- * Extension that is running {@link CassandraContainerExtra} for tests in different modes with
+ * Extension that is running {@link CassandraContainer} for tests in different modes with
  * database
  * schema migration support between test executions
  */
@@ -26,7 +27,6 @@ public @interface TestcontainersCassandra {
      *             3) Image environment variable can have default value if empty using syntax:
      *             "${MY_IMAGE_ENV|cassandra:4.1}"
      *             <p>
-     * @see TestcontainersCassandraExtension#getContainerDefault(CassandraMetadata)
      */
     String image() default "cassandra:4.1";
 
@@ -43,5 +43,5 @@ public @interface TestcontainersCassandra {
     Migration migration() default @Migration(engine = Migration.Engines.SCRIPTS,
             apply = Migration.Mode.NONE,
             drop = Migration.Mode.NONE,
-            migrations = {});
+            locations = {});
 }

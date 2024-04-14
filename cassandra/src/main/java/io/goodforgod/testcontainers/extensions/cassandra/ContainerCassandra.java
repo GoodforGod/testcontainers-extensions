@@ -1,9 +1,10 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
 import java.lang.annotation.*;
+import org.testcontainers.containers.CassandraContainer;
 
 /**
- * Indicates that annotated field containers {@link CassandraContainerExtra} instance
+ * Indicates that annotated field containers {@link CassandraContainer} instance
  * that should be used by {@link TestcontainersCassandra} rather than creating default container
  */
 @Documented

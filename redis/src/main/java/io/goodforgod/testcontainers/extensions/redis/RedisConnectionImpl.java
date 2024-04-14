@@ -16,9 +16,9 @@ import redis.clients.jedis.Protocol;
 import redis.clients.jedis.args.FlushMode;
 
 @Internal
-final class RedisConnectionImpl implements RedisConnection {
+class RedisConnectionImpl implements RedisConnection {
 
-    private static final class ParamsImpl implements Params {
+    static final class ParamsImpl implements Params {
 
         private final String host;
         private final int port;
@@ -78,7 +78,7 @@ final class RedisConnectionImpl implements RedisConnection {
     private final Params network;
 
     private volatile boolean isClosed = false;
-    private volatile RedisCommandsImpl jedis;
+    private volatile JedisCommandsImpl jedis;
 
     RedisConnectionImpl(Params params, Params network) {
         this.params = params;
@@ -108,7 +108,7 @@ final class RedisConnectionImpl implements RedisConnection {
                                        int database,
                                        String username,
                                        String password) {
-        var params = new ParamsImpl(host, port, username, password, database);
+        var params = new RedisConnectionImpl.ParamsImpl(host, port, username, password, database);
         return new RedisConnectionImpl(params, null);
     }
 
@@ -123,7 +123,7 @@ final class RedisConnectionImpl implements RedisConnection {
     }
 
     @NotNull
-    private RedisCommands connection() {
+    private JedisConnection connection() {
         if (isClosed) {
             throw new IllegalStateException("RedisConnection was closed");
         }
@@ -144,7 +144,7 @@ final class RedisConnectionImpl implements RedisConnection {
                     config.password(params().password());
                 }
 
-                jedis = new RedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
+                jedis = new JedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
             } catch (Exception e) {
                 throw new RedisConnectionException(e);
             }
@@ -154,7 +154,7 @@ final class RedisConnectionImpl implements RedisConnection {
     }
 
     @NotNull
-    public RedisCommands commands() {
+    public JedisConnection getConnection() {
         return connection();
     }
 
@@ -316,7 +316,12 @@ final class RedisConnectionImpl implements RedisConnection {
         return params().toString();
     }
 
-    void close() {
+    @Override
+    public void close() {
+        // do nothing
+    }
+
+    void stop() {
         if (jedis != null) {
             jedis.close();
             jedis = null;

@@ -19,15 +19,6 @@ public interface ContainerMetadata {
     String networkAlias();
 
     @NotNull
-    String networkAliasDefault();
-
-    /**
-     * @see Network
-     */
-    @NotNull
-    String networkAliasOrDefault();
-
-    @NotNull
     String image();
 
     @NotNull

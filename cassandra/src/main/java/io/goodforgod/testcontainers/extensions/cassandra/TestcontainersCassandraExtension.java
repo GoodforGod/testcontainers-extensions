@@ -1,22 +1,46 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
 import io.goodforgod.testcontainers.extensions.AbstractTestcontainersExtension;
+import io.goodforgod.testcontainers.extensions.ContainerContext;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.*;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.CassandraContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersCassandraExtension extends
-        AbstractTestcontainersExtension<CassandraConnection, CassandraContainerExtra<?>, CassandraMetadata> {
+        AbstractTestcontainersExtension<CassandraConnection, CassandraContainer<?>, CassandraMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersCassandraExtension.class);
+
+    @SuppressWarnings("unchecked")
+    protected Class<CassandraContainer<?>> getContainerType() {
+        return (Class<CassandraContainer<?>>) ((Class<?>) CassandraContainer.class);
+    }
+
+    protected Class<? extends Annotation> getContainerAnnotation() {
+        return ContainerCassandra.class;
+    }
+
+    protected Class<? extends Annotation> getConnectionAnnotation() {
+        return ConnectionCassandra.class;
+    }
+
+    @Override
+    protected ExtensionContext.Namespace getNamespace() {
+        return NAMESPACE;
+    }
 
     @Override
     protected Class<CassandraConnection> getConnectionType() {
@@ -24,12 +48,19 @@ class TestcontainersCassandraExtension extends
     }
 
     @Override
-    protected CassandraContainerExtra<?> getContainerDefault(CassandraMetadata metadata) {
-        var dockerImage = DockerImageName.parse(metadata.image())
+    protected CassandraContainer<?> createContainerDefault(CassandraMetadata metadata) {
+        var image = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("cassandra"));
 
-        var container = new CassandraContainerExtra<>(dockerImage);
-        container.setNetworkAliases(new ArrayList<>(List.of(metadata.networkAliasOrDefault())));
+        final CassandraContainer<?> container = new CassandraContainer<>(image);
+        final String alias = Optional.ofNullable(metadata.networkAlias())
+                .orElseGet(() -> "cassandra-" + System.currentTimeMillis());
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
+                .withMdc("image", image.asCanonicalNameString())
+                .withMdc("alias", alias));
+        container.waitingFor(Wait.forListeningPort());
+        container.withStartupTimeout(Duration.ofMinutes(5));
+        container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
@@ -38,21 +69,8 @@ class TestcontainersCassandraExtension extends
     }
 
     @Override
-    protected ExtensionContext.Namespace getNamespace() {
-        return NAMESPACE;
-    }
-
-    @SuppressWarnings("unchecked")
-    protected Class<CassandraContainerExtra<?>> getContainerType() {
-        return (Class<CassandraContainerExtra<?>>) ((Class<?>) CassandraContainerExtra.class);
-    }
-
-    protected Class<? extends Annotation> getContainerAnnotation() {
-        return ContainerCassandra.class;
-    }
-
-    protected Class<? extends Annotation> getConnectionAnnotation() {
-        return ContainerCassandraConnection.class;
+    protected ContainerContext<CassandraConnection> createContainerContext(CassandraContainer<?> container) {
+        return new CassandraContext(container);
     }
 
     @NotNull
@@ -61,20 +79,15 @@ class TestcontainersCassandraExtension extends
                 .map(a -> new CassandraMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(), a.migration()));
     }
 
-    @NotNull
-    protected CassandraConnection getConnectionForContainer(CassandraMetadata metadata, CassandraContainerExtra<?> container) {
-        return container.connection();
-    }
-
     private void tryMigrateIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            new ScriptCassandraMigrationEngine(connection).migrate(Arrays.asList(annotation.migration().migrations()));
+            new ScriptCassandraMigrationEngine(connection).apply(Arrays.asList(annotation.migration().locations()));
         }
     }
 
     private void tryDropIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
         if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            new ScriptCassandraMigrationEngine(connection).drop(Arrays.asList(annotation.migration().migrations()));
+            new ScriptCassandraMigrationEngine(connection).drop(Arrays.asList(annotation.migration().locations()));
         }
     }
 
@@ -85,7 +98,7 @@ class TestcontainersCassandraExtension extends
         var metadata = getMetadata(context);
         if (metadata.migration().apply() == Migration.Mode.PER_CLASS) {
             var storage = getStorage(context);
-            var connectionCurrent = getConnectionCurrent(context);
+            var connectionCurrent = getContainerContext(context).connection();
             tryMigrateIfRequired(metadata, connectionCurrent);
             storage.put(Migration.class, metadata.migration().apply());
         }
@@ -103,7 +116,7 @@ class TestcontainersCassandraExtension extends
         super.beforeEach(context);
 
         if (metadata.migration().apply() == Migration.Mode.PER_METHOD) {
-            var connectionCurrent = getConnectionCurrent(context);
+            var connectionCurrent = getContainerContext(context).connection();
             tryMigrateIfRequired(metadata, connectionCurrent);
         }
     }
@@ -115,7 +128,7 @@ class TestcontainersCassandraExtension extends
         storage.remove(Migration.class);
         if (metadata.migration().drop() == Migration.Mode.PER_METHOD) {
             if (metadata.runMode() != ContainerMode.PER_METHOD) {
-                var connectionCurrent = getConnectionCurrent(context);
+                var connectionCurrent = getContainerContext(context).connection();
                 tryDropIfRequired(metadata, connectionCurrent);
             }
         }
@@ -126,7 +139,7 @@ class TestcontainersCassandraExtension extends
     @Override
     public void afterAll(ExtensionContext context) {
         var metadata = getMetadata(context);
-        var connectionCurrent = getConnectionCurrent(context);
+        var connectionCurrent = getContainerContext(context).connection();
         if (metadata.migration().drop() == Migration.Mode.PER_CLASS) {
             if (metadata.runMode() == ContainerMode.PER_RUN) {
                 tryDropIfRequired(metadata, connectionCurrent);

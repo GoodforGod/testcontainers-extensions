@@ -4,7 +4,6 @@ import io.goodforgod.testcontainers.extensions.AbstractContainerMetadata;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.util.Set;
 import org.jetbrains.annotations.ApiStatus.Internal;
-import org.jetbrains.annotations.NotNull;
 
 @Internal
 final class KafkaMetadata extends AbstractContainerMetadata {
@@ -16,11 +15,6 @@ final class KafkaMetadata extends AbstractContainerMetadata {
         super(network, alias, image, runMode);
         this.topics = topics;
         this.reset = reset;
-    }
-
-    @Override
-    public @NotNull String networkAliasDefault() {
-        return "kafka-" + System.currentTimeMillis();
     }
 
     Set<String> topics() {

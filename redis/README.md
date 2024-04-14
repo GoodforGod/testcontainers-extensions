@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.9.6"
+testImplementation "io.goodforgod:testcontainers-extensions-redis:0.10.0"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redis:0.9.6"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redis</artifactId>
-    <version>0.9.6</version>
+    <version>0.10.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -51,8 +51,7 @@ testImplementation "redis.clients:jedis:4.4.3"
 
 ## Content
 - [Usage](#usage)
-- [Container](#container)
-  - [Connection](#container-connection)
+- [Connection](#connection)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
@@ -66,8 +65,11 @@ Test with container start in `PER_RUN` mode will look like:
 @TestcontainersRedis(mode = ContainerMode.PER_RUN)
 class ExampleTests {
 
+  @ConnectionRedis 
+  private RedisConnection connection;
+  
   @Test
-  void test(@ContainerRedisConnection RedisConnection connection) {
+  void test() {
     connection.commands().set("11", "1");
     connection.commands().set("12", "2");
     assertEquals(2, connection.countPrefix(RedisKey.of("1")));
@@ -75,39 +77,23 @@ class ExampleTests {
 }
 ```
 
-## Container
+## Connection
 
-Library provides special `RedisContainerExtra` with ability for migration and connection.
-It can be used with [Testcontainers JUnit Extension](https://java.testcontainers.org/test_framework_integration/junit_5/).
-
-```java
-class ExampleTests {
-
-    @Test
-    void test() {
-        try (var container = new RedisContainerExtra<>(DockerImageName.parse("redis:7.2-alpine"))) {
-            container.start();
-        }
-    }
-}
-```
-
-### Container Connection
-
-`RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
+`RedisConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
+You can inject connection via `@ConnectionRedis` as field or method argument or manually create it from container or manual settings.
 
 ```java
 class ExampleTests {
+
+  private static final RedisContainer container = new RedisContainer();
 
   @Test
   void test() {
-    try (var container = new RedisContainerExtra<>(DockerImageName.parse("redis:7.2-alpine"))) {
-      container.start();
-      var connection = container.connection();
-      connection.commands().set("11", "1");
-      connection.commands().set("12", "2");
-      assertEquals(2, connection.countPrefix(RedisKey.of("1")));
-    }
+    container.start();
+    RedisConnection connection = RedisConnection.forContainer(container);
+    connection.commands().set("11", "1");
+    connection.commands().set("12", "2");
+    assertEquals(2, connection.countPrefix(RedisKey.of("1")));
   }
 }
 ```
@@ -128,7 +114,7 @@ Simple example on how to start container per class, **no need to configure** con
 class ExampleTests {
 
     @Test
-    void test(@ContainerRedisConnection RedisConnection connection) {
+    void test(@ConnectionRedis RedisConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -167,13 +153,10 @@ Example:
 class ExampleTests {
 
     @ContainerRedis
-    private static final RedisContainer container = new RedisContainer()
-            .withNetworkAliases("myredis")
-            .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class)))
-            .withNetwork(Network.SHARED);
+    private static final RedisContainer container = new RedisContainer().withNetworkAliases("myredis");
     
     @Test
-    void test(@ContainerRedisConnection RedisConnection connection) {
+    void test(@ConnectionRedis RedisConnection connection) {
         assertEquals("myredis", connection.paramsInNetwork().get().host());
     }
 }
@@ -218,7 +201,7 @@ Image syntax:
 
 ### Annotation Connection
 
-`RedisConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerRedisConnection` annotation.
+`RedisConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionRedis` annotation.
 `RedisConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
@@ -226,11 +209,11 @@ Example:
 @TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
 class ExampleTests {
 
-    @ContainerRedisConnection
-    private RedisConnection connectionInField;
+    @ConnectionRedis
+    private RedisConnection connection;
 
     @Test
-    void test(@ContainerRedisConnection RedisConnection connection) {
+    void test() {
         connection.commands().set("11", "1");
         connection.commands().set("12", "2");
         assertEquals(2, connection.countPrefix(RedisKey.of("1")));

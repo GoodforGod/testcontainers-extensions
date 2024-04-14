@@ -36,6 +36,8 @@ import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 @Internal
 class KafkaConnectionImpl implements KafkaConnection {
 
+    private static final Duration POLL_TIMEOUT = Duration.ofMillis(500);
+
     private static final class ParamsImpl implements Params {
 
         private final String bootstrapServers;
@@ -83,7 +85,7 @@ class KafkaConnectionImpl implements KafkaConnection {
     private volatile KafkaProducer<byte[], byte[]> producer;
     private volatile Admin admin;
 
-    private final List<ConsumerImpl> consumers = new CopyOnWriteArrayList<>();
+    private final Map<String, ConsumerImpl> consumerByTopic = new ConcurrentHashMap<>();
     private final ParamsImpl params;
     @Nullable
     private final ParamsImpl paramsInNetwork;
@@ -137,7 +139,7 @@ class KafkaConnectionImpl implements KafkaConnection {
             logger.info("KafkaConsumer '{}' started consuming events from topics: {}", clientId, topics);
             while (isActive.get()) {
                 try {
-                    poll(Duration.ofMillis(100));
+                    poll(POLL_TIMEOUT);
                 } catch (WakeupException | InterruptException ignore) {
                     // do nothing
                 } catch (Exception e) {
@@ -153,7 +155,7 @@ class KafkaConnectionImpl implements KafkaConnection {
             if (!records.isEmpty()) {
                 logger.info("KafkaConsumer '{}' polled '{}' records from topics: {}", clientId, records.count(), topics);
             } else {
-                logger.trace("KafkaConsumer '{}' polled '{}' records...", clientId, records.count());
+                logger.trace("KafkaConsumer '{}' polled '{}' records from topics {}...", clientId, records.count(), topics);
             }
 
             for (var record : records) {
@@ -318,7 +320,16 @@ class KafkaConnectionImpl implements KafkaConnection {
             messageQueue.clear();
         }
 
-        void close() {
+        boolean isClosed() {
+            return !isActive.get();
+        }
+
+        @Override
+        public void close() {
+            stop();
+        }
+
+        void stop() {
             if (isActive.compareAndSet(true, false)) {
                 logger.debug("Stopping KafkaConsumer '{}' for {} topics...", clientId, topics);
                 final long started = System.nanoTime();
@@ -350,7 +361,7 @@ class KafkaConnectionImpl implements KafkaConnection {
     }
 
     @Override
-    public @NotNull KafkaConnectionClosable withProperties(@NotNull Properties properties) {
+    public @NotNull KafkaConnection withProperties(@NotNull Properties properties) {
         final Properties kafkaProperties = new Properties();
         kafkaProperties.putAll(params.properties());
         kafkaProperties.putAll(properties);
@@ -401,8 +412,9 @@ class KafkaConnectionImpl implements KafkaConnection {
                 logger.trace("KafkaProducer sending event: {}", event);
                 var result = producer.send(new ProducerRecord<>(topic, null, key, event.value().asBytes(), headers))
                         .get(10, TimeUnit.SECONDS);
-                logger.info("KafkaProducer sent event with offset '{}' with partition '{}' with timestamp '{}' event: {}",
-                        result.offset(), result.partition(), result.timestamp(), event);
+                logger.info(
+                        "KafkaProducer sent event to topic '{}' with offset '{}' with partition '{}' with timestamp '{}' event: {}",
+                        topic, result.offset(), result.partition(), result.timestamp(), event);
             } catch (Exception e) {
                 throw new KafkaConnectionException("KafkaProducer sent event failed: " + event, e);
             }
@@ -443,11 +455,24 @@ class KafkaConnectionImpl implements KafkaConnection {
                             .map(p -> new TopicPartition(e.getValue().name(), p.partition())))
                     .collect(Collectors.toSet());
 
-            final String id = "testcontainers-kafka-" + UUID.randomUUID().toString().substring(0, 8);
-            var kafkaConsumer = getConsumer(id, params.properties());
-            var consumer = new ConsumerImpl(kafkaConsumer, id, topicPartition);
-            consumers.add(consumer);
-            return consumer;
+            final String id = UUID.randomUUID().toString().substring(0, 8);
+            final String consumerTopicKey = topics.stream()
+                    .sorted()
+                    .collect(Collectors.joining(":"));
+
+            final ConsumerImpl consumer = consumerByTopic.computeIfAbsent(consumerTopicKey, k -> {
+                var kafkaConsumer = getConsumer(id, params.properties());
+                return new ConsumerImpl(kafkaConsumer, id, topicPartition);
+            });
+
+            if (consumer.isClosed()) {
+                var kafkaConsumer = getConsumer(id, params.properties());
+                ConsumerImpl activeConsumer = new ConsumerImpl(kafkaConsumer, id, topicPartition);
+                consumerByTopic.put(consumerTopicKey, activeConsumer);
+                return activeConsumer;
+            } else {
+                return consumer;
+            }
         } catch (Exception e) {
             throw new KafkaConnectionException("Can't create KafkaConsumer", e);
         }
@@ -612,17 +637,17 @@ class KafkaConnectionImpl implements KafkaConnection {
     }
 
     void clear() {
-        for (var consumer : consumers) {
+        for (var consumer : consumerByTopic.values()) {
             try {
-                consumer.close();
+                consumer.stop();
             } catch (Exception e) {
                 // do nothing
             }
         }
-        consumers.clear();
+        consumerByTopic.clear();
     }
 
-    void close() {
+    void stop() {
         if (!isClosed) {
             isClosed = true;
 
@@ -646,6 +671,11 @@ class KafkaConnectionImpl implements KafkaConnection {
                 }
             }
         }
+    }
+
+    @Override
+    public void close() {
+        // do nothing
     }
 
     @Override
