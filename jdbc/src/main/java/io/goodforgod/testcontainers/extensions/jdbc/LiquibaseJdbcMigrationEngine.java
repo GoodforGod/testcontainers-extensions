@@ -94,18 +94,16 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            try (Connection connection = jdbcConnection.openConnection()) {
-                try (var database = getLiquiDatabase(connection)) {
-                    migrateLiquibase(database, locations);
-                }
+            Connection connection = jdbcConnection.openConnection();
+            try (var database = getLiquiDatabase(connection)) {
+                migrateLiquibase(database, locations);
             }
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                try (Connection connection = jdbcConnection.openConnection()) {
-                    try (var database = getLiquiDatabase(connection)) {
-                        migrateLiquibase(database, locations);
-                    }
+                Connection connection = jdbcConnection.openConnection();
+                try (var database = getLiquiDatabase(connection)) {
+                    migrateLiquibase(database, locations);
                 }
             } catch (Exception ex) {
                 logger.error("Failed migration apply for engine '{}' for connection: {}",
@@ -125,18 +123,16 @@ public final class LiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, 
                 getClass().getSimpleName(), jdbcConnection);
 
         try {
-            try (Connection connection = jdbcConnection.openConnection()) {
-                try (var database = getLiquiDatabase(connection)) {
-                    dropLiquibase(database, locations);
-                }
+            Connection connection = jdbcConnection.openConnection();
+            try (var database = getLiquiDatabase(connection)) {
+                dropLiquibase(database, locations);
             }
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                try (Connection connection = jdbcConnection.openConnection()) {
-                    try (var database = getLiquiDatabase(connection)) {
-                        dropLiquibase(database, locations);
-                    }
+                Connection connection = jdbcConnection.openConnection();
+                try (var database = getLiquiDatabase(connection)) {
+                    dropLiquibase(database, locations);
                 }
             } catch (Exception ex) {
                 logger.error("Failed migration drop for engine '{}' for connection: {}",
