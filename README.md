@@ -27,25 +27,27 @@ Makes testing & asserts with Testcontainers even easier.
 Here is an example of [Kafka Extension](kafka) where KafkaContainer is started in `PER_RUN` mode with topic reset per method:
 
 ```java
+
 @TestcontainersKafka(mode = ContainerMode.PER_RUN,
         topics = @Topics(value = "my-topic-name", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
 
-  @ContainerKafkaConnection 
-  private KafkaConnection connection;
-  
-  @Test
-  void test() {
-    var consumer = connection.subscribe("my-topic-name");
-    connection.send("my-topic-name", Event.ofValue("event1"), Event.ofValue("event2"));
-    consumer.assertReceivedAtLeast(2, Duration.ofSeconds(5));
-  }
+    @ContainerKafkaConnection
+    private KafkaConnection kafkaConnection;
+
+    @Test
+    void test() {
+        var consumer = kafkaConnection.subscribe("my-topic-name");
+        kafkaConnection.send("my-topic-name", Event.ofValue("event1"), Event.ofValue("event2"));
+        consumer.assertReceivedAtLeast(2, Duration.ofSeconds(5));
+    }
 }
 ```
 
 Here is an example of [Postgres Extension](postgres) where PostgresContainer is started `PER_RUN` mode and migrations are applied per method:
 
 ```java
+
 @TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
@@ -53,14 +55,14 @@ Here is an example of [Postgres Extension](postgres) where PostgresContainer is 
                 drop = Migration.Mode.PER_METHOD))
 class ExampleTests {
 
-  @ConnectionPostgreSQL
-  private JdbcConnection connection;
+    @ConnectionPostgreSQL
+    private JdbcConnection postgresConnection;
 
-  @Test
-  void test() {
-    connection.execute("INSERT INTO users VALUES(1);");
-    var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
-    assertEquals(1, usersFound.size());
-  }
+    @Test
+    void test() {
+        postgresConnection.execute("INSERT INTO users VALUES(1);");
+        var usersFound = postgresConnection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
+        assertEquals(1, usersFound.size());
+    }
 }
 ```
