@@ -195,8 +195,8 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public void execute(@Language("SQL") @NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        var connection = get();
-        try (var stmt = connection.createStatement()) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);
@@ -258,8 +258,8 @@ class JdbcConnectionImpl implements JdbcConnection {
                                                          @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        var connection = get();
-        try (var stmt = connection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             return (rs.next())
                     ? Optional.ofNullable(extractor.apply(rs))
                     : Optional.empty();
@@ -273,8 +273,8 @@ class JdbcConnectionImpl implements JdbcConnection {
                                                       @NotNull ResultSetMapper<T, E> extractor)
             throws E {
         logger.debug("Executing SQL:\n{}", sql);
-        var connection = get();
-        try (var stmt = connection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             final List<T> result = new ArrayList<>();
             while (rs.next()) {
                 result.add(extractor.apply(rs));
@@ -293,8 +293,8 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private void assertQuery(@Language("SQL") String sql, QueryAssert consumer) {
         logger.debug("Executing SQL:\n{}", sql);
-        var connection = get();
-        try (var stmt = connection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             consumer.accept(rs);
         } catch (SQLException e) {
             throw new JdbcConnectionException(e);
@@ -337,8 +337,8 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public void assertInserted(@NotNull String sql) {
         logger.debug("Executing SQL:\n{}", sql);
-        var connection = get();
-        try (var stmt = connection.prepareStatement(sql)) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             if (rs == 0) {
                 Assertions.fail(String.format("Expected query to update but it didn't for SQL: %s", sql.replace("\n", " ")));
@@ -366,8 +366,8 @@ class JdbcConnectionImpl implements JdbcConnection {
 
     private boolean checkQuery(@Language("SQL") String sql, QueryChecker checker) {
         logger.debug("Executing SQL:\n{}", sql);
-        var connection = get();
-        try (var stmt = connection.prepareStatement(sql); var rs = stmt.executeQuery()) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.prepareStatement(sql); var rs = stmt.executeQuery()) {
             return checker.apply(rs);
         } catch (Exception e) {
             logger.warn("Failed executing SQL:\n{}\nDue to: {}", sql, e.getMessage(), e);
@@ -407,8 +407,8 @@ class JdbcConnectionImpl implements JdbcConnection {
     @Override
     public boolean checkInserted(@NotNull String sql) {
         logger.debug("Executing SQL: {}", sql);
-        var connection = get();
-        try (var stmt = connection.prepareStatement(sql)) {
+        var openedConnection = get();
+        try (var stmt = openedConnection.prepareStatement(sql)) {
             var rs = stmt.executeUpdate();
             return rs != 0;
         } catch (SQLException e) {
