@@ -78,7 +78,7 @@ final class CockroachContext implements ContainerContext<JdbcConnection> {
         var user = System.getenv(EXTERNAL_TEST_COCKROACH_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_COCKROACH_PASSWORD);
 
-        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_COCKROACH_DATABASE)).orElse("cockroachdb");
+        var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_COCKROACH_DATABASE)).orElse("postgres");
         if (url != null) {
             if (host != null && port != null) {
                 return Optional.of(JdbcConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));
