@@ -74,7 +74,7 @@ final class CassandraContext implements ContainerContext<CassandraConnection> {
         var dc = Optional.ofNullable(System.getenv(EXTERNAL_TEST_CASSANDRA_DATACENTER)).orElse("datacenter1");
 
         if (host != null && port != null) {
-            return Optional.of(CassandraConnectionClosableImpl.forExternal(host, Integer.parseInt(port), dc, user, password));
+            return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, user, password));
         } else {
             return Optional.empty();
         }
