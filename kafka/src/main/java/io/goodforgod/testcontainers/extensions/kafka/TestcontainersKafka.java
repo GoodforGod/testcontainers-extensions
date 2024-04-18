@@ -21,12 +21,12 @@ public @interface TestcontainersKafka {
     /**
      * @return Kafka image
      *             <p>
-     *             1) Image can have static value: "confluentinc/cp-kafka:7.5.3"
+     *             1) Image can have static value: "confluentinc/cp-kafka:7.5.4"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|confluentinc/cp-kafka:7.5.3}"
+     *             "${MY_IMAGE_ENV|confluentinc/cp-kafka:7.5.4}"
      */
-    String image() default "confluentinc/cp-kafka:7.5.3";
+    String image() default "confluentinc/cp-kafka:7.5.4";
 
     /**
      * @return when to start container
