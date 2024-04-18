@@ -46,7 +46,7 @@ Test with container start in `PER_RUN` mode will look like:
 @TestcontainersMockServer(mode = ContainerMode.PER_RUN)
 class ExampleTests {
 
-  @ContainerMockServerConnection
+  @ConnectionMockServer
   private MockServerConnection connection;
 
   @Test
@@ -69,7 +69,7 @@ You can inject connection via `@ConnectionMockServer` as field or method argumen
 ```java
 class ExampleTests {
 
-  @ContainerMockServerConnection 
+  @ConnectionMockServer 
   private MockServerConnection connection;
   
   @Test
@@ -100,7 +100,7 @@ Simple example on how to start container per class, **no need to configure** con
 class ExampleTests {
 
     @Test
-    void test(@ContainerMockServerConnection MockServerConnection connection) {
+    void test(@ConnectionMockServer MockServerConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -142,7 +142,7 @@ class ExampleTests {
     private static final MockServerContainer container = new MockServerContainer().withNetworkAliases("mymockserver");
     
     @Test
-    void test(@ContainerMockServerConnection MockServerConnection connection) {
+    void test(@ConnectionMockServer MockServerConnection connection) {
         assertEquals("mymockserver", connection.paramsInNetwork().get().host());
     }
 }
@@ -187,7 +187,7 @@ Image syntax:
 
 ### Annotation Connection
 
-`MockServerConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerMockServerConnection` annotation.
+`MockServerConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionMockServer` annotation.
 `MockServerConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
@@ -195,7 +195,7 @@ Example:
 @TestcontainersMockServer(mode = ContainerMode.PER_CLASS, image = "mockserver/mockserver:5.15.0")
 class ExampleTests {
 
-    @ContainerMockServerConnection
+    @ConnectionMockServer
     private MockServerConnection connection;
 
     @Test

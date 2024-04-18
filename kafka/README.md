@@ -71,7 +71,7 @@ Test with container start in `PER_RUN` mode and topic reset per method will look
         topics = @Topics(value = "my-topic-name", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
 
-  @ContainerKafkaConnection 
+  @ConnectionKafka 
   private KafkaConnection connection;
   
   @Test
@@ -165,7 +165,7 @@ class ExampleTests {
     private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.3"));
 
     @Test
-    void checkParams(@ContainerKafkaConnection KafkaConnection connection) {
+    void checkParams(@ConnectionKafka KafkaConnection connection) {
         assertNotNull(connection.params().boostrapServers());
         assertNotNull(connection.params().properties());
     }
@@ -233,7 +233,7 @@ class ExampleTests {
 
 ### Annotation Connection
 
-`KafkaConnection` - can be injected to field or method parameter and used to communicate with running container via `@ContainerKafkaConnection` annotation.
+`KafkaConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionKafka` annotation.
 `KafkaConnection` provides kafka properties, ability to send events to kafka or consume events from kafka for easier testing.
 
 ### Annotation Properties
@@ -244,7 +244,7 @@ It is possible to provide custom properties to `@KafkaConnection` that will be a
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.3")
 class ExampleTests {
 
-    @ContainerKafkaConnection(properties = { @ContainerKafkaConnection.Property(name = "enable.auto.commit", value = "true") })
+    @ConnectionKafka(properties = { @ConnectionKafka.Property(name = "enable.auto.commit", value = "true") })
     private KafkaConnection connection;
 }
 ```
@@ -270,7 +270,7 @@ Example:
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.3")
 class ExampleTests {
 
-    @ContainerKafkaConnection
+    @ConnectionKafka
     private KafkaConnection connection;
 
     @Test
@@ -289,7 +289,7 @@ Example:
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.3")
 class ExampleTests {
 
-    @ContainerKafkaConnection
+    @ConnectionKafka
     private KafkaConnection connection;
 
     @Test

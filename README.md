@@ -32,7 +32,7 @@ Here is an example of [Kafka Extension](kafka) where KafkaContainer is started i
         topics = @Topics(value = "my-topic-name", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
 
-    @ContainerKafkaConnection
+    @ConnectionKafka
     private KafkaConnection kafkaConnection;
 
     @Test
