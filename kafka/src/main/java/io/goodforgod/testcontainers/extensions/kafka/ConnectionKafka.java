@@ -17,18 +17,5 @@ public @interface ConnectionKafka {
      * @return {@link KafkaConnection} properties that will be used {@link ConsumerConfig} and
      *             {@link ProducerConfig}
      */
-    Property[] properties() default {};
-
-    @interface Property {
-
-        /**
-         * @return property key
-         */
-        String name();
-
-        /**
-         * @return property value
-         */
-        String value();
-    }
+    String[] properties() default {};
 }

@@ -121,11 +121,17 @@ final class TestcontainersKafkaExtension extends
             final KafkaConnectionImpl fieldKafkaConnection;
             if (annotation.properties().length == 0) {
                 fieldKafkaConnection = (KafkaConnectionImpl) containerContext.connection();
+            } else if (annotation.properties().length % 2 != 0) {
+                throw new ExtensionConfigurationException(
+                        "@ConnectionKafka#properties must have even number, properties expected as map of keys and values");
             } else {
                 final Properties fieldProperties = new Properties();
                 fieldProperties.putAll(containerContext.connection().params().properties());
-                Arrays.stream(annotation.properties())
-                        .forEach(property -> fieldProperties.put(property.name(), property.value()));
+
+                for (int i = 0; i < annotation.properties().length; i += 2) {
+                    fieldProperties.put(annotation.properties()[i], annotation.properties()[i + 1]);
+                }
+
                 fieldKafkaConnection = (KafkaConnectionImpl) containerContext.connection().withProperties(fieldProperties);
                 ((KafkaContext) containerContext).pool().add(fieldKafkaConnection);
             }
@@ -225,9 +231,14 @@ final class TestcontainersKafkaExtension extends
             return connection;
         }
 
+        if (annotation.properties().length % 2 != 0) {
+            throw new ExtensionConfigurationException(
+                    "@ConnectionKafka#properties must have even number, properties expected as map of keys and values");
+        }
+
         var properties = connection.params().properties();
-        for (ConnectionKafka.Property property : annotation.properties()) {
-            properties.put(property.name(), property.value());
+        for (int i = 0; i < annotation.properties().length; i += 2) {
+            properties.put(annotation.properties()[i], annotation.properties()[i + 1]);
         }
 
         var extensionContainer = getContainerContext(context);
