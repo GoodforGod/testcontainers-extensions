@@ -113,7 +113,7 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
 
         for (Table table : tables) {
             if (!table.keyspace().startsWith("system")) {
-                connection.execute("TRUNCATE TABLE " + table.keyspace() + "." + table.name());
+                connection.execute("DROP TABLE " + table.keyspace() + "." + table.name());
             }
         }
 
