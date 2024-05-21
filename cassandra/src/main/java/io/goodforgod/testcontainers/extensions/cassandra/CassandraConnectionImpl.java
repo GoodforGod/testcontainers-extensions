@@ -168,6 +168,8 @@ class CassandraConnectionImpl implements CassandraConnection {
         optionsMap.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT, TIMEOUT);
         optionsMap.put(TypedDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, TIMEOUT);
         optionsMap.put(TypedDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, TIMEOUT);
+        optionsMap.put(TypedDriverOption.REQUEST_TIMEOUT, TIMEOUT);
+        optionsMap.put(TypedDriverOption.METADATA_SCHEMA_REQUEST_TIMEOUT, TIMEOUT);
         var configLoader = DriverConfigLoader.fromMap(optionsMap);
 
         var sessionBuilder = new CqlSessionBuilder()
