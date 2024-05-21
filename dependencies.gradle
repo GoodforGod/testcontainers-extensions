@@ -6,7 +6,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("slf4j", "2.0.12")
             version("junit-api", "5.10.2")
             version("junit-platform", "1.10.2")
-            version("testcontainers", "1.17.6")
+            version("testcontainers", "1.19.8")
             version("flyway", "9.22.3")
             version("liquibase", "4.27.0")
 
@@ -32,10 +32,14 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-kafka", "org.testcontainers", "kafka").versionRef("testcontainers")
             library("testcontainers-cassandra", "org.testcontainers", "cassandra").versionRef("testcontainers")
             library("testcontainers-mockserver", "org.testcontainers", "mockserver").versionRef("testcontainers")
+            library("testcontainers-minio", "org.testcontainers", "minio").versionRef("testcontainers")
+            library("testcontainers-clickhouse", "org.testcontainers", "clickhouse").versionRef("testcontainers")
+            library("testcontainers-arangodb", "com.github.goodforgod", "arangodb-testcontainer").version("3.0.1")
 
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-mysql", "org.flywaydb", "flyway-mysql").versionRef("flyway")
             library("flyway-oracle", "org.flywaydb", "flyway-database-oracle").versionRef("flyway")
+            library("flyway-oracle", "org.flywaydb", "flyway-database-clickhouse").versionRef("flyway")
 
             library("liquibase-core", "org.liquibase", "liquibase-core").versionRef("liquibase")
 
@@ -47,6 +51,9 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.5.1")
             library("driver-redis", "redis.clients", "jedis").version("4.4.3")
             library("driver-mockserver", "org.mock-server", "mockserver-client-java").version("5.15.0")
+            library("driver-minio", "io.minio", "minio").version("8.5.10")
+            library("driver-clickhouse", "com.clickhouse", "clickhouse-jdbc").version("0.6.0-patch4")
+            library("driver-arangodb", "com.arangodb", "arangodb-java-driver").version("7.6.0")
         }
     }
 }
