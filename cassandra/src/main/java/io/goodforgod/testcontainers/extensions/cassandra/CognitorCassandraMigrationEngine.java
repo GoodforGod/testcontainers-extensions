@@ -39,7 +39,7 @@ public final class CognitorCassandraMigrationEngine extends AbstractDropCassandr
         Database database = new Database(connection.getConnection(),
                 new MigrationConfiguration()
                         .withKeyspaceName(connection.params().keyspace()));
-        MigrationTask migration = new MigrationTask(database, new MigrationRepository(validLocations), true);
+        MigrationTask migration = new MigrationTask(database, new MigrationRepository(validLocations));
         migration.migrate();
 
         logger.info("Finished schema migration for engine '{}' for connection: {}",
