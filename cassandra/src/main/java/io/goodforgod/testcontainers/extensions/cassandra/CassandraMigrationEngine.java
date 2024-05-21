@@ -11,9 +11,9 @@ public interface CassandraMigrationEngine {
 
     void apply(@NotNull List<String> locations);
 
-    default void drop(@NotNull String location) {
-        drop(List.of(location));
+    default void drop(@NotNull String location, Migration.DropMode dropMode) {
+        drop(List.of(location), dropMode);
     }
 
-    void drop(@NotNull List<String> locations);
+    void drop(@NotNull List<String> locations, Migration.DropMode dropMode);
 }

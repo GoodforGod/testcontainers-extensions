@@ -13,7 +13,7 @@ import org.junit.jupiter.api.*;
                 drop = Migration.Mode.PER_CLASS,
                 locations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class CassandraSimplePerClassMigrationTests {
+class CassandraSimplePerClassScriptMigrationTests {
 
     @BeforeAll
     public static void setupAll(@ConnectionCassandra CassandraConnection paramConnection) {
@@ -23,7 +23,7 @@ class CassandraSimplePerClassMigrationTests {
 
     @BeforeEach
     public void setupEach(@ConnectionCassandra CassandraConnection paramConnection) {
-        paramConnection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        paramConnection.queryOne("SELECT * FROM users;", r -> r.getInt(0));
         assertNotNull(paramConnection);
     }
 
@@ -36,7 +36,7 @@ class CassandraSimplePerClassMigrationTests {
     @Order(2)
     @Test
     void secondRun(@ConnectionCassandra CassandraConnection connection) {
-        var usersFound = connection.queryOne("SELECT * FROM cassandra.users;", r -> r.getInt(0)).orElse(null);
+        var usersFound = connection.queryOne("SELECT * FROM users;", r -> r.getInt(0)).orElse(null);
         assertEquals(1, usersFound);
     }
 }

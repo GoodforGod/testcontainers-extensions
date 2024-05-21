@@ -14,6 +14,7 @@ final class CassandraContext implements ContainerContext<CassandraConnection> {
     private static final String EXTERNAL_TEST_CASSANDRA_HOST = "EXTERNAL_TEST_CASSANDRA_HOST";
     private static final String EXTERNAL_TEST_CASSANDRA_PORT = "EXTERNAL_TEST_CASSANDRA_PORT";
     private static final String EXTERNAL_TEST_CASSANDRA_DATACENTER = "EXTERNAL_TEST_CASSANDRA_DATACENTER";
+    private static final String EXTERNAL_TEST_CASSANDRA_KEYSPACE = "EXTERNAL_TEST_CASSANDRA_KEYSPACE";
 
     private volatile CassandraConnectionImpl connection;
 
@@ -38,6 +39,7 @@ final class CassandraContext implements ContainerContext<CassandraConnection> {
                         alias,
                         CassandraContainer.CQL_PORT,
                         container.getLocalDatacenter(),
+                        "cassandra",
                         container.getUsername(),
                         container.getPassword());
             });
@@ -72,9 +74,10 @@ final class CassandraContext implements ContainerContext<CassandraConnection> {
         var user = System.getenv(EXTERNAL_TEST_CASSANDRA_USERNAME);
         var password = System.getenv(EXTERNAL_TEST_CASSANDRA_PASSWORD);
         var dc = Optional.ofNullable(System.getenv(EXTERNAL_TEST_CASSANDRA_DATACENTER)).orElse("datacenter1");
+        var keyspace = Optional.ofNullable(System.getenv(EXTERNAL_TEST_CASSANDRA_KEYSPACE)).orElse("cassandra");
 
         if (host != null && port != null) {
-            return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, user, password));
+            return Optional.of(CassandraConnectionImpl.forExternal(host, Integer.parseInt(port), dc, keyspace, user, password));
         } else {
             return Optional.empty();
         }

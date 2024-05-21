@@ -41,6 +41,9 @@ public interface CassandraConnection extends AutoCloseable {
         @NotNull
         String datacenter();
 
+        @NotNull
+        String keyspace();
+
         String username();
 
         String password();
@@ -113,7 +116,7 @@ public interface CassandraConnection extends AutoCloseable {
             throws E;
 
     /**
-     * @param table example: mykeyspace.mytable
+     * @param table example: mytable
      * @return SELECT COUNT(*) from specified table
      */
     long count(@NotNull String table);
@@ -121,7 +124,7 @@ public interface CassandraConnection extends AutoCloseable {
     /**
      * Asserts that SELECT COUNT(*) in specified table counts 0 rows
      *
-     * @param table example: mykeyspace.mytable
+     * @param table example: mytable
      */
     void assertCountsNone(@NotNull String table);
 
@@ -129,7 +132,7 @@ public interface CassandraConnection extends AutoCloseable {
      * Asserts that SELECT COUNT(*) in specified table counts at least minimal number expectedAtLeast
      * rows
      *
-     * @param table           example: mykeyspace.mytable
+     * @param table           example: mytable
      * @param expectedAtLeast at least minimal number of rows expected
      */
     void assertCountsAtLeast(long expectedAtLeast, @NotNull String table);
@@ -137,7 +140,7 @@ public interface CassandraConnection extends AutoCloseable {
     /**
      * Asserts that SELECT COUNT(*) in specified table counts exact number expected rows
      *
-     * @param table    example: mykeyspace.mytable
+     * @param table    example: mytable
      * @param expected exact number of rows expected
      */
     void assertCountsEquals(long expected, @NotNull String table);
@@ -189,25 +192,30 @@ public interface CassandraConnection extends AutoCloseable {
     void close();
 
     static CassandraConnection forContainer(CassandraContainer<?> container) {
+        return forContainer(container, "cassandra");
+    }
+
+    static CassandraConnection forContainer(CassandraContainer<?> container, String keyspace) {
         if (!container.isRunning()) {
             throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
         }
 
         var params = new CassandraConnectionImpl.ParamsImpl(container.getHost(),
                 container.getMappedPort(CassandraContainer.CQL_PORT),
-                container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+                keyspace, container.getLocalDatacenter(), container.getUsername(), container.getPassword());
         final Params network = new CassandraConnectionImpl.ParamsImpl(container.getNetworkAliases().get(0),
                 CassandraContainer.CQL_PORT,
-                container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+                keyspace, container.getLocalDatacenter(), container.getUsername(), container.getPassword());
         return new CassandraConnectionClosableImpl(params, network);
     }
 
     static CassandraConnection forParams(String host,
                                          int port,
                                          String datacenter,
+                                         String keyspace,
                                          String username,
                                          String password) {
-        var params = new CassandraConnectionImpl.ParamsImpl(host, port, datacenter, username, password);
+        var params = new CassandraConnectionImpl.ParamsImpl(host, port, keyspace, datacenter, username, password);
         return new CassandraConnectionClosableImpl(params, null);
     }
 }

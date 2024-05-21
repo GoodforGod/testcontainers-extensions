@@ -29,6 +29,11 @@ public @interface Migration {
     Mode drop();
 
     /**
+     * @return what tactic to use: DROP TABLE or TRUNCATE TABLE (drop table is slow)
+     */
+    DropMode dropMode() default DropMode.TRUNCATE;
+
+    /**
      * @return path for resource directory with scripts or scripts itself
      */
     String[] locations();
@@ -41,7 +46,12 @@ public @interface Migration {
          * For apply use scripts in ASC order to execute that are pretended to set up tables and data
          * For drop clean all Non System tables in all cassandra
          */
-        SCRIPTS
+        SCRIPTS,
+        /**
+         * Third-Party Cassandra Migration library
+         * <a href="https://github.com/patka/cassandra-migration">Github</a>
+         */
+        COGNITOR
     }
 
     /**
@@ -60,5 +70,10 @@ public @interface Migration {
          * Indicates that will run each test method
          */
         PER_METHOD
+    }
+
+    enum DropMode {
+        TRUNCATE,
+        DROP
     }
 }
