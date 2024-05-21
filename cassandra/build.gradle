@@ -5,6 +5,7 @@ dependencies {
     api(libs.testcontainers.cassandra) {
         exclude group: "com.datastax.cassandra"
     }
+    implementation "org.cognitor.cassandra:cassandra-migration:2.6.1_v4"
     
     implementation libs.slf4j.api
 
