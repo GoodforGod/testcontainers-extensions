@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
+import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
@@ -23,17 +24,21 @@ import org.slf4j.LoggerFactory;
 @Internal
 class CassandraConnectionImpl implements CassandraConnection {
 
+    private static final Duration TIMEOUT = Duration.ofSeconds(45);
+
     static final class ParamsImpl implements Params {
 
         private final String host;
         private final int port;
+        private final String keyspace;
         private final String datacenter;
         private final String username;
         private final String password;
 
-        ParamsImpl(String host, int port, String datacenter, String username, String password) {
+        ParamsImpl(String host, int port, String datacenter, String keyspace, String username, String password) {
             this.host = host;
             this.port = port;
+            this.keyspace = keyspace;
             this.datacenter = datacenter;
             this.username = username;
             this.password = password;
@@ -52,6 +57,11 @@ class CassandraConnectionImpl implements CassandraConnection {
         @Override
         public int port() {
             return port;
+        }
+
+        @Override
+        public @NotNull String keyspace() {
+            return keyspace;
         }
 
         @Override
@@ -74,6 +84,7 @@ class CassandraConnectionImpl implements CassandraConnection {
             return "[host=" + host +
                     ", port=" + port +
                     ", datacenter=" + datacenter +
+                    ", keyspace=" + keyspace +
                     ", username=" + username +
                     ", password=" + password + ']';
         }
@@ -87,6 +98,9 @@ class CassandraConnectionImpl implements CassandraConnection {
     private volatile boolean isClosed = false;
     private volatile CqlSession connection;
 
+    private volatile ScriptCassandraMigrationEngine scriptCassandraMigrationEngine;
+    private volatile CognitorCassandraMigrationEngine cognitorCassandraMigrationEngine;
+
     CassandraConnectionImpl(Params params, Params network) {
         this.params = params;
         this.network = network;
@@ -97,14 +111,15 @@ class CassandraConnectionImpl implements CassandraConnection {
                                             String hostInNetwork,
                                             Integer portInNetwork,
                                             String datacenter,
+                                            String keyspace,
                                             String username,
                                             String password) {
-        var params = new ParamsImpl(host, port, datacenter, username, password);
+        var params = new ParamsImpl(host, port, datacenter, keyspace, username, password);
         final Params network;
         if (hostInNetwork == null) {
             network = null;
         } else {
-            network = new ParamsImpl(hostInNetwork, portInNetwork, datacenter, username, password);
+            network = new ParamsImpl(hostInNetwork, portInNetwork, datacenter, keyspace, username, password);
         }
 
         return new CassandraConnectionImpl(params, network);
@@ -113,9 +128,10 @@ class CassandraConnectionImpl implements CassandraConnection {
     static CassandraConnection forExternal(String host,
                                            int port,
                                            String datacenter,
+                                           String keyspace,
                                            String username,
                                            String password) {
-        var params = new CassandraConnectionImpl.ParamsImpl(host, port, datacenter, username, password);
+        var params = new CassandraConnectionImpl.ParamsImpl(host, port, keyspace, datacenter, username, password);
         return new CassandraConnectionImpl(params, null);
     }
 
@@ -149,13 +165,15 @@ class CassandraConnectionImpl implements CassandraConnection {
         logger.debug("Opening CQL connection...");
 
         OptionsMap optionsMap = OptionsMap.driverDefaults();
-        optionsMap.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT, Duration.ofMinutes(5));
-        optionsMap.put(TypedDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, Duration.ofMinutes(5));
-        optionsMap.put(TypedDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, Duration.ofMinutes(5));
+        optionsMap.put(TypedDriverOption.CONNECTION_CONNECT_TIMEOUT, TIMEOUT);
+        optionsMap.put(TypedDriverOption.CONNECTION_INIT_QUERY_TIMEOUT, TIMEOUT);
+        optionsMap.put(TypedDriverOption.CONNECTION_SET_KEYSPACE_TIMEOUT, TIMEOUT);
+        optionsMap.put(TypedDriverOption.REQUEST_TIMEOUT, TIMEOUT);
+        optionsMap.put(TypedDriverOption.METADATA_SCHEMA_REQUEST_TIMEOUT, TIMEOUT);
         var configLoader = DriverConfigLoader.fromMap(optionsMap);
 
         var sessionBuilder = new CqlSessionBuilder()
-                .withCodecRegistry(new DefaultCodecRegistry("default-code-registry"))
+                .withCodecRegistry(new DefaultCodecRegistry("testing-codec-registry"))
                 .withConfigLoader(configLoader)
                 .withLocalDatacenter(params().datacenter())
                 .addContactPoint(new InetSocketAddress(params().host(), params().port()));
@@ -164,29 +182,49 @@ class CassandraConnectionImpl implements CassandraConnection {
             sessionBuilder.withAuthCredentials(params().username(), params().password());
         }
 
-        return sessionBuilder.build();
+        CqlSession session = sessionBuilder.build();
+        createKeyspace(params().keyspace(), session);
+        return session;
     }
 
     @Override
     public @NotNull CassandraMigrationEngine migrationEngine(Migration.@NotNull Engines engine) {
         if (engine == Migration.Engines.SCRIPTS) {
-            return new ScriptCassandraMigrationEngine(this);
+            if (scriptCassandraMigrationEngine == null) {
+                this.scriptCassandraMigrationEngine = new ScriptCassandraMigrationEngine(this);
+            }
+            return this.scriptCassandraMigrationEngine;
+        } else if (engine == Migration.Engines.COGNITOR) {
+            if (cognitorCassandraMigrationEngine == null) {
+                this.cognitorCassandraMigrationEngine = new CognitorCassandraMigrationEngine(this);
+            }
+            return this.cognitorCassandraMigrationEngine;
         }
 
         throw new UnsupportedOperationException("Unsupported engine: " + engine);
     }
 
-    @Override
     public void createKeyspace(@NotNull String keyspaceName) {
-        execute("CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
-                + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};");
+        createKeyspace(keyspaceName, getConnection());
+    }
+
+    private void createKeyspace(@NotNull String keyspaceName, CqlSession session) {
+        try {
+            String cql = "CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
+                    + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};";
+            var boundStatement = session.prepare(cql).bind().setTimeout(TIMEOUT);
+            session.execute(boundStatement).wasApplied();
+            session.execute("USE " + CqlIdentifier.fromCql(keyspaceName));
+        } catch (Exception e) {
+            throw new CassandraConnectionException(e);
+        }
     }
 
     @Override
     public void execute(@Language("CQL") @NotNull String cql) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(TIMEOUT);
             getConnection().execute(boundStatement).wasApplied();
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
@@ -271,7 +309,7 @@ class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(TIMEOUT);
             var rows = getConnection().execute(boundStatement).all();
             final List<T> result = new ArrayList<>(rows.size());
             for (Row row : rows) {
@@ -292,7 +330,7 @@ class CassandraConnectionImpl implements CassandraConnection {
     private void assertQuery(@Language("CQL") String cql, QueryAssert consumer) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(TIMEOUT);
             var rows = getConnection().execute(boundStatement);
             consumer.accept(rows);
         } catch (Exception e) {
@@ -334,7 +372,7 @@ class CassandraConnectionImpl implements CassandraConnection {
     private boolean checkQuery(@Language("CQL") String cql, QueryChecker checker) {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(TIMEOUT);
             var rows = getConnection().execute(boundStatement);
             return checker.apply(rows);
         } catch (Exception e) {

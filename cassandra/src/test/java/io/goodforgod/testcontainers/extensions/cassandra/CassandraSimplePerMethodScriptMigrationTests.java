@@ -11,9 +11,10 @@ import org.junit.jupiter.api.*;
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD,
+                dropMode = Migration.DropMode.DROP,
                 locations = { "migration" }))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class CassandraSimplePerMethodMigrationTests {
+class CassandraSimplePerMethodScriptMigrationTests {
 
     @BeforeEach
     public void setupEach(@ConnectionCassandra CassandraConnection paramConnection) {
@@ -24,7 +25,7 @@ class CassandraSimplePerMethodMigrationTests {
     @Order(1)
     @Test
     void firstRun(@ConnectionCassandra CassandraConnection connection) {
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
+        connection.execute("INSERT INTO users(id) VALUES(1);");
     }
 
     @Order(2)

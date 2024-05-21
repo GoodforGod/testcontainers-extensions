@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mysql:0.10.2"
+testImplementation "io.goodforgod:testcontainers-extensions-mysql:0.11.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-mysql:0.10.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mysql</artifactId>
-    <version>0.10.2</version>
+    <version>0.11.0</version>
     <scope>test</scope>
 </dependency>
 ```

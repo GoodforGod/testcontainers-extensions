@@ -5,7 +5,10 @@ import io.goodforgod.testcontainers.extensions.ContainerContext;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import java.lang.annotation.Annotation;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
@@ -64,7 +67,6 @@ class TestcontainersCassandraExtension extends
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
         }
-
         return container;
     }
 
@@ -79,16 +81,14 @@ class TestcontainersCassandraExtension extends
                 .map(a -> new CassandraMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(), a.migration()));
     }
 
-    private void tryMigrateIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
-        if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            new ScriptCassandraMigrationEngine(connection).apply(Arrays.asList(annotation.migration().locations()));
-        }
+    private void tryMigrateIfRequired(CassandraMetadata metadata, CassandraConnection connection) {
+        CassandraMigrationEngine migrationEngine = connection.migrationEngine(metadata.migration().engine());
+        migrationEngine.apply(Arrays.asList(metadata.migration().locations()));
     }
 
-    private void tryDropIfRequired(CassandraMetadata annotation, CassandraConnection connection) {
-        if (annotation.migration().engine() == Migration.Engines.SCRIPTS) {
-            new ScriptCassandraMigrationEngine(connection).drop(Arrays.asList(annotation.migration().locations()));
-        }
+    private void tryDropIfRequired(CassandraMetadata metadata, CassandraConnection connection) {
+        CassandraMigrationEngine migrationEngine = connection.migrationEngine(metadata.migration().engine());
+        migrationEngine.drop(Arrays.asList(metadata.migration().locations()), metadata.migration().dropMode());
     }
 
     @Override

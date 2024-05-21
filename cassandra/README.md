@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.10.2"
+testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.11.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.10.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cassandra</artifactId>
-    <version>0.10.2</version>
+    <version>0.11.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -78,8 +78,8 @@ class ExampleTests {
 
     @Test
     void test(@ConnectionCassandra CassandraConnection connection) {
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        connection.execute("INSERT INTO users(id) VALUES(1);");
+        var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(0));
         assertEquals(1, usersFound.size());
     }
 }
@@ -111,6 +111,8 @@ class ExampleTests {
 }
 ```
 
+Keyspace is created automatically.
+
 ### Connection Migration
 
 `Migrations` allow easily migrate database between test executions and drop after tests.
@@ -124,10 +126,17 @@ class ExampleTests {
     void test(@ConnectionCassandra CassandraConnection connection) {
       connection.migrationEngine(Migration.Engines.SCRIPTS).apply("migration/setup.cql");
       connection.execute("INSERT INTO users VALUES(1);");
-      connection.migrationEngine(Migration.Engines.SCRIPTS).drop("migration/setup.cql");
+      connection.migrationEngine(Migration.Engines.SCRIPTS).drop("migration/setup.cql", Migration.DropMode.TRUNCATE);
     }
 }
 ```
+
+Keyspace is created automatically.
+
+It is recommended to **always** use construction `CREATE IF NOT EXISTS` for migration scripts, 
+cause migration drop when using `TRUNCATE TABLE` on all tables in keyspace is a lot faster compared to using `DROP TABLE`.
+
+Default strategy is to use `TRUNCATE`, if you want to change it use `Migration.DropMode.DROP`.
 
 ## Annotation
 
@@ -192,6 +201,7 @@ class ExampleTests {
     @Test
     void test(@ConnectionCassandra CassandraConnection connection) {
       assertEquals("mydc", connection.params().datacenter());
+      assertEquals("cassandra", connection.params().keyspace());
     }
 }
 ```
@@ -249,8 +259,8 @@ class ExampleTests {
     @Test
     void test() {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
-        var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        connection.execute("INSERT INTO users(id) VALUES(2);");
+        var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(0));
         assertEquals(2, usersFound.size());
     }
 }
@@ -264,16 +274,23 @@ Annotation parameters:
 - `engine` - to use for migration.
 - `apply` - parameter configures migration mode.
 - `drop` - configures when to reset/drop/clear database.
+- `dropMode` - configures what strategy to use for migration drop (`TRUNCATE` or `DROP`)
 - `locations` - configures locations where migrations are placed.
+
+Keyspace is created automatically.
+
+It is recommended to **always** use construction `CREATE IF NOT EXISTS` for migration scripts,
+cause migration drop when using `TRUNCATE TABLE` on all tables in keyspace is a lot faster compared to using `DROP TABLE`.
+
+Default strategy is to use `TRUNCATE`, if you want to change it use `Migration.DropMode.DROP`.
 
 Available migration engines:
 - Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all cassandra
+- [Cognitor](https://github.com/patka/cassandra-migration) - For `apply` uses Cognitor Cassandra migration library, for `drop` clean all Non System tables in all cassandra
 
-Given engine is Scripts and migration file named `setup.sql` is in resource directory `migration`:
+Given engine is Scripts and migration file named `1_setup.sql` is in resource directory `migration`:
 ```sql
-CREATE KEYSPACE IF NOT EXISTS cassandra WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
-
-CREATE TABLE IF NOT EXISTS cassandra.users
+CREATE TABLE IF NOT EXISTS users
 (
   id INT,
   PRIMARY KEY (id)
@@ -287,15 +304,16 @@ Test with container and migration per method will look like:
                 engine = Migration.Engines.SCRIPTS,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD,
-                migrations = { "migration/setup.cql" }
+                dropMode = Migration.DropMode.TRUNCATE,
+                migrations = { "migration" }
         ))
 class ExampleTests {
 
     @Test
     void test(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
-        var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
+        connection.execute("INSERT INTO users(id) VALUES(2);");
+        var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(0));
         assertEquals(2, usersFound.size());
     }
 }
@@ -312,6 +330,7 @@ Special environment variables:
 - `EXTERNAL_TEST_CASSANDRA_HOST` - Cassandra instance host.
 - `EXTERNAL_TEST_CASSANDRA_PORT` - Cassandra instance port.
 - `EXTERNAL_TEST_CASSANDRA_DATACENTER` - Cassandra instance database (`datacenter1` by default).
+- `EXTERNAL_TEST_CASSANDRA_KEYSPACE` - Cassandra keyspace (`cassandra` by default).
 - 
 ## License
 

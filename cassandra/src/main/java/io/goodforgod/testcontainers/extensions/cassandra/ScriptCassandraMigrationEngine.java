@@ -8,36 +8,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public final class ScriptCassandraMigrationEngine implements CassandraMigrationEngine {
-
-    private static final Logger logger = LoggerFactory.getLogger(ScriptCassandraMigrationEngine.class);
-
-    private static class Table {
-
-        private final String keyspace;
-        private final String name;
-
-        private Table(String keyspace, String name) {
-            this.keyspace = keyspace;
-            this.name = name;
-        }
-
-        public String keyspace() {
-            return keyspace;
-        }
-
-        public String name() {
-            return name;
-        }
-    }
-
-    private final CassandraConnection connection;
+public final class ScriptCassandraMigrationEngine extends AbstractDropCassandraMigrationEngine {
 
     public ScriptCassandraMigrationEngine(CassandraConnection connection) {
-        this.connection = connection;
+        super(connection);
     }
 
     private static List<File> getFilesFromLocations(List<String> locations) {
@@ -93,31 +68,6 @@ public final class ScriptCassandraMigrationEngine implements CassandraMigrationE
         }
 
         logger.info("Finished schema migration for engine '{}' for connection: {}",
-                getClass().getSimpleName(), connection);
-    }
-
-    @Override
-    public void drop(@NotNull List<String> locations) {
-        if (locations.isEmpty()) {
-            logger.warn("Empty locations for schema migration for engine '{}' for connection: {}",
-                    getClass().getSimpleName(), connection);
-            return;
-        }
-
-        logger.debug("Starting schema dropping for engine '{}' for connection: {}",
-                getClass().getSimpleName(), connection);
-
-        var tables = ((CassandraConnectionImpl) connection).queryMany(
-                "SELECT keyspace_name, table_name FROM system_schema.tables;",
-                r -> new Table(r.getString(0), r.getString(1)));
-
-        for (Table table : tables) {
-            if (!table.keyspace().startsWith("system")) {
-                connection.execute("DROP TABLE " + table.keyspace() + "." + table.name());
-            }
-        }
-
-        logger.info("Finished schema dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), connection);
     }
 }

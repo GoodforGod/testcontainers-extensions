@@ -35,7 +35,7 @@ class CassandraConnectionAssertsTests {
     @Test
     void queryMany(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
+        connection.execute("INSERT INTO users(id) VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM cassandra.users;", r -> r.getInt(0));
         assertEquals(2, usersFound.size());
     }
@@ -49,24 +49,24 @@ class CassandraConnectionAssertsTests {
     @Test
     void assertCountsNoneWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsNone("cassandra.users"));
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsNone("users"));
     }
 
     @Test
     void assertCountsNoneWhenZero(@ConnectionCassandra CassandraConnection connection) {
-        assertDoesNotThrow(() -> connection.assertCountsNone("cassandra.users"));
+        assertDoesNotThrow(() -> connection.assertCountsNone("users"));
     }
 
     @Test
     void assertCountsAtLeastWhenZero(@ConnectionCassandra CassandraConnection connection) {
-        assertThrows(AssertionFailedError.class, () -> connection.assertCountsAtLeast(1, "cassandra.users"));
+        assertThrows(AssertionFailedError.class, () -> connection.assertCountsAtLeast(1, "users"));
     }
 
     @Test
     void assertCountsAtLeastWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
-        assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "cassandra.users"));
+        connection.execute("INSERT INTO users(id) VALUES(2);");
+        assertDoesNotThrow(() -> connection.assertCountsAtLeast(1, "users"));
     }
 
     @Test
@@ -83,7 +83,7 @@ class CassandraConnectionAssertsTests {
     @Test
     void assertCountsExactWhenMore(@ConnectionCassandra CassandraConnection connection) {
         connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(2);");
+        connection.execute("INSERT INTO users(id) VALUES(2);");
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, "cassandra.users"));
     }
 
@@ -95,7 +95,7 @@ class CassandraConnectionAssertsTests {
 
     @Test
     void assertQueriesNoneWhenMore(@ConnectionCassandra CassandraConnection connection) {
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
+        connection.execute("INSERT INTO users(id) VALUES(1);");
         assertThrows(AssertionFailedError.class, () -> connection.assertQueriesNone("SELECT * FROM cassandra.users;"));
     }
 
