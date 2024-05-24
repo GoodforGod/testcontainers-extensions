@@ -55,7 +55,7 @@ class TestcontainersRedisExtension extends
         container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias))
-                .withStartupTimeout(Duration.ofMinutes(5));
+                .withStartupTimeout(Duration.ofMinutes(2));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);

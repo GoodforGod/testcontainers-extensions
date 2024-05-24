@@ -77,7 +77,7 @@ final class TestcontainersKafkaExtension extends
                 "org.apache.zookeeper=ERROR,org.kafka.zookeeper=ERROR,org.kafka.zookeeper.server=ERROR,kafka.zookeeper=ERROR,org.apache.kafka=ERROR");
         container.withExposedPorts(9092, KafkaContainer.KAFKA_PORT);
         container.waitingFor(Wait.forListeningPort());
-        container.withStartupTimeout(Duration.ofMinutes(5));
+        container.withStartupTimeout(Duration.ofMinutes(2));
 
         var actualVersion = new ComparableVersion(DockerImageName.parse(container.getDockerImageName()).getVersionPart());
         if (!actualVersion.isLessThan(MIN_KRAFT_TAG)) {

@@ -7,7 +7,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("junit-api", "5.10.2")
             version("junit-platform", "1.10.2")
             version("testcontainers", "1.19.8")
-            version("flyway", "9.22.3")
+            version("flyway", "10.12.0")
             version("liquibase", "4.27.0")
 
             library("slf4j-api", "org.slf4j", "slf4j-api").versionRef("slf4j")
@@ -39,7 +39,8 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-mysql", "org.flywaydb", "flyway-mysql").versionRef("flyway")
             library("flyway-oracle", "org.flywaydb", "flyway-database-oracle").versionRef("flyway")
-            library("flyway-oracle", "org.flywaydb", "flyway-database-clickhouse").versionRef("flyway")
+            library("flyway-clickhouse", "org.flywaydb", "flyway-database-clickhouse").versionRef("flyway")
+            library("flyway-postgres", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             library("liquibase-core", "org.liquibase", "liquibase-core").versionRef("liquibase")
 

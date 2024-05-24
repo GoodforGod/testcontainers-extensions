@@ -18,7 +18,7 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
         this.jdbcConnection = jdbcConnection;
     }
 
-    private static Flyway getFlyway(DataSource dataSource, List<String> locations) {
+    private Flyway getFlyway(DataSource dataSource, List<String> locations) {
         final List<String> migrationLocations = (locations.isEmpty())
                 ? List.of("classpath:db/migration")
                 : locations;
@@ -39,12 +39,13 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
         logger.debug("Starting migration migration for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
+        Flyway flyway = getFlyway(getDataSource(), locations);
         try {
-            getFlyway(getDataSource(), locations).migrate();
+            flyway.migrate();
         } catch (Exception e) {
             try {
-                Thread.sleep(250);
-                getFlyway(getDataSource(), locations).migrate();
+                Thread.sleep(2050);
+                flyway.migrate();
             } catch (InterruptedException ex) {
                 logger.error("Failed migration migration for engine '{}' for connection: {}",
                         getClass().getSimpleName(), jdbcConnection);

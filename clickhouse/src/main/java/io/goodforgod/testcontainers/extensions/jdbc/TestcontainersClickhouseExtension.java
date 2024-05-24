@@ -9,31 +9,30 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.clickhouse.ClickHouseContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-final class TestcontainersPostgreSQLExtension extends
-        AbstractTestcontainersJdbcExtension<PostgreSQLContainer<?>, JdbcMetadata> {
+final class TestcontainersClickhouseExtension extends
+        AbstractTestcontainersJdbcExtension<ClickHouseContainer, JdbcMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
-            .create(TestcontainersPostgreSQLExtension.class);
+            .create(TestcontainersClickhouseExtension.class);
 
-    @SuppressWarnings("unchecked")
     @Override
-    protected Class<PostgreSQLContainer<?>> getContainerType() {
-        return (Class<PostgreSQLContainer<?>>) ((Class<?>) PostgreSQLContainer.class);
+    protected Class<ClickHouseContainer> getContainerType() {
+        return ClickHouseContainer.class;
     }
 
     @Override
     protected Class<? extends Annotation> getContainerAnnotation() {
-        return ContainerPostgreSQL.class;
+        return ContainerClickhouse.class;
     }
 
     @Override
     protected Class<? extends Annotation> getConnectionAnnotation() {
-        return ConnectionPostgreSQL.class;
+        return ConnectionClickhouse.class;
     }
 
     @Override
@@ -42,19 +41,20 @@ final class TestcontainersPostgreSQLExtension extends
     }
 
     @Override
-    protected PostgreSQLContainer<?> createContainerDefault(JdbcMetadata metadata) {
+    protected ClickHouseContainer createContainerDefault(JdbcMetadata metadata) {
         var image = DockerImageName.parse(metadata.image())
-                .asCompatibleSubstituteFor(DockerImageName.parse("gvenzl/oracle-xe"));
+                .asCompatibleSubstituteFor(DockerImageName.parse("yandex/clickhouse-server"));
 
-        final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(image);
-        final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "oracle-" + System.currentTimeMillis());
-        container.withDatabaseName("postgres");
-        container.withUsername("postgres");
-        container.withPassword("postgres");
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
+        final ClickHouseContainer container = new ClickHouseContainer(image);
+        final String alias = Optional.ofNullable(metadata.networkAlias())
+                .orElseGet(() -> "clickhouse-" + System.currentTimeMillis());
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(ClickHouseContainer.class))
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
-        container.withStartupTimeout(Duration.ofMinutes(2));
+        container.withDatabaseName("clickhouse");
+        container.withUsername("clickhouse");
+        container.withPassword("clickhouse");
+        container.withStartupTimeout(Duration.ofSeconds(15));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
@@ -64,13 +64,13 @@ final class TestcontainersPostgreSQLExtension extends
     }
 
     @Override
-    protected ContainerContext<JdbcConnection> createContainerContext(PostgreSQLContainer<?> container) {
-        return new PostgreSQLContext(container);
+    protected ContainerContext<JdbcConnection> createContainerContext(ClickHouseContainer container) {
+        return new ClickhouseContext(container);
     }
 
     @NotNull
     protected Optional<JdbcMetadata> findMetadata(@NotNull ExtensionContext context) {
-        return findAnnotation(TestcontainersPostgreSQL.class, context)
+        return findAnnotation(TestcontainersClickhouse.class, context)
                 .map(a -> new JdbcMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode(), a.migration()));
     }
 }

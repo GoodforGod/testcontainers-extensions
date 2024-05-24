@@ -413,18 +413,22 @@ class JdbcConnectionImpl implements JdbcConnection {
         return checkInserted(sql);
     }
 
-    DataSource dataSource() {
+    protected HikariDataSource createDataSource() {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(params().jdbcUrl());
+        hikariConfig.setUsername(params().username());
+        hikariConfig.setPassword(params().password());
+        hikariConfig.setAutoCommit(true);
+        hikariConfig.setMinimumIdle(1);
+        hikariConfig.setMaximumPoolSize(25);
+        hikariConfig.setPoolName("jdbc-connection");
+        hikariConfig.setLeakDetectionThreshold(10000);
+        return new HikariDataSource(hikariConfig);
+    }
+
+    final HikariDataSource dataSource() {
         if (dataSource == null) {
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setJdbcUrl(params().jdbcUrl());
-            hikariConfig.setUsername(params().username());
-            hikariConfig.setPassword(params().password());
-            hikariConfig.setAutoCommit(true);
-            hikariConfig.setMinimumIdle(1);
-            hikariConfig.setMaximumPoolSize(25);
-            hikariConfig.setPoolName("jdbc-connection");
-            hikariConfig.setLeakDetectionThreshold(10000);
-            this.dataSource = new HikariDataSource(hikariConfig);
+            this.dataSource = createDataSource();
         }
 
         return this.dataSource;

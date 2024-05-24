@@ -51,7 +51,7 @@ class TestcontainersRedisExtension extends AbstractTestcontainersExtension<Redis
                         .withMdc("image", metadata.image()))
                 .withNetworkAliases(alias)
                 .waitingFor(Wait.forListeningPort())
-                .withStartupTimeout(Duration.ofMinutes(5));
+                .withStartupTimeout(Duration.ofMinutes(2));
 
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);

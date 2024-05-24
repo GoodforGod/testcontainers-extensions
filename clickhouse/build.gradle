@@ -1,0 +1,15 @@
+dependencies {
+    compileOnly libs.driver.clickhouse
+
+    api project(":jdbc")
+    api libs.testcontainers.clickhouse
+
+    implementation "io.goodforgod:liquibase-clickhouse:4.27.0-SNAPSHOT"
+    implementation libs.slf4j.jul
+    implementation libs.flyway.clickhouse
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+    implementation libs.hikari
+
+    testImplementation libs.driver.clickhouse
+}

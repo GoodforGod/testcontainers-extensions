@@ -35,6 +35,7 @@ dependencies {
     jacocoAggregation project(":redis")
     jacocoAggregation project(":mockserver")
     jacocoAggregation project(":minio")
+    jacocoAggregation project(":clickhouse")
 }
 
 reporting {
