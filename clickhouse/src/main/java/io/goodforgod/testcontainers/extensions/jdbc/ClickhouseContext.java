@@ -81,7 +81,8 @@ final class ClickhouseContext implements ContainerContext<JdbcConnection> {
         var db = Optional.ofNullable(System.getenv(EXTERNAL_TEST_CLICKHOUSE_DATABASE)).orElse("default");
         if (url != null) {
             if (host != null && port != null) {
-                return Optional.of(ClickhouseConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));
+                return Optional
+                        .of(ClickhouseConnectionImpl.forJDBC(url, host, Integer.parseInt(port), null, null, db, user, password));
             } else {
                 return Optional.of(ClickhouseConnectionImpl.forExternal(url, user, password));
             }

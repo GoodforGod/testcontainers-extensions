@@ -1,5 +1,11 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import java.io.FileWriter;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.sql.Connection;
+import java.util.List;
+import java.util.Optional;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -12,13 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
-
-import java.io.FileWriter;
-import java.io.Writer;
-import java.nio.file.Files;
-import java.sql.Connection;
-import java.util.List;
-import java.util.Optional;
 
 public final class ClickhouseLiquibaseJdbcMigrationEngine implements JdbcMigrationEngine, AutoCloseable {
 

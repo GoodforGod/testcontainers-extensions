@@ -423,12 +423,23 @@ class JdbcConnectionImpl implements JdbcConnection {
         hikariConfig.setMaximumPoolSize(25);
         hikariConfig.setPoolName("jdbc-connection");
         hikariConfig.setLeakDetectionThreshold(10000);
+        hikariConfig.setConnectionTimeout(10000);
+        hikariConfig.setInitializationFailTimeout(10000);
         return new HikariDataSource(hikariConfig);
     }
 
     final HikariDataSource dataSource() {
         if (dataSource == null) {
-            this.dataSource = createDataSource();
+            try {
+                this.dataSource = createDataSource();
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(1000);
+                    this.dataSource = createDataSource();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         }
 
         return this.dataSource;
