@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import javax.sql.DataSource;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -413,18 +412,33 @@ class JdbcConnectionImpl implements JdbcConnection {
         return checkInserted(sql);
     }
 
-    DataSource dataSource() {
+    protected HikariDataSource createDataSource() {
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(params().jdbcUrl());
+        hikariConfig.setUsername(params().username());
+        hikariConfig.setPassword(params().password());
+        hikariConfig.setAutoCommit(true);
+        hikariConfig.setMinimumIdle(1);
+        hikariConfig.setMaximumPoolSize(25);
+        hikariConfig.setPoolName("jdbc-connection");
+        hikariConfig.setLeakDetectionThreshold(10000);
+        hikariConfig.setConnectionTimeout(10000);
+        hikariConfig.setInitializationFailTimeout(10000);
+        return new HikariDataSource(hikariConfig);
+    }
+
+    final HikariDataSource dataSource() {
         if (dataSource == null) {
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setJdbcUrl(params().jdbcUrl());
-            hikariConfig.setUsername(params().username());
-            hikariConfig.setPassword(params().password());
-            hikariConfig.setAutoCommit(true);
-            hikariConfig.setMinimumIdle(1);
-            hikariConfig.setMaximumPoolSize(25);
-            hikariConfig.setPoolName("jdbc-connection");
-            hikariConfig.setLeakDetectionThreshold(10000);
-            this.dataSource = new HikariDataSource(hikariConfig);
+            try {
+                this.dataSource = createDataSource();
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(1000);
+                    this.dataSource = createDataSource();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         }
 
         return this.dataSource;

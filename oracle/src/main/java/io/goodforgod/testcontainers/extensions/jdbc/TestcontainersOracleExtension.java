@@ -51,7 +51,7 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
         container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
-        container.withStartupTimeout(Duration.ofMinutes(5));
+        container.withStartupTimeout(Duration.ofMinutes(2));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);

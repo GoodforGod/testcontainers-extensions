@@ -2,6 +2,7 @@ dependencies {
     api project(":jdbc")
     api libs.testcontainers.cockroach
 
+    implementation libs.flyway.postgres
     implementation libs.junit.launcher
     implementation libs.junit.api
 

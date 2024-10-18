@@ -1,0 +1,25 @@
+dependencies {
+    compileOnly libs.driver.clickhouse
+    compileOnly("com.clickhouse:clickhouse-http-client") {
+        version {
+            strictly "0.7.0"
+        }
+    }
+
+    api project(":jdbc")
+    api libs.testcontainers.clickhouse
+
+    implementation libs.liquibase.clickhouse
+    implementation libs.slf4j.jul
+    implementation libs.flyway.clickhouse
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+    implementation libs.hikari
+
+    testImplementation libs.driver.clickhouse
+    testImplementation("com.clickhouse:clickhouse-http-client") {
+        version {
+            strictly "0.7.0"
+        }
+    }
+}

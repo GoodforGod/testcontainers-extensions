@@ -1,0 +1,9 @@
+dependencies {
+    api project(":common")
+    api libs.testcontainers.minio
+    api libs.driver.minio
+
+    implementation libs.slf4j.api
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+}

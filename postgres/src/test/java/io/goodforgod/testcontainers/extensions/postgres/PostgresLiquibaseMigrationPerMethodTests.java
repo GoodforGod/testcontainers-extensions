@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS,
-        image = "postgres:15.6-alpine",
+        image = "postgres:16.4-alpine",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
                 apply = Migration.Mode.PER_METHOD,

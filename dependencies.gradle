@@ -3,12 +3,13 @@ import org.gradle.api.initialization.resolve.DependencyResolutionManagement
 dependencyResolutionManagement { DependencyResolutionManagement it ->
     it.versionCatalogs {
         libs {
-            version("slf4j", "2.0.12")
-            version("junit-api", "5.10.2")
-            version("junit-platform", "1.10.2")
-            version("testcontainers", "1.17.6")
-            version("flyway", "9.22.3")
-            version("liquibase", "4.27.0")
+            version("slf4j", "2.0.16")
+            version("junit-api", "5.10.5")
+            version("junit-platform", "1.10.5")
+            version("testcontainers", "1.19.8")
+            version("flyway", "10.20.0")
+            version("liquibase", "4.29.0")
+            version("clickhouse", "0.7.0")
 
             library("slf4j-api", "org.slf4j", "slf4j-api").versionRef("slf4j")
             library("slf4j-jul", "org.slf4j", "jul-to-slf4j").versionRef("slf4j")
@@ -32,21 +33,28 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-kafka", "org.testcontainers", "kafka").versionRef("testcontainers")
             library("testcontainers-cassandra", "org.testcontainers", "cassandra").versionRef("testcontainers")
             library("testcontainers-mockserver", "org.testcontainers", "mockserver").versionRef("testcontainers")
+            library("testcontainers-minio", "org.testcontainers", "minio").versionRef("testcontainers")
+            library("testcontainers-clickhouse", "org.testcontainers", "clickhouse").versionRef("testcontainers")
 
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-mysql", "org.flywaydb", "flyway-mysql").versionRef("flyway")
             library("flyway-oracle", "org.flywaydb", "flyway-database-oracle").versionRef("flyway")
+            library("flyway-clickhouse", "org.flywaydb", "flyway-database-clickhouse").version("10.16.3")
+            library("flyway-postgres", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             library("liquibase-core", "org.liquibase", "liquibase-core").versionRef("liquibase")
+            library("liquibase-clickhouse", "io.goodforgod", "liquibase-clickhouse").version("0.8.0")
 
-            library("driver-postgres", "org.postgresql", "postgresql").version("42.6.0")
-            library("driver-mariadb", "org.mariadb.jdbc", "mariadb-java-client").version("3.1.4")
-            library("driver-mysql", "mysql", "mysql-connector-java").version("8.0.33")
+            library("driver-postgres", "org.postgresql", "postgresql").version("42.7.4")
+            library("driver-mariadb", "org.mariadb.jdbc", "mariadb-java-client").version("3.4.1")
+            library("driver-mysql", "com.mysql", "mysql-connector-j").version("9.1.0")
             library("driver-oracle", "com.oracle.database.jdbc", "ojdbc8").version("21.5.0.0")
-            library("driver-cassandra", "com.datastax.oss", "java-driver-core").version("4.17.0")
-            library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.5.1")
-            library("driver-redis", "redis.clients", "jedis").version("4.4.3")
+            library("driver-cassandra", "org.apache.cassandra", "java-driver-core").version("4.18.1")
+            library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.8.0")
+            library("driver-redis", "redis.clients", "jedis").version("5.2.0")
             library("driver-mockserver", "org.mock-server", "mockserver-client-java").version("5.15.0")
+            library("driver-minio", "io.minio", "minio").version("8.5.12")
+            library("driver-clickhouse", "com.clickhouse", "clickhouse-jdbc").versionRef("clickhouse")
         }
     }
 }

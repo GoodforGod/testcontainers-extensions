@@ -130,27 +130,36 @@ class RedisConnectionImpl implements RedisConnection {
 
         if (jedis == null) {
             try {
-                var config = DefaultJedisClientConfig.builder()
-                        .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
-                        .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
-                        .clientName("testcontainers-extensions-redis")
-                        .database(Protocol.DEFAULT_DATABASE);
-
-                if (params().username() != null) {
-                    config.user(params.username());
-                }
-
-                if (params().password() != null) {
-                    config.password(params().password());
-                }
-
-                jedis = new JedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
+                jedis = getJedis();
             } catch (Exception e) {
-                throw new RedisConnectionException(e);
+                try {
+                    Thread.sleep(550);
+                    jedis = getJedis();
+                } catch (Exception ex) {
+                    throw new RedisConnectionException(e);
+                }
             }
         }
 
         return jedis;
+    }
+
+    private JedisCommandsImpl getJedis() {
+        var config = DefaultJedisClientConfig.builder()
+                .timeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                .blockingSocketTimeoutMillis((int) Duration.ofSeconds(10).toMillis())
+                .clientName("testcontainers-extensions-redis")
+                .database(Protocol.DEFAULT_DATABASE);
+
+        if (params().username() != null) {
+            config.user(params.username());
+        }
+
+        if (params().password() != null) {
+            config.password(params().password());
+        }
+
+        return new JedisCommandsImpl(new HostAndPort(params().host(), params().port()), config.build());
     }
 
     @NotNull

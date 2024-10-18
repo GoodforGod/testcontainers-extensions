@@ -293,7 +293,7 @@ class CassandraConnectionImpl implements CassandraConnection {
             throws E {
         logger.debug("Executing CQL:\n{}", cql);
         try {
-            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(5));
+            var boundStatement = getConnection().prepare(cql).bind().setTimeout(Duration.ofMinutes(2));
             var row = getConnection().execute(boundStatement).one();
             return (row != null)
                     ? Optional.ofNullable(extractor.apply(row))

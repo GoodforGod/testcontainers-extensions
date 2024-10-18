@@ -1,6 +1,6 @@
 # Testcontainers Extensions Redis
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
+[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-redis/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-redis)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.11.0"
+testImplementation "io.goodforgod:testcontainers-extensions-redis:0.12.0"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redis:0.11.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redis</artifactId>
-    <version>0.11.0</version>
+    <version>0.12.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -126,7 +126,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersRedis(image = "${MY_IMAGE_ENV|redis:7.2-alpine}")
+@TestcontainersRedis(image = "${MY_IMAGE_ENV|redis:7.4-alpine}")
 class ExampleTests {
 
     @Test
@@ -138,9 +138,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `redis:7.2-alpine`
+- Image can have static value: `redis:7.4-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redis:7.2-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redis:7.4-alpine}`
 
 ### Manual Container
 
@@ -206,7 +206,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.2-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.4-alpine")
 class ExampleTests {
 
     @ConnectionRedis
