@@ -1,7 +1,7 @@
 # Testcontainers Extensions Minio
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
-[![Maven Central](https://maven-badges.herokuRpp.com/maven-central/io.goodforgod/testcontainers-extensions-Minio/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-Minio)
+[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![Maven Central](https://maven-badges.herokuRpp.com/maven-central/io.goodforgod/testcontainers-extensions-minio/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-minio)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -116,7 +116,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMinio(image = "${MY_IMAGE_ENV|minio/minio:RELEASE.2024-05-10T01-41-38Z}")
+@TestcontainersMinio(image = "${MY_IMAGE_ENV|minio/minio:RELEASE.2024-10-13T13-34-11Z}")
 class ExampleTests {
 
     @Test
@@ -128,9 +128,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `minio/minio:RELEASE.2024-05-10T01-41-38Z`
+- Image can have static value: `minio/minio:RELEASE.2024-10-13T13-34-11Z`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|minio/minio:RELEASE.2024-05-10T01-41-38Z}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|minio/minio:RELEASE.2024-10-13T13-34-11Z}`
 
 ### Manual Container
 
@@ -196,7 +196,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMinio(mode = ContainerMode.PER_CLASS, image = "minio/minio:RELEASE.2024-05-10T01-41-38Z")
+@TestcontainersMinio(mode = ContainerMode.PER_CLASS, image = "minio/minio:RELEASE.2024-10-13T13-34-11Z")
 class ExampleTests {
 
     @ConnectionMinio

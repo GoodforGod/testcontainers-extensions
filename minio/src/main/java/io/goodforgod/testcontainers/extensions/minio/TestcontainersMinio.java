@@ -22,12 +22,12 @@ public @interface TestcontainersMinio {
     /**
      * @return MinIOContainer image
      *             <p>
-     *             1) Image can have static value: "minio/minio:RELEASE.2024-05-10T01-41-38Z"
+     *             1) Image can have static value: "minio/minio:RELEASE.2024-10-13T13-34-11Z"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|minio/minio:RELEASE.2024-05-10T01-41-38Z}"
+     *             "${MY_IMAGE_ENV|minio/minio:RELEASE.2024-10-13T13-34-11Z}"
      */
-    String image() default "minio/minio:RELEASE.2024-05-10T01-41-38Z";
+    String image() default "minio/minio:RELEASE.2024-10-13T13-34-11Z";
 
     /**
      * @return when to start container

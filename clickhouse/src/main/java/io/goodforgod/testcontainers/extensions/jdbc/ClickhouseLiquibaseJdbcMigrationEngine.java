@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 import liquibase.Contexts;
@@ -81,6 +82,7 @@ public final class ClickhouseLiquibaseJdbcMigrationEngine implements JdbcMigrati
         });
     }
 
+    // not supported
     private static void dropLiquibase(Database database, List<String> locations) {
         prepareLiquibase(database, locations, (liquibase, writer) -> {
             liquibase.dropAll();
@@ -122,17 +124,17 @@ public final class ClickhouseLiquibaseJdbcMigrationEngine implements JdbcMigrati
         logger.debug("Starting migration dropping for engine '{}' for connection: {}",
                 getClass().getSimpleName(), jdbcConnection);
 
-        try {
-            Connection connection = jdbcConnection.openConnection();
-            try (var database = getLiquiDatabase(connection)) {
-                dropLiquibase(database, locations);
-            }
+        final String query = String.format("TRUNCATE DATABASE IF EXISTS %s;", jdbcConnection.params().database());
+
+        try (Connection connection = jdbcConnection.openConnection()) {
+            Statement statement = connection.createStatement();
+            statement.execute(query);
         } catch (Exception e) {
             try {
                 Thread.sleep(250);
-                Connection connection = jdbcConnection.openConnection();
-                try (var database = getLiquiDatabase(connection)) {
-                    dropLiquibase(database, locations);
+                try (Connection connection = jdbcConnection.openConnection()) {
+                    Statement statement = connection.createStatement();
+                    statement.execute(query);
                 }
             } catch (Exception ex) {
                 logger.error("Failed migration drop for engine '{}' for connection: {}",

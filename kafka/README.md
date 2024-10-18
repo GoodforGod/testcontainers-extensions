@@ -1,6 +1,6 @@
 # Testcontainers Extensions Kafka
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
+[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-kafka/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-kafka)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -135,7 +135,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersKafka(image = "${MY_IMAGE_ENV|confluentinc/cp-kafka:7.5.4}")
+@TestcontainersKafka(image = "${MY_IMAGE_ENV|confluentinc/cp-kafka:7.7.1}")
 class ExampleTests {
 
     @Test
@@ -147,9 +147,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `confluentinc/cp-kafka:7.5.4`
+- Image can have static value: `confluentinc/cp-kafka:7.7.1`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|confluentinc/cp-kafka:7.5.4}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|confluentinc/cp-kafka:7.7.1}`
 
 ### Manual Container
 
@@ -162,7 +162,7 @@ Example:
 class ExampleTests {
 
     @ContainerKafka
-    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.4"));
+    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"));
 
     @Test
     void checkParams(@ConnectionKafka KafkaConnection connection) {
@@ -241,7 +241,7 @@ class ExampleTests {
 It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
 
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.4")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
 class ExampleTests {
 
     @ConnectionKafka(properties = {"enable.auto.commit", "true"})
@@ -267,7 +267,7 @@ You can easily send events to any topic (if topic not exist before sending, it w
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.4")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
 class ExampleTests {
 
     @ConnectionKafka
@@ -286,7 +286,7 @@ You can easily subscribe and consume events from any topic (if topic not exist b
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.4")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
 class ExampleTests {
 
     @ConnectionKafka

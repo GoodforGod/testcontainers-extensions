@@ -1,51 +1,52 @@
-# Testcontainers Extensions Cockroachdb
+# Testcontainers Extensions ClickHouse
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-cockroachdb/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-cockroachdb)
+[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-clickhouse/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-clickhouse)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=ncloc)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 
-Testcontainers Cockroachdb Extension with advanced testing capabilities.
+Testcontainers ClickHouse Extension with advanced testing capabilities.
 
 Features:
 - Container easy run *per method*, *per class*, *per execution*.
-- Container easy migration with *[Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)* / *[Liquibase](https://www.liquibase.com/databases/cockroachdb-2)*.
+- Container easy migration with *[Flyway](https://documentation.red-gate.com/fd/clickhouse-database-233439843.html)* / *[Liquibase](https://github.com/GoodforGod/liquibase-clickhouse)*.
 - Container easy connection injection with asserts.
 
 ## Dependency :rocket:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.12.0"
+testImplementation "io.goodforgod:testcontainers-extensions-clickhouse:0.12.0"
 ```
 
 **Maven**
 ```xml
 <dependency>
     <groupId>io.goodforgod</groupId>
-    <artifactId>testcontainers-extensions-cockroachdb</artifactId>
+    <artifactId>testcontainers-extensions-clickhouse</artifactId>
     <version>0.12.0</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ### JDBC Driver
-Cockroachdb works natively with [Postgres JDBC Driver](https://mvnrepository.com/artifact/org.postgresql/postgresql). Driver must be on classpath, if it is somehow not on your classpath already,
+
+ClickHouse works natively with [Clickhouse JDBC Driver](https://mvnrepository.com/artifact/com.clickhouse/clickhouse-jdbc). Driver must be on classpath, if it is somehow not on your classpath already,
 don't forget to add:
 
 **Gradle**
 ```groovy
-testRuntimeOnly "org.postgresql:postgresql:42.6.0"
+testRuntimeOnly "com.clickhouse:clickhouse-jdbc:0.7.0"
 ```
 
 **Maven**
 ```xml
 <dependency>
-    <groupId>org.postgresql</groupId>
-    <artifactId>postgresql</artifactId>
-    <version>42.6.0</version>
+    <groupId>com.clickhouse</groupId>
+    <artifactId>clickhouse-jdbc</artifactId>
+    <version>0.7.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -65,14 +66,14 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 Test with container start in `PER_RUN` mode and migration per method will look like:
 
 ```java
-@TestcontainersCockroach(mode = ContainerMode.PER_RUN,
+@TestcontainersClickhouse(mode = ContainerMode.PER_RUN,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
                 drop = Migration.Mode.PER_METHOD))
 class ExampleTests {
 
-  @ConnectionCockroach
+  @ConnectionClickhouse
   private JdbcConnection connection;
 
   @Test
@@ -87,12 +88,12 @@ class ExampleTests {
 ## Connection
 
 `JdbcConnection` is an abstraction with asserting data in database container and easily manipulate container connection settings.
-You can inject connection via `@ConnectionCockroach` as field or method argument or manually create it from container or manual settings.
+You can inject connection via `@ConnectionClickhouse` as field or method argument or manually create it from container or manual settings.
 
 ```java
 class ExampleTests {
 
-    private static final CockroachContainer container = new CockroachContainer();
+    private static final ClickhouseContainer container = new ClickhouseContainer();
     
     @Test
     void test() {
@@ -106,14 +107,14 @@ class ExampleTests {
 ### Connection Migration
 
 `Migrations` allow easily migrate database between test executions and drop after tests.
-You can migrate container via `@TestcontainersCockroach#migration` annotation parameter or manually using `JdbcConnection`.
+You can migrate container via `@TestcontainersClickhouse#migration` annotation parameter or manually using `JdbcConnection`.
 
 ```java
-@TestcontainersCockroach
+@TestcontainersClickhouse
 class ExampleTests {
 
     @Test
-    void test(@ConnectionCockroach JdbcConnection connection) {
+    void test(@ConnectionClickhouse JdbcConnection connection) {
       connection.migrationEngine(Migration.Engines.FLYWAY).apply("db/migration");
       connection.execute("INSERT INTO users VALUES(1);");
       connection.migrationEngine(Migration.Engines.FLYWAY).drop("db/migration");
@@ -122,12 +123,12 @@ class ExampleTests {
 ```
 
 Available migration engines:
-- [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
-- [Liquibase](https://www.liquibase.com/databases/cockroachdb-2)
+- [Flyway](https://documentation.red-gate.com/fd/clickhouse-database-233439843.html)
+- [Liquibase](https://github.com/GoodforGod/liquibase-clickhouse)
 
 ## Annotation
 
-`@TestcontainersCockroach` - allow **automatically start container** with specified image in different modes without the need to configure it.
+`@TestcontainersClickhouse` - allow **automatically start container** with specified image in different modes without the need to configure it.
 
 Available containers modes:
 
@@ -137,11 +138,11 @@ Available containers modes:
 
 Simple example on how to start container per class, **no need to configure** container:
 ```java
-@TestcontainersCockroach(mode = ContainerMode.PER_CLASS)
+@TestcontainersClickhouse(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
     @Test
-    void test(@ConnectionCockroach JdbcConnection connection) {
+    void test(@ConnectionClickhouse JdbcConnection connection) {
         assertNotNull(connection);
     }
 }
@@ -153,7 +154,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersCockroach(image = "${MY_IMAGE_ENV|clickhouse/clickhouse-server:24.4.1-alpine}")
+@TestcontainersClickhouse(image = "${MY_IMAGE_ENV|clickhouse/clickhouse-server:24.9-alpine}")
 class ExampleTests {
 
     @Test
@@ -165,25 +166,25 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `clickhouse/clickhouse-server:24.4.1-alpine`
+- Image can have static value: `clickhouse/clickhouse-server:24.9-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|clickhouse/clickhouse-server:24.4.1-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|clickhouse/clickhouse-server:24.9-alpine}`
 
 ### Manual Container
 
-When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersCockroach`,
-this can be done using `@ContainerCockroach` annotation for container.
+When you need to **manually configure container** with specific options, you can provide such container as instance that will be used by `@TestcontainersClickhouse`,
+this can be done using `@ContainerClickhouse` annotation for container.
 
 Example:
 ```java
-@TestcontainersCockroach(mode = ContainerMode.PER_CLASS)
+@TestcontainersClickhouse(mode = ContainerMode.PER_CLASS)
 class ExampleTests {
 
-    @ContainerCockroach
-    private static final CockroachContainer container = new CockroachContainer();
+    @ContainerClickhouse
+    private static final ClickhouseContainer container = new ClickhouseContainer();
     
     @Test
-    void test(@ConnectionCockroach JdbcConnection connection) {
+    void test(@ConnectionClickhouse JdbcConnection connection) {
         // do something
     }
 }
@@ -193,7 +194,7 @@ class ExampleTests {
 
 In case you want to enable [Network.SHARED](https://java.testcontainers.org/features/networking/) for containers you can do this using `network` & `shared` parameter in annotation:
 ```java
-@TestcontainersCockroach(network = @Network(shared = true))
+@TestcontainersClickhouse(network = @Network(shared = true))
 class ExampleTests {
 
   @Test
@@ -210,7 +211,7 @@ Alias can be extracted from environment variable also or default value can be pr
 
 In case specified environment variable is missing `default alias` will be created:
 ```java
-@TestcontainersCockroach(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
+@TestcontainersClickhouse(network = @Network(alias = "${MY_ALIAS_ENV|my_default_alias}"))
 class ExampleTests {
 
     @Test
@@ -228,15 +229,15 @@ Image syntax:
 
 ### Annotation Connection
 
-`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionCockroach` annotation.
+`JdbcConnection` - can be injected to field or method parameter and used to communicate with running container via `@ConnectionClickhouse` annotation.
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 Example:
 ```java
-@TestcontainersCockroach(mode = ContainerMode.PER_CLASS, image = "clickhouse/clickhouse-server:24.4.1-alpine")
+@TestcontainersClickhouse(mode = ContainerMode.PER_CLASS, image = "clickhouse/clickhouse-server:24.9-alpine")
 class ExampleTests {
 
-    @ConnectionCockroach
+    @ConnectionClickhouse
     private JdbcConnection connection;
 
     @Test
@@ -253,21 +254,21 @@ class ExampleTests {
 
 ### External Connection
 
-In case you want to use some external Cockroachdb instance that is running in CI or other place for tests (due to docker limitations or other), 
-you can use special *environment variables* and extension will use them to propagate connection and no Cockroachdb containers will be running in such case.
+In case you want to use some external ClickHouse instance that is running in CI or other place for tests (due to docker limitations or other), 
+you can use special *environment variables* and extension will use them to propagate connection and no ClickHouse containers will be running in such case.
 
 Special environment variables:
-- `EXTERNAL_TEST_COCKROACH_JDBC_URL` - Cockroachdb instance JDBC url.
-- `EXTERNAL_TEST_COCKROACH_USERNAME` - Cockroachdb instance username (optional).
-- `EXTERNAL_TEST_COCKROACH_PASSWORD` - Cockroachdb instance password (optional).
-- `EXTERNAL_TEST_COCKROACH_HOST` - Cockroachdb instance host (optional if JDBC url specified).
-- `EXTERNAL_TEST_COCKROACH_PORT` - Cockroachdb instance port (optional if JDBC url specified).
-- `EXTERNAL_TEST_COCKROACH_DATABASE` - Cockroachdb instance database (`cockroachdb` by default) (optional if JDBC url specified)
+- `EXTERNAL_TEST_CLICKHOUSE_JDBC_URL` - ClickHouse instance JDBC url.
+- `EXTERNAL_TEST_CLICKHOUSE_USERNAME` - ClickHouse instance username (optional).
+- `EXTERNAL_TEST_CLICKHOUSE_PASSWORD` - ClickHouse instance password (optional).
+- `EXTERNAL_TEST_CLICKHOUSE_HOST` - ClickHouse instance host (optional if JDBC url specified).
+- `EXTERNAL_TEST_CLICKHOUSE_PORT` - ClickHouse instance port (optional if JDBC url specified).
+- `EXTERNAL_TEST_CLICKHOUSE_DATABASE` - ClickHouse instance database (`default` by default) (optional if JDBC url specified)
 
-Use can use either `EXTERNAL_TEST_COCKROACH_JDBC_URL` to specify connection with username & password combination
-or use combination of `EXTERNAL_TEST_COCKROACH_HOST` & `EXTERNAL_TEST_COCKROACH_PORT` & `EXTERNAL_TEST_COCKROACH_DATABASE`.
+Use can use either `EXTERNAL_TEST_CLICKHOUSE_JDBC_URL` to specify connection with username & password combination
+or use combination of `EXTERNAL_TEST_CLICKHOUSE_HOST` & `EXTERNAL_TEST_CLICKHOUSE_PORT` & `EXTERNAL_TEST_CLICKHOUSE_DATABASE`.
 
-`EXTERNAL_TEST_COCKROACH_JDBC_URL` env have higher priority over host & port & database.
+`EXTERNAL_TEST_CLICKHOUSE_JDBC_URL` env have higher priority over host & port & database.
 
 ### Annotation Migration
 
@@ -280,10 +281,10 @@ Annotation parameters:
 - `locations` - configures locations where migrations are placed.
 
 Available migration engines:
-- [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html)
-- [Liquibase](https://www.liquibase.com/databases/cockroachdb-2)
+- [Flyway](https://documentation.red-gate.com/fd/clickhouse-database-233439843.html)
+- [Liquibase](https://github.com/GoodforGod/liquibase-clickhouse)
 
-Given engine is [Flyway](https://documentation.red-gate.com/fd/cockroachdb-184127591.html) and migration file named `V1__flyway.sql` is in resource directory on default path `db/migration`:
+Given engine is [Flyway](https://documentation.red-gate.com/fd/clickhouse-database-233439843.html) and migration file named `V1__flyway.sql` is in resource directory on default path `db/migration`:
 ```sql
 CREATE TABLE IF NOT EXISTS users
 (
@@ -293,7 +294,7 @@ CREATE TABLE IF NOT EXISTS users
 
 Test with container and migration per method will look like:
 ```java
-@TestcontainersCockroach(mode = ContainerMode.PER_CLASS,
+@TestcontainersClickhouse(mode = ContainerMode.PER_CLASS,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,
@@ -301,7 +302,7 @@ Test with container and migration per method will look like:
 class ExampleTests {
 
     @Test
-    void test(@ConnectionCockroach JdbcConnection connection) {
+    void test(@ConnectionClickhouse JdbcConnection connection) {
         connection.execute("INSERT INTO users VALUES(1);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(1));
         assertEquals(1, usersFound.size());

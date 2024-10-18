@@ -44,7 +44,7 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
             flyway.migrate();
         } catch (Exception e) {
             try {
-                Thread.sleep(2050);
+                Thread.sleep(250);
                 flyway.migrate();
             } catch (InterruptedException ex) {
                 logger.error("Failed migration migration for engine '{}' for connection: {}",

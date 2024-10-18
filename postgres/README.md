@@ -1,6 +1,6 @@
 # Testcontainers Extensions Postgres
 
-[![Minimum required Java version](https://img.shields.io/badge/Java-11%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/11/)
+[![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-postgres)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -153,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:15.6-alpine}")
+@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:16.4-alpine}")
 class ExampleTests {
 
     @Test
@@ -165,9 +165,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `postgres:15.6-alpine`
+- Image can have static value: `postgres:16.4-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:15.6-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:16.4-alpine}`
 
 ### Manual Container
 
@@ -236,7 +236,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:15.6-alpine")
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:16.4-alpine")
 class ExampleTests {
 
     @ConnectionPostgreSQL

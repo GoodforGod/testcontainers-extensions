@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.5.4")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
 class KafkaConnectionAssertsTests {
 
     @ConnectionKafka

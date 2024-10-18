@@ -88,7 +88,7 @@ final class TestcontainersKafkaExtension extends
             if (withKraft.isPresent()) {
                 withKraft.get().setAccessible(true);
                 try {
-                    withKraft.get().invoke(this);
+                    withKraft.get().invoke(container);
                     LoggerFactory.getLogger(KafkaContainer.class).info("Kraft is enabled");
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     container.withEmbeddedZookeeper();

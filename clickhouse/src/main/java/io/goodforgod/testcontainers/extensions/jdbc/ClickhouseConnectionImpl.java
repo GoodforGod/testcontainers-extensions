@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.net.URI;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Anton Kurako (GoodforGod)
@@ -56,5 +57,19 @@ class ClickhouseConnectionImpl extends JdbcConnectionImpl {
 
         var params = new ParamsImpl(jdbcUrl, host, port, database, username, password);
         return new ClickhouseConnectionImpl(params, null);
+    }
+
+    private volatile ClickhouseLiquibaseJdbcMigrationEngine liquibaseJdbcMigrationEngine;
+
+    @Override
+    public @NotNull JdbcMigrationEngine migrationEngine(Migration.@NotNull Engines engine) {
+        if (engine == Migration.Engines.LIQUIBASE) {
+            if (liquibaseJdbcMigrationEngine == null) {
+                this.liquibaseJdbcMigrationEngine = new ClickhouseLiquibaseJdbcMigrationEngine(this);
+            }
+            return this.liquibaseJdbcMigrationEngine;
+        } else {
+            return super.migrationEngine(engine);
+        }
     }
 }
