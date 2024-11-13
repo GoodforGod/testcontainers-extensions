@@ -30,7 +30,6 @@ Makes testing & asserts with Testcontainers even easier.
 Here is an example of [Kafka Extension](kafka) where KafkaContainer is started in `PER_RUN` mode with topic reset per method:
 
 ```java
-
 @TestcontainersKafka(mode = ContainerMode.PER_RUN,
         topics = @Topics(value = "my-topic-name", reset = Topics.Mode.PER_METHOD))
 class ExampleTests {
@@ -50,7 +49,6 @@ class ExampleTests {
 Here is an example of [Postgres Extension](postgres) where PostgresContainer is started `PER_RUN` mode and migrations are applied per method:
 
 ```java
-
 @TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,

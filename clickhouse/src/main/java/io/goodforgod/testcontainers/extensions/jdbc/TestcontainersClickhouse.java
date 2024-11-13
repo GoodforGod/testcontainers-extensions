@@ -17,7 +17,7 @@ import org.testcontainers.clickhouse.ClickHouseContainer;
 @Documented
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@interface TestcontainersClickhouse {
+public @interface TestcontainersClickhouse {
 
     /**
      * @return Clickhouse image

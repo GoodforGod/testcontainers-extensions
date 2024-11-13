@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-clickhouse:0.12.0"
+testImplementation "io.goodforgod:testcontainers-extensions-clickhouse:0.12.1"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-clickhouse:0.12.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-clickhouse</artifactId>
-    <version>0.12.0</version>
+    <version>0.12.1</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -39,6 +39,7 @@ don't forget to add:
 **Gradle**
 ```groovy
 testRuntimeOnly "com.clickhouse:clickhouse-jdbc:0.7.0"
+testRuntimeOnly "com.clickhouse:clickhouse-http-client:0.7.0"
 ```
 
 **Maven**
@@ -46,6 +47,12 @@ testRuntimeOnly "com.clickhouse:clickhouse-jdbc:0.7.0"
 <dependency>
     <groupId>com.clickhouse</groupId>
     <artifactId>clickhouse-jdbc</artifactId>
+    <version>0.7.0</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>com.clickhouse</groupId>
+    <artifactId>:clickhouse-http-client</artifactId>
     <version>0.7.0</version>
     <scope>test</scope>
 </dependency>
@@ -277,7 +284,7 @@ or use combination of `EXTERNAL_TEST_CLICKHOUSE_HOST` & `EXTERNAL_TEST_CLICKHOUS
 Annotation parameters:
 - `engine` - to use for migration.
 - `apply` - parameter configures migration mode.
-- `drop` - configures when to reset/drop/clear database.
+- `drop` - configures when to reset/drop/clear database. (Liquibase doesn't support `dropAll` command, so database is cleaned with `TRUNCATE DATABASE`)
 - `locations` - configures locations where migrations are placed.
 
 Available migration engines:
