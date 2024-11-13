@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.12.0"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.12.1"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.12.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.12.0</version>
+    <version>0.12.1</version>
     <scope>test</scope>
 </dependency>
 ```

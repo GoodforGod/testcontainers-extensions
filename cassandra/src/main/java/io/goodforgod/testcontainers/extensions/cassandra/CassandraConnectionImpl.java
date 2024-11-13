@@ -1,6 +1,5 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
-import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
@@ -176,15 +175,13 @@ class CassandraConnectionImpl implements CassandraConnection {
                 .withCodecRegistry(new DefaultCodecRegistry("testing-codec-registry"))
                 .withConfigLoader(configLoader)
                 .withLocalDatacenter(params().datacenter())
-                .addContactPoint(new InetSocketAddress(params().host(), params().port()));
+                .addContactPoint(InetSocketAddress.createUnresolved(params().host(), params().port()));
 
         if (params().username() != null && params().password() != null) {
             sessionBuilder.withAuthCredentials(params().username(), params().password());
         }
 
-        CqlSession session = sessionBuilder.build();
-        createKeyspace(params().keyspace(), session);
-        return session;
+        return sessionWithKeyspace(params().keyspace(), sessionBuilder);
     }
 
     @Override
@@ -208,13 +205,24 @@ class CassandraConnectionImpl implements CassandraConnection {
         createKeyspace(keyspaceName, getConnection());
     }
 
+    private CqlSession sessionWithKeyspace(@NotNull String keyspaceName, CqlSessionBuilder sessionBuilder) {
+        try (var session = sessionBuilder.build()) {
+            String cql = "CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
+                    + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};";
+            var boundStatement = session.prepare(cql).bind().setTimeout(TIMEOUT);
+            session.execute(boundStatement).wasApplied();
+            return sessionBuilder.withKeyspace(keyspaceName).build();
+        } catch (Exception e) {
+            throw new CassandraConnectionException(e);
+        }
+    }
+
     private void createKeyspace(@NotNull String keyspaceName, CqlSession session) {
         try {
             String cql = "CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
                     + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};";
             var boundStatement = session.prepare(cql).bind().setTimeout(TIMEOUT);
             session.execute(boundStatement).wasApplied();
-            session.execute("USE " + CqlIdentifier.fromCql(keyspaceName));
         } catch (Exception e) {
             throw new CassandraConnectionException(e);
         }

@@ -17,7 +17,7 @@ import org.testcontainers.containers.CockroachContainer;
 @Documented
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@interface TestcontainersCockroach {
+public @interface TestcontainersCockroach {
 
     /**
      * @return Cockroachdb image
