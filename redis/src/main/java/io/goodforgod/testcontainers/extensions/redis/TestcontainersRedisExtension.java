@@ -50,7 +50,8 @@ class TestcontainersRedisExtension extends
         var image = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("redis"));
 
-        final RedisContainer<?> container = new RedisContainer<>(image);
+        final RedisContainer<?> container = new RedisContainer<>(image)
+                .waitAfterStart(Duration.ofMillis(25)); // cause some drivers tends to fail to connect to redis on hot start
         final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "redis-" + System.currentTimeMillis());
         container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
                 .withMdc("image", image.asCanonicalNameString())

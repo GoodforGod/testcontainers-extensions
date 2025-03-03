@@ -44,10 +44,11 @@ final class TestcontainersPostgreSQLExtension extends
     @Override
     protected PostgreSQLContainer<?> createContainerDefault(JdbcMetadata metadata) {
         var image = DockerImageName.parse(metadata.image())
-                .asCompatibleSubstituteFor(DockerImageName.parse("gvenzl/oracle-xe"));
+                .asCompatibleSubstituteFor(DockerImageName.parse(PostgreSQLContainer.IMAGE));
 
         final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(image);
-        final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "oracle-" + System.currentTimeMillis());
+        final String alias = Optional.ofNullable(metadata.networkAlias())
+                .orElseGet(() -> "postgres-" + System.currentTimeMillis());
         container.withDatabaseName("postgres");
         container.withUsername("postgres");
         container.withPassword("postgres");

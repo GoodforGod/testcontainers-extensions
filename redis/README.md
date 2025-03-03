@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.12.1"
+testImplementation "io.goodforgod:testcontainers-extensions-redis:0.12.2"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redis:0.12.1"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redis</artifactId>
-    <version>0.12.1</version>
+    <version>0.12.2</version>
     <scope>test</scope>
 </dependency>
 ```
