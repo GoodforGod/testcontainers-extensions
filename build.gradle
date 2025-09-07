@@ -40,7 +40,9 @@ dependencies {
 
 reporting {
     reports {
-        testCodeCoverageReport(JacocoCoverageReport) { }
+        testCodeCoverageReport(JacocoCoverageReport) {
+            testSuiteName = "test"
+        }
     }
 }
 
