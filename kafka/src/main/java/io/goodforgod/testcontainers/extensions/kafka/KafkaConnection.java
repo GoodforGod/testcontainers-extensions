@@ -7,7 +7,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
-import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
+import org.testcontainers.kafka.KafkaContainer;
 
 /**
  * Kafka Connection to {@link TestcontainersKafka}
@@ -204,6 +205,22 @@ public interface KafkaConnection extends AutoCloseable {
     }
 
     @NotNull
+    static KafkaConnection forContainer(@NotNull org.testcontainers.containers.KafkaContainer container) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
+        final Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
+
+        final Properties networkProperties = new Properties();
+        networkProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                String.format("%s:%s", container.getNetworkAliases().get(0), KafkaConnectionImpl.KAFKA_PORT));
+
+        return new KafkaConnectionClosableImpl(properties, networkProperties);
+    }
+
+    @NotNull
     static KafkaConnection forContainer(@NotNull KafkaContainer container) {
         if (!container.isRunning()) {
             throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
@@ -214,7 +231,23 @@ public interface KafkaConnection extends AutoCloseable {
 
         final Properties networkProperties = new Properties();
         networkProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                String.format("%s:%s", container.getNetworkAliases().get(0), "9092"));
+                String.format("%s:%s", container.getNetworkAliases().get(0), KafkaConnectionImpl.KAFKA_PORT));
+
+        return new KafkaConnectionClosableImpl(properties, networkProperties);
+    }
+
+    @NotNull
+    static KafkaConnection forContainer(@NotNull ConfluentKafkaContainer container) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
+        final Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
+
+        final Properties networkProperties = new Properties();
+        networkProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                String.format("%s:%s", container.getNetworkAliases().get(0), KafkaConnectionImpl.KAFKA_PORT));
 
         return new KafkaConnectionClosableImpl(properties, networkProperties);
     }

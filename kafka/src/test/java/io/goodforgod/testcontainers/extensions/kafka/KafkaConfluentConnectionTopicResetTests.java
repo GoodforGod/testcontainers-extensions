@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersKafka(mode = ContainerMode.PER_CLASS,
-        image = "apache/kafka-native:4.1.0",
+        image = "confluentinc/cp-kafka:7.2.15",
         topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class KafkaConnectionTopicResetTests {
+class KafkaConfluentConnectionTopicResetTests {
 
     @ConnectionKafka(properties = { ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest" })
     private KafkaConnection connection;
