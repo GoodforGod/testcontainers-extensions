@@ -21,12 +21,12 @@ public @interface TestcontainersMySQL {
     /**
      * @return MySQL image
      *             <p>
-     *             1) Image can have static value: "mysql:8.0-debian"
+     *             1) Image can have static value: "mysql:9.4"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|mysql:8.0-debian}"
+     *             "${MY_IMAGE_ENV|mysql:9.4}"
      */
-    String image() default "mysql:8.0-debian";
+    String image() default "mysql:9.4";
 
     /**
      * @return when to start container

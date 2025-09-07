@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersMySQL(mode = ContainerMode.PER_CLASS,
-        image = "mysql:8.0-debian",
+        image = "mysql:9.4",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
                 apply = Migration.Mode.PER_METHOD,

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersMariaDB(mode = ContainerMode.PER_CLASS,
-        image = "mariadb:11.2-jammy",
+        image = "mariadb:11.8",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
                 apply = Migration.Mode.PER_METHOD,

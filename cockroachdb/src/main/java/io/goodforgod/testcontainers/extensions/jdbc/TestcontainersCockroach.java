@@ -22,12 +22,12 @@ public @interface TestcontainersCockroach {
     /**
      * @return Cockroachdb image
      *             <p>
-     *             1) Image can have static value: "cockroachdb/cockroach:latest-v23.1"
+     *             1) Image can have static value: "cockroachdb/cockroach:latest-v23.2"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}"
+     *             "${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.2}"
      */
-    String image() default "cockroachdb/cockroach:latest-v23.1";
+    String image() default "cockroachdb/cockroach:latest-v23.2";
 
     /**
      * @return when to start container

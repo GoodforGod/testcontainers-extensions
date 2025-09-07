@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mysql:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-mysql:0.13.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-mysql:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mysql</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -153,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMySQL(image = "${MY_IMAGE_ENV|mysql:8.0-debian}")
+@TestcontainersMySQL(image = "${MY_IMAGE_ENV|mysql:9.4}")
 class ExampleTests {
 
     @Test
@@ -165,9 +165,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `mysql:8.0-debian`
+- Image can have static value: `mysql:9.4`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mysql:8.0-debian}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mysql:9.4}`
 
 ### Manual Container
 
@@ -236,7 +236,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersMySQL(mode = ContainerMode.PER_CLASS, image = "mysql:8.0-debian")
+@TestcontainersMySQL(mode = ContainerMode.PER_CLASS, image = "mysql:9.4")
 class ExampleTests {
 
     @ConnectionMySQL

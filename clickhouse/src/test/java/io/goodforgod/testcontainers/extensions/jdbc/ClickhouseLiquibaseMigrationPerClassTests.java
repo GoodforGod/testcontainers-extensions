@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersClickhouse(mode = ContainerMode.PER_CLASS,
-        image = "clickhouse/clickhouse-server:24.9-alpine",
+        image = "clickhouse/clickhouse-server:25.8-alpine",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
                 apply = Migration.Mode.PER_CLASS,
