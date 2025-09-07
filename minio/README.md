@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-minio:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-minio:0.13.0"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-minio:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-minio</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -116,7 +116,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMinio(image = "${MY_IMAGE_ENV|minio/minio:RELEASE.2024-10-13T13-34-11Z}")
+@TestcontainersMinio(image = "${MY_IMAGE_ENV|minio/minio:RELEASE.2025-07-23T15-54-02Z}")
 class ExampleTests {
 
     @Test
@@ -128,9 +128,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `minio/minio:RELEASE.2024-10-13T13-34-11Z`
+- Image can have static value: `minio/minio:RELEASE.2025-07-23T15-54-02Z`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|minio/minio:RELEASE.2024-10-13T13-34-11Z}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|minio/minio:RELEASE.2025-07-23T15-54-02Z}`
 
 ### Manual Container
 
@@ -196,7 +196,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMinio(mode = ContainerMode.PER_CLASS, image = "minio/minio:RELEASE.2024-10-13T13-34-11Z")
+@TestcontainersMinio(mode = ContainerMode.PER_CLASS, image = "minio/minio:RELEASE.2025-07-23T15-54-02Z")
 class ExampleTests {
 
     @ConnectionMinio

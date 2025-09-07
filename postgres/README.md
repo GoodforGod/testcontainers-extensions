@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.13.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -153,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:16.4-alpine}")
+@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:17.6-alpine}")
 class ExampleTests {
 
     @Test
@@ -165,9 +165,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `postgres:16.4-alpine`
+- Image can have static value: `postgres:17.6-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:16.4-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:17.6-alpine}`
 
 ### Manual Container
 
@@ -236,7 +236,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:16.4-alpine")
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:17.6-alpine")
 class ExampleTests {
 
     @ConnectionPostgreSQL

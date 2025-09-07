@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.13.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mariadb</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -153,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMariaDB(image = "${MY_IMAGE_ENV|mariadb:11.2-jammy}")
+@TestcontainersMariaDB(image = "${MY_IMAGE_ENV|mariadb:11.8}")
 class ExampleTests {
 
     @Test
@@ -165,9 +165,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `mariadb:11.2-jammy`
+- Image can have static value: `mariadb:11.8`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mariadb:11.2-jammy}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mariadb:11.8}`
 
 ### Manual Container
 
@@ -238,7 +238,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMariaDB(mode = ContainerMode.PER_CLASS, image = "mariadb:11.2-jammy")
+@TestcontainersMariaDB(mode = ContainerMode.PER_CLASS, image = "mariadb:11.8")
 class ExampleTests {
 
     @ConnectionMariaDB

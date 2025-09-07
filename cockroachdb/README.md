@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.13.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-cockroachdb:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-cockroachdb</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -153,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersCockroach(image = "${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}")
+@TestcontainersCockroach(image = "${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.2}")
 class ExampleTests {
 
     @Test
@@ -165,9 +165,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `cockroachdb/cockroach:latest-v23.1`
+- Image can have static value: `cockroachdb/cockroach:latest-v23.2`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.1}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|cockroachdb/cockroach:latest-v23.2}`
 
 ### Manual Container
 
@@ -233,7 +233,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersCockroach(mode = ContainerMode.PER_CLASS, image = "cockroachdb/cockroach:latest-v23.1")
+@TestcontainersCockroach(mode = ContainerMode.PER_CLASS, image = "cockroachdb/cockroach:latest-v23.2")
 class ExampleTests {
 
     @ConnectionCockroach

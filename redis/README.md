@@ -17,7 +17,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redis:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-redis:0.13.0"
 ```
 
 **Maven**
@@ -25,7 +25,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redis:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redis</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -126,7 +126,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersRedis(image = "${MY_IMAGE_ENV|redis:7.4-alpine}")
+@TestcontainersRedis(image = "${MY_IMAGE_ENV|redis:8.2-alpine}")
 class ExampleTests {
 
     @Test
@@ -138,9 +138,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `redis:7.4-alpine`
+- Image can have static value: `redis:8.2-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redis:7.4-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redis:8.2-alpine}`
 
 ### Manual Container
 
@@ -206,7 +206,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:7.4-alpine")
+@TestcontainersRedis(mode = ContainerMode.PER_CLASS, image = "redis:8.2-alpine")
 class ExampleTests {
 
     @ConnectionRedis

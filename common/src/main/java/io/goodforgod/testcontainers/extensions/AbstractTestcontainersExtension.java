@@ -19,7 +19,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 @Internal
-public abstract class AbstractTestcontainersExtension<Connection, Container extends GenericContainer<?>, Metadata extends ContainerMetadata>
+public abstract class AbstractTestcontainersExtension<Connection, Container extends GenericContainer, Metadata extends ContainerMetadata>
         implements
         BeforeAllCallback,
         BeforeEachCallback,
@@ -161,9 +161,15 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
         final Optional<Container> container = findContainerInClassField(context.getTestInstance().get());
         if (container.isPresent()) {
+            logger.debug("Found {} container from field for: {}", getContainerType().getSimpleName(), context.getDisplayName());
             return container;
         } else if (context.getTestClass().filter(c -> c.isAnnotationPresent(Nested.class)).isPresent()) {
-            return findParentTestClassIfNested(context).flatMap(this::findContainerInClassField);
+            Optional<Container> containerNested = findParentTestClassIfNested(context).flatMap(this::findContainerInClassField);
+            if (containerNested.isPresent()) {
+                logger.debug("Found {} container from @Nested test field for: {}", getContainerType().getSimpleName(),
+                        context.getDisplayName());
+            }
+            return containerNested;
         } else {
             return Optional.empty();
         }
@@ -340,9 +346,11 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
                                     .map(c -> c.getNetwork() == Network.SHARED)
                                     .orElse(metadata.networkShared());
 
-                            final String networkAlias = containerFromField.map(c -> c.getNetworkAliases())
+                            final String networkAlias = containerFromField
+                                    .map(c -> ((GenericContainer<?>) c).getNetworkAliases())
                                     .filter(a -> !a.isEmpty())
                                     .map(a -> a.stream()
+                                            .map(Object::toString)
                                             .filter(alias -> alias.equals(metadata.networkAlias()))
                                             .findFirst()
                                             .orElse(a.get(0)))
@@ -357,7 +365,7 @@ public abstract class AbstractTestcontainersExtension<Connection, Container exte
 
                 var containerContext = sharedContainerMap.computeIfAbsent(sharedKey, k -> {
                     Container container = containerFromField.orElseGet(() -> {
-                        logger.debug("Getting default container for image: {}", metadata.image());
+                        logger.debug("Creating default container for image: {}", metadata.image());
                         return createContainerDefault(metadata);
                     });
 
