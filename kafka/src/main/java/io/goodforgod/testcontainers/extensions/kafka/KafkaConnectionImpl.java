@@ -36,7 +36,10 @@ import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 @Internal
 class KafkaConnectionImpl implements KafkaConnection {
 
-    private static final Duration POLL_TIMEOUT = Duration.ofMillis(500);
+    private static final Duration KAFKA_POLL_TIMEOUT = Duration.ofMillis(25);
+    private static final Duration AWAIT_POLL_INTERVAL = Duration.ofMillis(10);
+
+    static final int KAFKA_PORT = 9092;
 
     private static final class ParamsImpl implements Params {
 
@@ -118,8 +121,8 @@ class KafkaConnectionImpl implements KafkaConnection {
             logger.trace("KafkaConsumer topics {} assigning...", this.topics);
             this.consumer.assign(topicPartitions);
             Awaitility.await()
-                    .atMost(Duration.ofMinutes(1))
-                    .pollInterval(Duration.ofMillis(50))
+                    .atMost(Duration.ofSeconds(35))
+                    .pollInterval(AWAIT_POLL_INTERVAL)
                     .until(() -> {
                         try {
                             return this.consumer.listTopics(Duration.ofSeconds(10));
@@ -139,7 +142,7 @@ class KafkaConnectionImpl implements KafkaConnection {
             logger.info("KafkaConsumer '{}' started consuming events from topics: {}", clientId, topics);
             while (isActive.get()) {
                 try {
-                    poll(POLL_TIMEOUT);
+                    poll(KAFKA_POLL_TIMEOUT);
                 } catch (WakeupException | InterruptException ignore) {
                     // do nothing
                 } catch (Exception e) {
@@ -201,6 +204,8 @@ class KafkaConnectionImpl implements KafkaConnection {
             }
 
             if (receivedEvents.size() == expectedEvents) {
+                logger.debug("KafkaConsumer '{}' received at least {} records from topics: {}",
+                        clientId, receivedEvents.size(), topics);
                 receivedPreviously.addAll(receivedEvents);
                 return List.copyOf(receivedEvents);
             }
@@ -208,26 +213,29 @@ class KafkaConnectionImpl implements KafkaConnection {
             try {
                 Awaitility.await()
                         .atMost(timeout)
+                        .pollDelay(Duration.ofMillis(5))
                         .until(() -> {
-                            try {
-                                var received = messageQueue.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
-                                if (received == null) {
-                                    return receivedEvents;
-                                }
+                            for (int i = 0; i < expectedEvents; i++) {
+                                try {
+                                    var received = messageQueue.poll(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                                    if (received == null) {
+                                        return receivedEvents;
+                                    }
 
-                                var event = new ReceivedEventImpl(received);
-                                receivedEvents.add(event);
-                                return receivedEvents;
-                            } catch (InterruptedException e) {
-                                return Assertions
-                                        .fail(String.format("Expected to receive at least %s event, but was interrupted: %s",
-                                                expectedEvents, e.getMessage()));
+                                    var event = new ReceivedEventImpl(received);
+                                    receivedEvents.add(event);
+                                } catch (InterruptedException e) {
+                                    // do nothing
+                                }
                             }
+                            return receivedEvents;
                         }, received -> received.size() >= expectedEvents);
             } catch (ConditionTimeoutException e) {
                 // do nothing
             }
 
+            logger.debug("KafkaConsumer '{}' received at least {} records from topics: {}",
+                    clientId, receivedEvents.size(), topics);
             receivedPreviously.addAll(receivedEvents);
             return List.copyOf(receivedEvents);
         }
@@ -244,6 +252,8 @@ class KafkaConnectionImpl implements KafkaConnection {
                     receivedEvents.add(event);
                 }
 
+                logger.debug("KafkaConsumer '{}' received equals {} records in {} from topics: {}",
+                        clientId, receivedEvents.size(), timeToWait, topics);
                 receivedPreviously.addAll(receivedEvents);
                 return List.copyOf(receivedEvents);
             } catch (InterruptedException e) {
@@ -438,7 +448,7 @@ class KafkaConnectionImpl implements KafkaConnection {
 
             var topicInfo = Awaitility.await()
                     .atMost(Duration.ofMinutes(1))
-                    .pollInterval(Duration.ofMillis(100))
+                    .pollInterval(AWAIT_POLL_INTERVAL)
                     .until(() -> {
                         try {
                             return admin.describeTopics(topics).allTopicNames().get(10, TimeUnit.SECONDS);
@@ -480,7 +490,7 @@ class KafkaConnectionImpl implements KafkaConnection {
 
     private static KafkaProducer<byte[], byte[]> getProducer(Properties properties) {
         final Properties producerProperties = new Properties();
-        producerProperties.put(ProducerConfig.ACKS_CONFIG, "all");
+        producerProperties.put(ProducerConfig.ACKS_CONFIG, "1");
         producerProperties.put(ProducerConfig.RETRIES_CONFIG, "3");
         producerProperties.putAll(properties);
         return new KafkaProducer<>(producerProperties, new ByteArraySerializer(), new ByteArraySerializer());
@@ -490,7 +500,7 @@ class KafkaConnectionImpl implements KafkaConnection {
         final Properties consumerProperties = new Properties();
         consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "5");
+        consumerProperties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "50");
         consumerProperties.put(ConsumerConfig.CLIENT_ID_CONFIG, consumerId);
         consumerProperties.putAll(properties);
         return new KafkaConsumer<>(consumerProperties, new ByteArrayDeserializer(), new ByteArrayDeserializer());
@@ -546,7 +556,7 @@ class KafkaConnectionImpl implements KafkaConnection {
                 logger.trace("Topics {} reset status check...", topicsToReset);
                 Awaitility.await()
                         .atMost(Duration.ofSeconds(35))
-                        .pollInterval(Duration.ofMillis(100))
+                        .pollInterval(AWAIT_POLL_INTERVAL)
                         .until(() -> {
                             try {
                                 return admin.describeTopics(topics).allTopicNames().get(10, TimeUnit.SECONDS);
@@ -562,15 +572,16 @@ class KafkaConnectionImpl implements KafkaConnection {
                 logger.debug("Topics {} reset status check success", topicsToReset);
 
                 logger.trace("Topics {} recreating...", topicsToReset);
-                Awaitility.await().atMost(Duration.ofSeconds(35))
-                        .pollInterval(Duration.ofMillis(50))
+                Awaitility.await()
+                        .atMost(Duration.ofSeconds(35))
+                        .pollInterval(AWAIT_POLL_INTERVAL)
                         .until(() -> {
                             try {
                                 admin.createTopics(topicsToCreateAfterReset).all().get(10, TimeUnit.SECONDS);
                                 return true;
                             } catch (ExecutionException e) {
                                 if (e.getCause() instanceof TopicExistsException) {
-                                    Thread.sleep(500);
+                                    Thread.sleep(40);
                                     return false;
                                 } else {
                                     throw new KafkaConnectionException("Kafka Admin operation failed for topics: " + topics, e);

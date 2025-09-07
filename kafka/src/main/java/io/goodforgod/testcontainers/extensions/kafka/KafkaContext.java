@@ -8,7 +8,9 @@ import java.util.Properties;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
+import org.testcontainers.kafka.KafkaContainer;
 
 @Internal
 final class KafkaContext implements ContainerContext<KafkaConnection> {
@@ -48,11 +50,11 @@ final class KafkaContext implements ContainerContext<KafkaConnection> {
     private static final String EXTERNAL_TEST_KAFKA_PREFIX = "EXTERNAL_TEST_KAFKA_";
 
     private final KafkaConnectionPool pool = new KafkaConnectionPool();
-    private final KafkaContainer container;
+    private final GenericContainer<?> container;
 
     private volatile KafkaConnectionImpl connection;
 
-    KafkaContext(KafkaContainer container) {
+    KafkaContext(GenericContainer container) {
         this.container = container;
     }
 
@@ -68,10 +70,19 @@ final class KafkaContext implements ContainerContext<KafkaConnection> {
                 final String alias = container.getNetworkAliases().get(container.getNetworkAliases().size() - 1);
 
                 final Properties properties = new Properties();
-                properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, container.getBootstrapServers());
+                if (container instanceof KafkaContainer kc) {
+                    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kc.getBootstrapServers());
+                } else if (container instanceof ConfluentKafkaContainer ckc) {
+                    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, ckc.getBootstrapServers());
+                } else if (container instanceof org.testcontainers.containers.KafkaContainer okc) {
+                    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, okc.getBootstrapServers());
+                } else {
+                    throw new UnsupportedOperationException("Unsupported Kafka container type: " + container.getClass());
+                }
 
                 final Properties networkProperties = new Properties();
-                networkProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, String.format("%s:%s", alias, "9092"));
+                networkProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                        String.format("%s:%s", alias, KafkaConnectionImpl.KAFKA_PORT));
 
                 return new KafkaConnectionImpl(properties, networkProperties);
             });

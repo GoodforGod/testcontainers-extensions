@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.12.2"
+testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.13.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-kafka:0.12.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-kafka</artifactId>
-    <version>0.12.2</version>
+    <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -135,7 +135,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersKafka(image = "${MY_IMAGE_ENV|confluentinc/cp-kafka:7.7.1}")
+@TestcontainersKafka(image = "${MY_IMAGE_ENV|apache/kafka-native:4.1.0}")
 class ExampleTests {
 
     @Test
@@ -147,9 +147,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `confluentinc/cp-kafka:7.7.1`
+- Image can have static value: `apache/kafka-native:4.1.0`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|confluentinc/cp-kafka:7.7.1}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|apache/kafka-native:4.1.0}`
 
 ### Manual Container
 
@@ -162,7 +162,7 @@ Example:
 class ExampleTests {
 
     @ContainerKafka
-    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"));
+    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.0"));
 
     @Test
     void checkParams(@ConnectionKafka KafkaConnection connection) {
@@ -241,7 +241,7 @@ class ExampleTests {
 It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
 
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.1.0")
 class ExampleTests {
 
     @ConnectionKafka(properties = {"enable.auto.commit", "true"})
@@ -267,7 +267,7 @@ You can easily send events to any topic (if topic not exist before sending, it w
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.1.0")
 class ExampleTests {
 
     @ConnectionKafka
@@ -286,7 +286,7 @@ You can easily subscribe and consume events from any topic (if topic not exist b
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "confluentinc/cp-kafka:7.7.1")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.1.0")
 class ExampleTests {
 
     @ConnectionKafka
