@@ -1,0 +1,14 @@
+dependencies {
+    compileOnly libs.driver.kafka
+
+    api project(":common")
+    api libs.testcontainers.redpanda
+    api libs.json
+
+    implementation libs.slf4j.api
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+
+    testRuntimeOnly libs.driver.kafka
+    testImplementation libs.driver.kafka
+}

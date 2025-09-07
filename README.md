@@ -67,3 +67,8 @@ class ExampleTests {
     }
 }
 ```
+
+## Testcontainers compatibility
+
+- Version 0.13+ - build on top of Testcontainers [1.21.3](https://mvnrepository.com/artifact/org.testcontainers/testcontainers/1.21.3)
+- Version 0.12+ - build on top of Testcontainers [1.19.8](https://mvnrepository.com/artifact/org.testcontainers/testcontainers/1.19.8)
