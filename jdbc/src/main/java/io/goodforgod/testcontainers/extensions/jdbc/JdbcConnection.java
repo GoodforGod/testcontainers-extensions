@@ -238,19 +238,36 @@ public interface JdbcConnection extends AutoCloseable {
         }
 
         String jdbcUrl = container.getJdbcUrl();
-        int from = jdbcUrl.indexOf("//");
-        int to = jdbcUrl.indexOf("/", from + 2);
-        int port = Integer.parseInt(jdbcUrl.substring(from, to).split(":")[1]);
+        var hostToPort = parseHostToPort(container.getDriverClassName(), jdbcUrl);
+        var host = hostToPort.host();
+        var port = hostToPort.port();
         var params = new JdbcConnectionImpl.ParamsImpl(jdbcUrl, container.getHost(), port, container.getDatabaseName(),
                 container.getUsername(), container.getPassword());
 
         String networkHost = container.getNetworkAliases().get(0);
         Integer networkPort = container.getFirstMappedPort();
-        var networkJdbcUrl = String.format("%s//%s:%d/%s", jdbcUrl.substring(0, from), networkHost, networkPort,
-                container.getDatabaseName());
+        var networkJdbcUrl = jdbcUrl.replace(host + ":" + port, networkHost + ":" + networkPort);
         var network = new JdbcConnectionImpl.ParamsImpl(networkJdbcUrl, container.getHost(), port, container.getDatabaseName(),
                 container.getUsername(), container.getPassword());
 
         return new JdbcConnectionClosableImpl(params, network);
     }
+
+    static private HostToPort parseHostToPort(String driverClassName, String jdbcUrl) {
+        if (driverClassName.startsWith("oracle.")) {
+            int atSignIndex = jdbcUrl.indexOf("@");
+            int colonIndex = jdbcUrl.indexOf(":", atSignIndex);
+            int dbSlashIndex = jdbcUrl.indexOf("/", colonIndex);
+            String host = jdbcUrl.substring(atSignIndex + 1, colonIndex);
+            Integer port = Integer.parseInt(jdbcUrl.substring(colonIndex + 1, dbSlashIndex));
+            return new HostToPort(host, port);
+        } else {
+            int from = jdbcUrl.indexOf("//");
+            int to = jdbcUrl.indexOf("/", from + 2);
+            String[] hostPort = jdbcUrl.substring(from, to).split(":");
+            return new HostToPort(hostPort[0], Integer.parseInt(hostPort[1]));
+        }
+    }
+
+    record HostToPort(String host, Integer port) {}
 }
