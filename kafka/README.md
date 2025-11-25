@@ -14,6 +14,8 @@ Features:
 - KafkaProducer for easy testing with asserts.
 - KafkaConsumer for easy testing with asserts.
 
+Uses [Kafka Native container](https://hub.docker.com/r/apache/kafka-native) by default.
+
 ## Dependency :rocket:
 
 **Gradle**
