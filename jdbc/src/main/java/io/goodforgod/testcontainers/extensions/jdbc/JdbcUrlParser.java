@@ -8,12 +8,24 @@ final class JdbcUrlParser {
 
     record HostAndPort(String host, int port) {}
 
+    public static HostAndPort parseJdbc(String jdbcUrl) {
+        try {
+            if (jdbcUrl.startsWith("jdbc:oracle:")) {
+                return parseOracle(jdbcUrl);
+            } else {
+                return parseJdbc(jdbcUrl);
+            }
+        } catch (IllegalArgumentException e) {
+            return parseFallback(jdbcUrl);
+        }
+    }
+
     public static HostAndPort parseJdbc(String driverClassName, String jdbcUrl) {
         try {
             if (driverClassName.startsWith("oracle.")) {
                 return parseOracle(jdbcUrl);
             } else {
-                return parseJdbc(jdbcUrl);
+                return parseJdbcStandard(jdbcUrl);
             }
         } catch (IllegalArgumentException e) {
             return parseFallback(jdbcUrl);
@@ -57,7 +69,7 @@ final class JdbcUrlParser {
         return new HostAndPort(host, port);
     }
 
-    private static HostAndPort parseJdbc(String jdbcUrl) {
+    private static HostAndPort parseJdbcStandard(String jdbcUrl) {
         try {
             URI uri = URI.create(jdbcUrl.replace("jdbc:", ""));
             String host = uri.getHost();
