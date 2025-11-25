@@ -2,7 +2,7 @@ dependencies {
     compileOnly libs.driver.clickhouse
     compileOnly("com.clickhouse:clickhouse-http-client") {
         version {
-            strictly "0.7.0"
+            strictly "0.9.2"
         }
     }
 
@@ -19,7 +19,7 @@ dependencies {
     testImplementation libs.driver.clickhouse
     testImplementation("com.clickhouse:clickhouse-http-client") {
         version {
-            strictly "0.7.0"
+            strictly "0.9.2"
         }
     }
 }

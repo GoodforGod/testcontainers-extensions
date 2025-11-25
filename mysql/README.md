@@ -153,7 +153,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMySQL(image = "${MY_IMAGE_ENV|mysql:9.4}")
+@TestcontainersMySQL(image = "${MY_IMAGE_ENV|mysql:8.0-debian}")
 class ExampleTests {
 
     @Test
@@ -165,9 +165,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `mysql:9.4`
+- Image can have static value: `mysql:8.0-debian`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mysql:9.4}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mysql:8.0-debian}`
 
 ### Manual Container
 
@@ -236,7 +236,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersMySQL(mode = ContainerMode.PER_CLASS, image = "mysql:9.4")
+@TestcontainersMySQL(mode = ContainerMode.PER_CLASS, image = "mysql:8.0-debian")
 class ExampleTests {
 
     @ConnectionMySQL

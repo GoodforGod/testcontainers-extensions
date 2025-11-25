@@ -38,8 +38,8 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testRuntimeOnly "com.clickhouse:clickhouse-jdbc:0.7.0"
-testRuntimeOnly "com.clickhouse:clickhouse-http-client:0.7.0"
+testRuntimeOnly "com.clickhouse:clickhouse-jdbc:0.9.2"
+testRuntimeOnly "com.clickhouse:clickhouse-http-client:0.9.2"
 ```
 
 **Maven**
@@ -47,13 +47,13 @@ testRuntimeOnly "com.clickhouse:clickhouse-http-client:0.7.0"
 <dependency>
     <groupId>com.clickhouse</groupId>
     <artifactId>clickhouse-jdbc</artifactId>
-    <version>0.7.0</version>
+    <version>0.9.2</version>
     <scope>test</scope>
 </dependency>
 <dependency>
     <groupId>com.clickhouse</groupId>
     <artifactId>:clickhouse-http-client</artifactId>
-    <version>0.7.0</version>
+    <version>0.9.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -62,6 +62,7 @@ testRuntimeOnly "com.clickhouse:clickhouse-http-client:0.7.0"
 - [Usage](#usage)
 - [Connection](#connection)
   - [Migration](#connection-migration)
+  - [Migration Compatibility](#liquibase-compatibility)
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
@@ -132,6 +133,13 @@ class ExampleTests {
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/clickhouse-database-233439843.html)
 - [Liquibase](https://github.com/GoodforGod/liquibase-clickhouse)
+
+### Liquibase compatibility
+
+- Version 0.13.0+ - Liquibase [4.33.0+](https://mvnrepository.com/artifact/org.liquibase/liquibase-core) and [clickhouse driver 0.9.2+](https://github.com/ClickHouse/clickhouse-java/releases/tag/v0.9.2)
+- Version 0.12.0+ - Liquibase [4.29.0+](https://mvnrepository.com/artifact/org.liquibase/liquibase-core) and [clickhouse driver 0.7.0-0.7.2](https://github.com/ClickHouse/clickhouse-java/releases/tag/v0.7.2)
+
+Check for more info [here](https://github.com/GoodforGod/liquibase-clickhouse/releases/tag/v0.9.0).
 
 ## Annotation
 
