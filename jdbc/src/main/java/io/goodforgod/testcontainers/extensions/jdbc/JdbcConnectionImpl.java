@@ -115,7 +115,8 @@ class JdbcConnectionImpl implements JdbcConnection {
         if (hostInNetwork == null) {
             network = null;
         } else {
-            var jdbcUrlInNetwork = JdbcUrlParser.replaceHostPort(jdbcUrl, new JdbcUrlParser.HostAndPort(host, port), new JdbcUrlParser.HostAndPort(hostInNetwork, portInNetwork));
+            var jdbcUrlInNetwork = JdbcUrlParser.replaceHostPort(jdbcUrl, new JdbcUrlParser.HostAndPort(host, port),
+                    new JdbcUrlParser.HostAndPort(hostInNetwork, portInNetwork));
             network = new ParamsImpl(jdbcUrlInNetwork, hostInNetwork, portInNetwork, database, username, password);
         }
 
