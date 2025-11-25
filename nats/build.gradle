@@ -1,0 +1,13 @@
+dependencies {
+    compileOnly libs.driver.nats
+
+    api project(":common")
+    api libs.testcontainers.nats
+    api libs.json
+
+    implementation libs.slf4j.api
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+
+    testImplementation libs.driver.nats
+}

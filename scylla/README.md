@@ -1,7 +1,7 @@
 # Testcontainers Extensions Scylla
 
 [![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-cassandra/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-cassandra)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-scylla/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-scylla)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -18,21 +18,21 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-cassandra:0.13.0"
+testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.13.0"
 ```
 
 **Maven**
 ```xml
 <dependency>
     <groupId>io.goodforgod</groupId>
-    <artifactId>testcontainers-extensions-cassandra</artifactId>
+    <artifactId>testcontainers-extensions-scylla</artifactId>
     <version>0.13.0</version>
     <scope>test</scope>
 </dependency>
 ```
 
-### Cassandra Driver
-[Cassandra DataStax Driver](https://mvnrepository.com/artifact/com.datastax.oss/java-driver-core) must be on classpath, if it is somehow not on your classpath already,
+### Scylla Driver
+[Scylla DataStax Driver](https://mvnrepository.com/artifact/com.datastax.oss/java-driver-core) must be on classpath, if it is somehow not on your classpath already,
 don't forget to add:
 
 **Gradle**
@@ -87,9 +87,9 @@ class ExampleTests {
 
 ## Container Old Driver
 
-[Testcontainers Scylla module](https://java.testcontainers.org/modules/databases/cassandra/) leaks old driver as transitive dependency and uses it in its deprecated APIs.
+[Testcontainers Scylla module](https://java.testcontainers.org/modules/databases/scylla/) leaks old driver as transitive dependency and uses it in its deprecated APIs.
 
-Library excludes [com.datastax.cassandra:cassandra-driver-core](https://mvnrepository.com/artifact/com.datastax.cassandra/cassandra-driver-core/3.10.0)
+Library excludes [com.datastax.scylla:scylla-driver-core](https://mvnrepository.com/artifact/com.datastax.scylla/scylla-driver-core/3.10.0)
 old driver from dependency leaking due to lots of vulnerabilities, if you require it add such dependency manually yourself.
 
 ## Connection
@@ -201,7 +201,7 @@ class ExampleTests {
     @Test
     void test(@ConnectionScylla ScyllaConnection connection) {
       assertEquals("mydc", connection.params().datacenter());
-      assertEquals("cassandra", connection.params().keyspace());
+      assertEquals("scylla", connection.params().keyspace());
     }
 }
 ```
@@ -258,7 +258,7 @@ class ExampleTests {
 
     @Test
     void test() {
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
+        connection.execute("INSERT INTO scylla.users(id) VALUES(1);");
         connection.execute("INSERT INTO users(id) VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(0));
         assertEquals(2, usersFound.size());
@@ -285,8 +285,8 @@ cause migration drop when using `TRUNCATE TABLE` on all tables in keyspace is a 
 Default strategy is to use `TRUNCATE`, if you want to change it use `Migration.DropMode.DROP`.
 
 Available migration engines:
-- Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all cassandra
-- [Cognitor](https://github.com/patka/cassandra-migration) - For `apply` uses Cognitor Scylla migration library, for `drop` clean all Non System tables in all cassandra
+- Scripts - For `apply` load scripts from specified paths or directories and execute in ASC order, for `drop` clean all Non System tables in all scylla
+- [Cognitor](https://github.com/patka/scylla-migration) - For `apply` uses Cognitor Scylla migration library, for `drop` clean all Non System tables in all scylla
 
 Given engine is Scripts and migration file named `1_setup.sql` is in resource directory `migration`:
 ```sql
@@ -311,7 +311,7 @@ class ExampleTests {
 
     @Test
     void test(@ConnectionScylla ScyllaConnection connection) {
-        connection.execute("INSERT INTO cassandra.users(id) VALUES(1);");
+        connection.execute("INSERT INTO scylla.users(id) VALUES(1);");
         connection.execute("INSERT INTO users(id) VALUES(2);");
         var usersFound = connection.queryMany("SELECT * FROM users;", r -> r.getInt(0));
         assertEquals(2, usersFound.size());
@@ -330,7 +330,7 @@ Special environment variables:
 - `EXTERNAL_TEST_SCYLLA_HOST` - Scylla instance host.
 - `EXTERNAL_TEST_SCYLLA_PORT` - Scylla instance port.
 - `EXTERNAL_TEST_SCYLLA_DATACENTER` - Scylla instance database (`datacenter1` by default).
-- `EXTERNAL_TEST_SCYLLA_KEYSPACE` - Scylla keyspace (`cassandra` by default).
+- `EXTERNAL_TEST_SCYLLA_KEYSPACE` - Scylla keyspace (`scylla` by default).
 - 
 ## License
 

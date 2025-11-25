@@ -24,6 +24,9 @@ Makes testing & asserts with Testcontainers even easier.
 - [MockServer](mockserver)
 - [Minio](minio)
 - [Clickhouse](clickhouse)
+- [Redpanda](redpanda)
+- [Scylla](scylla)
+- [NATS](nats)
 
 ## Usage
 
