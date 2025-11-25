@@ -7,6 +7,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("junit-api", "5.11.4")
             version("junit-platform", "1.11.4")
             version("testcontainers", "1.21.3")
+            version("testcontainers-nats", "0.1.0")
             version("flyway", "10.20.0")
             version("liquibase", "4.29.0")
             version("clickhouse", "0.9.1")
@@ -32,6 +33,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-cockroach", "org.testcontainers", "cockroachdb").versionRef("testcontainers")
             library("testcontainers-kafka", "org.testcontainers", "kafka").versionRef("testcontainers")
             library("testcontainers-redpanda", "org.testcontainers", "redpanda").versionRef("testcontainers")
+            library("testcontainers-nats", "io.goodforgod", "nats-testcontainers").versionRef("testcontainers-nats")
             library("testcontainers-cassandra", "org.testcontainers", "cassandra").versionRef("testcontainers")
             library("testcontainers-scylladb", "org.testcontainers", "scylladb").versionRef("testcontainers")
             library("testcontainers-mockserver", "org.testcontainers", "mockserver").versionRef("testcontainers")
@@ -45,7 +47,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("flyway-postgres", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             library("liquibase-core", "org.liquibase", "liquibase-core").versionRef("liquibase")
-            library("liquibase-clickhouse", "io.goodforgod", "liquibase-clickhouse").version("0.8.0")
+            library("liquibase-clickhouse", "io.goodforgod", "liquibase-clickhouse").version("0.9.0")
 
             library("driver-postgres", "org.postgresql", "postgresql").version("42.7.4")
             library("driver-mariadb", "org.mariadb.jdbc", "mariadb-java-client").version("3.4.1")
@@ -53,6 +55,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-oracle", "com.oracle.database.jdbc", "ojdbc8").version("21.5.0.0")
             library("driver-cassandra", "org.apache.cassandra", "java-driver-core").version("4.18.1")
             library("driver-kafka", "org.apache.kafka", "kafka-clients").version("3.8.0")
+            library("driver-nats", "io.nats", "jnats").version("2.22.0")
             library("driver-redis", "redis.clients", "jedis").version("5.2.0")
             library("driver-mockserver", "org.mock-server", "mockserver-client-java").version("5.15.0")
             library("driver-minio", "io.minio", "minio").version("8.5.12")

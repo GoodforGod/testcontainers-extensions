@@ -75,12 +75,4 @@ class TestcontainersMockServerExtension extends
         return findAnnotation(TestcontainersMockServer.class, context)
                 .map(a -> new MockServerMetadata(a.network().shared(), a.network().alias(), a.image(), a.mode()));
     }
-
-    @Override
-    public void beforeEach(ExtensionContext context) {
-        super.beforeEach(context);
-
-        var connection = getContainerContext(context).connection();
-        connection.client().reset();
-    }
 }
