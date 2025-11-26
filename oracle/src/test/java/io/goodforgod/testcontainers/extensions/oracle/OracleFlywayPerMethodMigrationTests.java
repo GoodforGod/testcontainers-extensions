@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersOracle(mode = ContainerMode.PER_CLASS,
-        image = "gvenzl/oracle-xe:18.4.0-faststart",
+        image = "gvenzl/oracle-xe:18.4.0-slim-faststart",
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,
                 apply = Migration.Mode.PER_METHOD,

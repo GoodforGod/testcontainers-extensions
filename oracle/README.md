@@ -51,7 +51,7 @@ testRuntimeOnly "com.oracle.database.jdbc:ojdbc8:21.5.0.0"
 ```
 
 Oracle behavior differently based on [Database version](https://hub.docker.com/r/gvenzl/oracle-xe) / [JDBC driver version](https://www.oracle.com/database/technologies/faq-jdbc.html) / JDK version / [migration engines](#migration).
-Extension tested against image `gvenzl/oracle-xe:18.4.0-faststart` and driver `com.oracle.database.jdbc:ojdbc8:21.5.0.0`.
+Extension tested against image `gvenzl/oracle-xe:18.4.0-slim-faststart` and driver `com.oracle.database.jdbc:ojdbc8:21.5.0.0`.
 
 ## Content
 - [Usage](#usage)
@@ -156,7 +156,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersOracle(image = "${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-faststart}")
+@TestcontainersOracle(image = "${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-slim-faststart}")
 class ExampleTests {
 
     @Test
@@ -168,9 +168,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `gvenzl/oracle-xe:18.4.0-faststart`
+- Image can have static value: `gvenzl/oracle-xe:18.4.0-slim-faststart`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-faststart}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|gvenzl/oracle-xe:18.4.0-slim-faststart}`
 
 ### Manual Container
 
@@ -237,7 +237,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersOracle(mode = ContainerMode.PER_CLASS, image = "gvenzl/oracle-xe:18.4.0-faststart")
+@TestcontainersOracle(mode = ContainerMode.PER_CLASS, image = "gvenzl/oracle-xe:18.4.0-slim-faststart")
 class ExampleTests {
 
     @ConnectionOracle

@@ -102,40 +102,7 @@ final class EventImpl implements Event {
         }
     }
 
-    static final class HeaderImpl implements Header {
-
-        private final String key;
-        private final Value value;
-
-        HeaderImpl(String key, Value value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        @Override
-        public @NotNull String key() {
-            return key;
-        }
-
-        @Override
-        public @NotNull Value value() {
-            return value;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (o == null || getClass() != o.getClass())
-                return false;
-            HeaderImpl header = (HeaderImpl) o;
-            return Objects.equals(key, header.key) && Objects.equals(value, header.value);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(key, value);
-        }
+    record HeaderImpl(String key, Value value) implements Header {
 
         @Override
         public String toString() {

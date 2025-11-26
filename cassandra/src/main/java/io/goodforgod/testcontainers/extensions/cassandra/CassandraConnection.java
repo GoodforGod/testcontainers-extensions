@@ -1,5 +1,7 @@
 package io.goodforgod.testcontainers.extensions.cassandra;
 
+import static io.goodforgod.testcontainers.extensions.cassandra.CassandraContext.CQL_PORT;
+
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
@@ -7,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 
 /**
  * Describes active Cassandra connection of currently running {@link CassandraContainer}
@@ -191,20 +193,38 @@ public interface CassandraConnection extends AutoCloseable {
     @Override
     void close();
 
-    static CassandraConnection forContainer(CassandraContainer<?> container) {
+    static CassandraConnection forContainer(org.testcontainers.containers.CassandraContainer<?> container) {
         return forContainer(container, "cassandra");
     }
 
-    static CassandraConnection forContainer(CassandraContainer<?> container, String keyspace) {
+    static CassandraConnection forContainer(org.testcontainers.containers.CassandraContainer<?> container, String keyspace) {
         if (!container.isRunning()) {
             throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
         }
 
         var params = new CassandraConnectionImpl.ParamsImpl(container.getHost(),
-                container.getMappedPort(CassandraContainer.CQL_PORT),
+                container.getMappedPort(CQL_PORT),
                 keyspace, container.getLocalDatacenter(), container.getUsername(), container.getPassword());
         final Params network = new CassandraConnectionImpl.ParamsImpl(container.getNetworkAliases().get(0),
-                CassandraContainer.CQL_PORT,
+                CQL_PORT,
+                keyspace, container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+        return new CassandraConnectionClosableImpl(params, network);
+    }
+
+    static CassandraConnection forContainer(CassandraContainer container) {
+        return forContainer(container, "cassandra");
+    }
+
+    static CassandraConnection forContainer(CassandraContainer container, String keyspace) {
+        if (!container.isRunning()) {
+            throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
+        }
+
+        var params = new CassandraConnectionImpl.ParamsImpl(container.getHost(),
+                container.getMappedPort(CQL_PORT),
+                keyspace, container.getLocalDatacenter(), container.getUsername(), container.getPassword());
+        final Params network = new CassandraConnectionImpl.ParamsImpl(container.getNetworkAliases().get(0),
+                CQL_PORT,
                 keyspace, container.getLocalDatacenter(), container.getUsername(), container.getPassword());
         return new CassandraConnectionClosableImpl(params, network);
     }

@@ -12,24 +12,7 @@ abstract class AbstractDropScyllaMigrationEngine implements ScyllaMigrationEngin
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private static class Table {
-
-        private final String keyspace;
-        private final String name;
-
-        private Table(String keyspace, String name) {
-            this.keyspace = keyspace;
-            this.name = name;
-        }
-
-        public String keyspace() {
-            return keyspace;
-        }
-
-        public String name() {
-            return name;
-        }
-    }
+    private record Table(String keyspace, String name) {}
 
     protected final ScyllaConnection connection;
 

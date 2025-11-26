@@ -17,5 +17,6 @@
     <logger level="WARN" name="org.apache.kafka"/>
     <logger level="INFO" name="org.testcontainers"/>
     <logger level="WARN" name="org.testcontainers.containers"/>
+    <logger level="INFO" name="org.testcontainers.kafka"/>
     <logger level="TRACE" name="io.goodforgod.testcontainers.extensions"/>
 </configuration>

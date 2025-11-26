@@ -48,7 +48,7 @@ final class TestcontainersClickhouseExtension extends
         final ClickHouseContainer container = new ClickHouseContainer(image);
         final String alias = Optional.ofNullable(metadata.networkAlias())
                 .orElseGet(() -> "clickhouse-" + System.currentTimeMillis());
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(ClickHouseContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(ClickHouseContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.withDatabaseName("clickhouse");

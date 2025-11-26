@@ -26,7 +26,6 @@ class TestcontainersScyllaExtension extends
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersScyllaExtension.class);
 
-    @SuppressWarnings("unchecked")
     protected Class<ScyllaDBContainer> getContainerType() {
         return ScyllaDBContainer.class;
     }
@@ -60,7 +59,7 @@ class TestcontainersScyllaExtension extends
         container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(ScyllaDBContainer.class))
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
-        container.withStartupTimeout(Duration.ofMinutes(2));
+        container.withStartupTimeout(Duration.ofMinutes(5));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);

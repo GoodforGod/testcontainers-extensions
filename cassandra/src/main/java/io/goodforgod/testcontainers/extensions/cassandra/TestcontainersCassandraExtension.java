@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -22,14 +22,14 @@ import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersCassandraExtension extends
-        AbstractTestcontainersExtension<CassandraConnection, CassandraContainer<?>, CassandraMetadata> {
+        AbstractTestcontainersExtension<CassandraConnection, CassandraContainer, CassandraMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersCassandraExtension.class);
 
     @SuppressWarnings("unchecked")
-    protected Class<CassandraContainer<?>> getContainerType() {
-        return (Class<CassandraContainer<?>>) ((Class<?>) CassandraContainer.class);
+    protected Class<CassandraContainer> getContainerType() {
+        return CassandraContainer.class;
     }
 
     protected Class<? extends Annotation> getContainerAnnotation() {
@@ -51,18 +51,18 @@ class TestcontainersCassandraExtension extends
     }
 
     @Override
-    protected CassandraContainer<?> createContainerDefault(CassandraMetadata metadata) {
+    protected CassandraContainer createContainerDefault(CassandraMetadata metadata) {
         var image = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("cassandra"));
 
-        final CassandraContainer<?> container = new CassandraContainer<>(image);
+        final CassandraContainer container = new CassandraContainer(image);
         final String alias = Optional.ofNullable(metadata.networkAlias())
                 .orElseGet(() -> "cassandra-" + System.currentTimeMillis());
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CassandraContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.waitingFor(Wait.forListeningPort());
-        container.withStartupTimeout(Duration.ofMinutes(2));
+        container.withStartupTimeout(Duration.ofMinutes(5));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
@@ -71,7 +71,7 @@ class TestcontainersCassandraExtension extends
     }
 
     @Override
-    protected ContainerContext<CassandraConnection> createContainerContext(CassandraContainer<?> container) {
+    protected ContainerContext<CassandraConnection> createContainerContext(CassandraContainer container) {
         return new CassandraContext(container);
     }
 

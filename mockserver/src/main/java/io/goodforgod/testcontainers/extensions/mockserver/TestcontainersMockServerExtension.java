@@ -53,7 +53,7 @@ class TestcontainersMockServerExtension extends
         final MockServerContainer container = new MockServerContainer(image);
         final String alias = Optional.ofNullable(metadata.networkAlias())
                 .orElseGet(() -> "mockserver-" + System.currentTimeMillis());
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MockServerContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.withStartupTimeout(Duration.ofMinutes(2));

@@ -16,5 +16,6 @@
 
     <logger level="INFO" name="org.testcontainers"/>
     <logger level="WARN" name="org.testcontainers.containers"/>
+    <logger level="INFO" name="org.testcontainers.scylladb"/>
     <logger level="TRACE" name="io.goodforgod.testcontainers.extensions"/>
 </configuration>

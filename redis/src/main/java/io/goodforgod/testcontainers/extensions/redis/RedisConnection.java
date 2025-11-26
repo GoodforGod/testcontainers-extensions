@@ -144,7 +144,7 @@ public interface RedisConnection extends AutoCloseable {
     @Override
     void close();
 
-    static RedisConnection forContainer(RedisContainer<?> container) {
+    static RedisConnection forContainer(RedisContainer container) {
         if (!container.isRunning()) {
             throw new IllegalStateException(container.getClass().getSimpleName() + " container is not running");
         }
