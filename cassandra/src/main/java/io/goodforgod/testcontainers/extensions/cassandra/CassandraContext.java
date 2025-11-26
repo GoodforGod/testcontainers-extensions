@@ -4,10 +4,12 @@ import io.goodforgod.testcontainers.extensions.ContainerContext;
 import java.util.Optional;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
-import org.testcontainers.containers.CassandraContainer;
+import org.testcontainers.cassandra.CassandraContainer;
 
 @Internal
 final class CassandraContext implements ContainerContext<CassandraConnection> {
+
+    static final Integer CQL_PORT = 9042;
 
     private static final String EXTERNAL_TEST_CASSANDRA_USERNAME = "EXTERNAL_TEST_CASSANDRA_USERNAME";
     private static final String EXTERNAL_TEST_CASSANDRA_PASSWORD = "EXTERNAL_TEST_CASSANDRA_PASSWORD";
@@ -18,9 +20,9 @@ final class CassandraContext implements ContainerContext<CassandraConnection> {
 
     private volatile CassandraConnectionImpl connection;
 
-    private final CassandraContainer<?> container;
+    private final CassandraContainer container;
 
-    CassandraContext(CassandraContainer<?> container) {
+    CassandraContext(CassandraContainer container) {
         this.container = container;
     }
 
@@ -35,9 +37,9 @@ final class CassandraContext implements ContainerContext<CassandraConnection> {
             final CassandraConnection jdbcConnection = connectionExternal.orElseGet(() -> {
                 final String alias = container.getNetworkAliases().get(container.getNetworkAliases().size() - 1);
                 return CassandraConnectionImpl.forContainer(container.getHost(),
-                        container.getMappedPort(CassandraContainer.CQL_PORT),
+                        container.getMappedPort(CQL_PORT),
                         alias,
-                        CassandraContainer.CQL_PORT,
+                        CQL_PORT,
                         container.getLocalDatacenter(),
                         "cassandra",
                         container.getUsername(),

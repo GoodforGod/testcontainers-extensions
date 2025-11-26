@@ -52,7 +52,7 @@ final class TestcontainersPostgreSQLExtension extends
         container.withDatabaseName("postgres");
         container.withUsername("postgres");
         container.withPassword("postgres");
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(PostgreSQLContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.withStartupTimeout(Duration.ofMinutes(2));

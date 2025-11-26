@@ -6,7 +6,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
-public class RedisContainer<SELF extends RedisContainer<SELF>> extends GenericContainer<SELF> {
+public class RedisContainer extends GenericContainer<RedisContainer> {
 
     public static final Integer PORT = 6379;
 
@@ -61,7 +61,7 @@ public class RedisContainer<SELF extends RedisContainer<SELF>> extends GenericCo
         return getMappedPort(PORT);
     }
 
-    public SELF waitAfterStart(@NotNull Duration duration) {
+    public RedisContainer waitAfterStart(@NotNull Duration duration) {
         this.waitAfterStart = duration;
         return self();
     }

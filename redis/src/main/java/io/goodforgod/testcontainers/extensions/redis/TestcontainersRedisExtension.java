@@ -17,14 +17,13 @@ import org.testcontainers.utility.DockerImageName;
 
 @Internal
 class TestcontainersRedisExtension extends
-        AbstractTestcontainersExtension<RedisConnection, RedisContainer<?>, RedisMetadata> {
+        AbstractTestcontainersExtension<RedisConnection, RedisContainer, RedisMetadata> {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersRedisExtension.class);
 
-    @SuppressWarnings("unchecked")
-    protected Class<RedisContainer<?>> getContainerType() {
-        return (Class<RedisContainer<?>>) ((Class<?>) RedisContainer.class);
+    protected Class<RedisContainer> getContainerType() {
+        return RedisContainer.class;
     }
 
     protected Class<? extends Annotation> getContainerAnnotation() {
@@ -46,14 +45,14 @@ class TestcontainersRedisExtension extends
     }
 
     @Override
-    protected RedisContainer<?> createContainerDefault(RedisMetadata metadata) {
+    protected RedisContainer createContainerDefault(RedisMetadata metadata) {
         var image = DockerImageName.parse(metadata.image())
                 .asCompatibleSubstituteFor(DockerImageName.parse("redis"));
 
-        final RedisContainer<?> container = new RedisContainer<>(image)
+        final RedisContainer container = new RedisContainer(image)
                 .waitAfterStart(Duration.ofMillis(25)); // cause some drivers tends to fail to connect to redis on hot start
         final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "redis-" + System.currentTimeMillis());
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RedisContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias))
                 .withStartupTimeout(Duration.ofMinutes(2));
@@ -66,7 +65,7 @@ class TestcontainersRedisExtension extends
     }
 
     @Override
-    protected ContainerContext<RedisConnection> createContainerContext(RedisContainer<?> container) {
+    protected ContainerContext<RedisConnection> createContainerContext(RedisContainer container) {
         return new RedisContext(container);
     }
 

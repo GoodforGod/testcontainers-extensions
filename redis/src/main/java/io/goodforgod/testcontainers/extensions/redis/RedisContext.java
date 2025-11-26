@@ -16,9 +16,9 @@ final class RedisContext implements ContainerContext<RedisConnection> {
 
     private volatile RedisConnectionImpl connection;
 
-    private final RedisContainer<?> container;
+    private final RedisContainer container;
 
-    RedisContext(RedisContainer<?> container) {
+    RedisContext(RedisContainer container) {
         this.container = container;
     }
 

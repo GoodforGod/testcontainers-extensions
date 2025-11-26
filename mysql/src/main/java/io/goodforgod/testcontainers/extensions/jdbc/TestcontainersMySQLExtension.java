@@ -51,7 +51,7 @@ final class TestcontainersMySQLExtension extends AbstractTestcontainersJdbcExten
         container.withDatabaseName(MySQLContext.DATABASE_NAME);
         container.withUsername("mysql");
         container.withPassword("mysql");
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MySQLContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MySQLContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.waitingFor(Wait.forListeningPort());

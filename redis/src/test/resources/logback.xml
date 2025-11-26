@@ -16,5 +16,6 @@
 
     <logger level="INFO" name="org.testcontainers"/>
     <logger level="WARN" name="org.testcontainers.containers"/>
+    <logger level="INFO" name="io.goodforgod.testcontainers.extensions.redis.RedisContainer"/>
     <logger level="TRACE" name="io.goodforgod.testcontainers.extensions"/>
 </configuration>

@@ -48,7 +48,7 @@ final class TestcontainersCockroachExtension extends
         final CockroachContainer container = new CockroachContainer(image);
         final String alias = Optional.ofNullable(metadata.networkAlias())
                 .orElseGet(() -> "cockroach-" + System.currentTimeMillis());
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(CockroachContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.withStartupTimeout(Duration.ofMinutes(2));

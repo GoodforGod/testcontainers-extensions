@@ -31,67 +31,12 @@ class ScyllaConnectionImpl implements ScyllaConnection {
     static final String USERNAME = "cassandra";
     static final String PASSWORD = "cassandra";
 
-    static final class ParamsImpl implements Params {
-
-        private final String host;
-        private final int port;
-        private final String keyspace;
-        private final String datacenter;
-        private final String username;
-        private final String password;
-
-        ParamsImpl(String host, int port, String datacenter, String keyspace, String username, String password) {
-            this.host = host;
-            this.port = port;
-            this.keyspace = keyspace;
-            this.datacenter = datacenter;
-            this.username = username;
-            this.password = password;
-        }
+    record ParamsImpl(String host, int port, String datacenter, String keyspace, String username, String password)
+            implements Params {
 
         @Override
         public String contactPoint() {
             return host + ":" + port;
-        }
-
-        @Override
-        public @NotNull String host() {
-            return host;
-        }
-
-        @Override
-        public int port() {
-            return port;
-        }
-
-        @Override
-        public @NotNull String keyspace() {
-            return keyspace;
-        }
-
-        @Override
-        public @NotNull String datacenter() {
-            return datacenter;
-        }
-
-        @Override
-        public String username() {
-            return username;
-        }
-
-        @Override
-        public String password() {
-            return password;
-        }
-
-        @Override
-        public String toString() {
-            return "[host=" + host +
-                    ", port=" + port +
-                    ", datacenter=" + datacenter +
-                    ", keyspace=" + keyspace +
-                    ", username=" + username +
-                    ", password=" + password + ']';
         }
     }
 

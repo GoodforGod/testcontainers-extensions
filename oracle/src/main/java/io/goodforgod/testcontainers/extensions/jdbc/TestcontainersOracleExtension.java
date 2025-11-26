@@ -48,10 +48,10 @@ final class TestcontainersOracleExtension extends AbstractTestcontainersJdbcExte
         final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "oracle-" + System.currentTimeMillis());
         container.withPassword("test");
         container.withDatabaseName("oracle");
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(OracleContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
-        container.withStartupTimeout(Duration.ofMinutes(2));
+        container.withStartupTimeout(Duration.ofMinutes(5));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);

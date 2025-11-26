@@ -72,7 +72,7 @@ final class TestcontainersKafkaExtension extends
         var loggerClass = (container instanceof org.testcontainers.containers.KafkaContainer okc)
                 ? okc.getClass()
                 : KafkaContainer.class;
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(loggerClass))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(loggerClass), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.withEnv("KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE", "false");

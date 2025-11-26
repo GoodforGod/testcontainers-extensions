@@ -37,15 +37,15 @@ don't forget to add:
 
 **Gradle**
 ```groovy
-testRuntimeOnly "org.apache.nats:nats-clients:3.5.1"
+testRuntimeOnly "io.nats:jnats:2.22.0"
 ```
 
 **Maven**
 ```xml
 <dependency>
-    <groupId>org.apache.nats</groupId>
-    <artifactId>nats-clients</artifactId>
-    <version>3.5.1</version>
+    <groupId>io.nats</groupId>
+    <artifactId>jnats</artifactId>
+    <version>2.22.0</version>
     <scope>test</scope>
 </dependency>
 ```

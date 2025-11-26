@@ -62,7 +62,7 @@ final class TestcontainersNatsExtension extends
         final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "nats-" + System.currentTimeMillis());
 
         var loggerClass = NatsContainer.class;
-        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(loggerClass))
+        container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(loggerClass), true)
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
         container.withStartupTimeout(Duration.ofMinutes(2));
