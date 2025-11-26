@@ -34,7 +34,7 @@ jobs:
         run: './gradlew test jacocoTestReport testCodeCoverageReport'
 
       - name: Publish Snapshot
-        run: './gradlew publish'
+        run: './gradlew publish --no-daemon --no-parallel'
         env:
           OSS_USERNAME: ${{ secrets.OSS_USERNAME }}
           OSS_PASSWORD: ${{ secrets.OSS_PASSWORD }}

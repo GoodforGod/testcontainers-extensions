@@ -30,7 +30,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Publish Release to GitHub Packages
-        run: './gradlew publishMavenJavaPublicationToGitHubPackagesRepository'
+        run: './gradlew publishMavenJavaPublicationToGitHubPackagesRepository --no-daemon --no-parallel'
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.OSS_GITHUB_TOKEN }}
@@ -38,7 +38,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSS_SIGNING_PASSWORD }}
 
       - name: Publish Release to OSSRH
-        run: './gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository'
+        run: './gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository --no-daemon --no-parallel'
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
           OSS_USERNAME: ${{ secrets.OSS_USERNAME }}
