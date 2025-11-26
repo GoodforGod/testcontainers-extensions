@@ -179,8 +179,8 @@ subprojects {
         repositories {
             maven {
                 name = "OSSRH"
-                def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
-                def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                def releasesRepoUrl = "https://ossrh-staging-api.central.sonatype.com/service/local/"
+                def snapshotsRepoUrl = "https://central.sonatype.com/repository/maven-snapshots/"
                 url = version.endsWith("SNAPSHOT") ? snapshotsRepoUrl : releasesRepoUrl
                 credentials {
                     username System.getenv("OSS_USERNAME")
