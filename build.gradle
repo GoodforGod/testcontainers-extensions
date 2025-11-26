@@ -137,6 +137,10 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
+    transitionCheckOptions {
+        maxRetries = 100
+        delayBetween = Duration.ofSeconds(15)
+    }
 }
 
 subprojects {
