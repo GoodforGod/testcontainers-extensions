@@ -1,7 +1,7 @@
 # Testcontainers Extensions Scylla
 
 [![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-scylla/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-scylla)
+[![Maven Central](https://img.shields.io/maven-central/v/io.goodforgod/testcontainers-extensions-scylla.svg)](https://central.sonatype.com/artifact/io.goodforgod/testcontainers-extensions-scylla)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -13,6 +13,9 @@ Features:
 - Container easy run *per method*, *per class*, *per execution*.
 - Container easy migration with scripts.
 - Container easy connection injection with asserts.
+
+ScyllaDB is a high-performance, distributed NoSQL database designed as a drop-in replacement for Apache Cassandra. 
+It achieves low latency and high throughput by using a highly optimized, shard-per-core architecture written in C++.
 
 ## Dependency :rocket:
 

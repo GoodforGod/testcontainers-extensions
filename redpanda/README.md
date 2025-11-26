@@ -1,7 +1,7 @@
 # Testcontainers Extensions Redpanda
 
 [![Minimum required Java version](https://img.shields.io/badge/Java-17%2B-blue?logo=openjdk)](https://openjdk.org/projects/jdk/17/)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-redpanda/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.goodforgod/testcontainers-extensions-redpanda)
+[![Maven Central](https://img.shields.io/maven-central/v/io.goodforgod/testcontainers-extensions-redpanda.svg)](https://central.sonatype.com/artifact/io.goodforgod/testcontainers-extensions-redpanda)
 [![GitHub Action](https://github.com/goodforgod/testcontainers-extensions/workflows/Release/badge.svg)](https://github.com/GoodforGod/testcontainers-extensions/actions?query=workflow%3A"CI+Master"++)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=coverage)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=GoodforGod_testcontainers-extensions&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=GoodforGod_testcontainers-extensions)
@@ -13,6 +13,9 @@ Features:
 - Container easy run *per method*, *per class*, *per execution*.
 - RedpandaProducer for easy testing with asserts.
 - RedpandaConsumer for easy testing with asserts.
+
+Redpanda is a modern, Kafka-compatible streaming data platform designed for high performance and low latency without requiring a JVM. 
+It provides a drop-in replacement for Apache Kafka while simplifying operations and reducing resource usage.
 
 ## Dependency :rocket:
 
