@@ -6,7 +6,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             version("slf4j", "2.0.16")
             version("junit-api", "5.11.4")
             version("junit-platform", "1.11.4")
-            version("testcontainers", "1.21.3")
+            version("testcontainers", "1.21.4")
             version("testcontainers-nats", "0.1.0")
             version("flyway", "10.20.0")
             version("liquibase", "4.33.0")
@@ -47,7 +47,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("flyway-postgres", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             library("liquibase-core", "org.liquibase", "liquibase-core").versionRef("liquibase")
-            library("liquibase-clickhouse", "io.goodforgod", "liquibase-clickhouse").version("0.9.0")
+            library("liquibase-clickhouse", "io.goodforgod", "liquibase-clickhouse").version("0.9.1")
 
             library("driver-postgres", "org.postgresql", "postgresql").version("42.7.4")
             library("driver-mariadb", "org.mariadb.jdbc", "mariadb-java-client").version("3.4.1")

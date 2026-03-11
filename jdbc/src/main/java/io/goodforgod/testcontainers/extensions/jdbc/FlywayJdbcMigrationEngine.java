@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.jdbc;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.jetbrains.annotations.NotNull;
@@ -23,14 +24,21 @@ public final class FlywayJdbcMigrationEngine implements JdbcMigrationEngine, Aut
                 ? List.of("classpath:db/migration")
                 : locations;
 
+        Map<String, String> configMap = Map.of();
+        if (this.jdbcConnection.params().jdbcUrl().startsWith("jdbc:postgresql://")) {
+            configMap = Map.of("flyway.postgresql.transactional.lock", "false");
+        }
+
         return Flyway.configure()
                 .dataSource(dataSource)
                 .loggers("slf4j")
                 .connectRetries(5)
                 .connectRetriesInterval(1)
+                .cleanDisabled(false)
+                .executeInTransaction(false)
+                .configuration(configMap)
                 .encoding(StandardCharsets.UTF_8)
                 .locations(migrationLocations.toArray(String[]::new))
-                .cleanDisabled(false)
                 .load();
     }
 

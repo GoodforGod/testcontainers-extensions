@@ -24,7 +24,7 @@ class JdbcConnectionAssertsTests {
 
     @Test
     void executeFromResources(@ContainerJdbcConnection JdbcConnection connection) {
-        connection.executeFromResources("db/migration/V1__flyway.sql");
+        connection.executeFromResources("create_table.sql");
     }
 
     @Test
