@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [ "17" ]
-        group: [ "Core", "Database", "Messaging", "Services" ]
+        group: [ "Core", "Jdbc", "Database", "Messaging", "Other" ]
     name: Pull Request Java ${{ matrix.java }} for ${{ matrix.group }}
     env:
       GRADLE_TASK_SUFFIX: ${{ matrix.group }}

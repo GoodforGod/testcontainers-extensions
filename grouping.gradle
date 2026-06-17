@@ -1,9 +1,17 @@
-def moduleGroups = [
+def explicitModuleGroups = [
         core     : ["common", "jdbc"],
-        database : ["postgres", "mariadb", "mysql", "oracle", "cockroachdb", "cassandra", "scylla", "clickhouse"],
-        messaging: ["kafka", "redpanda", "nats"],
-        services : ["redis", "mockserver", "minio"],
+        jdbc     : ["postgres", "mariadb", "mysql", "oracle", "cockroachdb", "clickhouse"],
+        databases: ["cassandra", "scylla"],
+        messaging: ["kafka", "redpanda", "nats", "rabbitmq"],
 ]
+
+def groupedModules = explicitModuleGroups.values().flatten() as Set
+def otherModules = rootProject.subprojects
+        .collect { Project pj -> pj.name }
+        .findAll { moduleName -> !groupedModules.contains(moduleName) }
+        .sort()
+
+def moduleGroups = explicitModuleGroups + [other: otherModules]
 
 def addDependency = { TaskProvider taskProvider, String dependency ->
     taskProvider.configure { Task task -> task.dependsOn(dependency) }
