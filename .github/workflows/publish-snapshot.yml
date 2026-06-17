@@ -1,40 +1,42 @@
 name: Snapshot
 
 on:
-  push:
-    paths:
-      - '**/workflows/*.yml'
-      - '**/java/**'
-      - '*.java'
-      - '*.gradle'
-      - '*.properties'
+  workflow_run:
+    workflows:
+      - CI Master
+    types:
+      - completed
     branches:
-      - dev
+      - master
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     name: Publish Snapshot
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - uses: actions/checkout@v4
         with:
-          java-version: '17'
-          distribution: 'adopt'
+          ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Code Style
-        run: './gradlew spotlessCheck'
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "adopt"
 
-      - name: Build
-        run: './gradlew classes'
-
-      - name: Test
-        run: './gradlew test jacocoTestReport testCodeCoverageReport'
+      - name: Gradle setup
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+          gradle-home-cache-cleanup: true
 
       - name: Publish Snapshot
-        run: './gradlew publish --no-daemon --no-parallel'
+        run: "./gradlew publish --no-daemon --no-parallel --stacktrace"
         env:
           OSS_USERNAME: ${{ secrets.OSS_USERNAME }}
           OSS_PASSWORD: ${{ secrets.OSS_PASSWORD }}
