@@ -21,7 +21,7 @@ It provides a drop-in replacement for Apache Kafka while simplifying operations 
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-redpanda:0.13.0"
+testImplementation "io.goodforgod:testcontainers-extensions-redpanda:0.13.2"
 ```
 
 **Maven**
@@ -29,7 +29,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-redpanda:0.13.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-redpanda</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.2</version>
     <scope>test</scope>
 </dependency>
 ```
