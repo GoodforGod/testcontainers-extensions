@@ -63,8 +63,10 @@ subprojects {
     apply plugin: "java-library"
     apply plugin: "com.diffplug.spotless"
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     dependencies {
         compileOnly "org.jetbrains:annotations:24.0.1"
@@ -115,7 +117,7 @@ subprojects {
     jacocoTestReport {
         reports {
             xml.required = true
-            html.destination file("${buildDir}/jacocoHtml")
+            html.outputLocation = file("${buildDir}/jacocoHtml")
         }
     }
 

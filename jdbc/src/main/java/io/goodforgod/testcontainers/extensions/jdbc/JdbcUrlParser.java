@@ -13,7 +13,7 @@ final class JdbcUrlParser {
             if (jdbcUrl.startsWith("jdbc:oracle:")) {
                 return parseOracle(jdbcUrl);
             } else {
-                return parseJdbc(jdbcUrl);
+                return parseJdbcStandard(jdbcUrl);
             }
         } catch (IllegalArgumentException e) {
             return parseFallback(jdbcUrl);
@@ -32,43 +32,6 @@ final class JdbcUrlParser {
         }
     }
 
-    private static HostAndPort parseFallback(String jdbcUrl) {
-        int from = jdbcUrl.indexOf("//");
-        if (from < 0) {
-            throw new IllegalArgumentException("Invalid JDBC URL: " + jdbcUrl);
-        }
-        from += 2; // пропустить "//"
-
-        int to = jdbcUrl.indexOf("/", from);
-        if (to < 0) {
-            to = jdbcUrl.length();
-        }
-
-        String hostPortPart = jdbcUrl.substring(from, to);
-
-        String host;
-        int port;
-
-        // IPv6: [2001:db8::1]:5432
-        if (hostPortPart.startsWith("[")) {
-            int closing = hostPortPart.indexOf("]");
-            host = hostPortPart.substring(1, closing);
-            port = Integer.parseInt(hostPortPart.substring(closing + 2)); // skip ]:
-        } else {
-            // IPv4 / hostname: host:port
-            String[] hp = hostPortPart.split(":", 2); // важно: limit = 2
-            host = hp[0];
-
-            if (hp.length == 1) {
-                throw new IllegalArgumentException("Port is missing in URL: " + jdbcUrl);
-            }
-
-            port = Integer.parseInt(hp[1]);
-        }
-
-        return new HostAndPort(host, port);
-    }
-
     private static HostAndPort parseJdbcStandard(String jdbcUrl) {
         try {
             URI uri = URI.create(jdbcUrl.replace("jdbc:", ""));
@@ -81,8 +44,18 @@ final class JdbcUrlParser {
 
             return new HostAndPort(host, port);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid JDBC URL: " + jdbcUrl, e);
+            return parseFallback(jdbcUrl);
         }
+    }
+
+    private static HostAndPort parseFallback(String jdbcUrl) {
+        int from = jdbcUrl.indexOf("//");
+        if (from < 0) {
+            throw new IllegalArgumentException("Invalid JDBC URL: " + jdbcUrl);
+        }
+
+        from += 2;
+        return parseHostPort(jdbcUrl, from, findHostPortEnd(jdbcUrl, from));
     }
 
     private static HostAndPort parseOracle(String jdbcUrl) {
@@ -92,56 +65,35 @@ final class JdbcUrlParser {
 
         String url = jdbcUrl.substring("jdbc:oracle:".length());
 
-        // Убираем "thin:" если есть
         if (url.startsWith("thin:")) {
             url = url.substring("thin:".length());
         }
 
-        // Снимаем префикс '@'
         if (url.startsWith("@")) {
             url = url.substring(1);
         }
 
-        // -----------------------------------------------------
-        // 1. CASE: TNS DESCRIPTION URL
-        // jdbc:oracle:thin:@(DESCRIPTION=...)
-        // -----------------------------------------------------
         if (url.startsWith("(")) {
             return parseOracleDescriptionUrl(url);
         }
 
-        // -----------------------------------------------------
-        // 2. CASE: SERVICE_NAME URL
-        // @//host:port/service
-        // -----------------------------------------------------
         if (url.startsWith("//")) {
             return parseOracleServiceNameUrl(url);
         }
 
-        // -----------------------------------------------------
-        // 3. CASE: SID URL
-        // @host:port:SID
-        // -----------------------------------------------------
         return parseOracleSidUrl(url);
     }
 
     private static HostAndPort parseOracleSidUrl(String url) {
-        // Формат: host:port:SID
-        // jdbc:oracle:thin:@localhost:1521:ORCL
         String[] parts = url.split(":");
         if (parts.length < 2) {
             throw new IllegalArgumentException("Invalid SID Oracle URL: " + url);
         }
-        String host = parts[0];
-        int port = Integer.parseInt(parts[1]);
 
-        return new HostAndPort(host, port);
+        return new HostAndPort(parts[0], Integer.parseInt(parts[1]));
     }
 
     private static HostAndPort parseOracleServiceNameUrl(String url) {
-        // Формат: //host:port/service
-        // Убираем //
-        // jdbc:oracle:thin:@//db.example.com:1522/service
         String rest = url.substring(2);
 
         int colon = rest.indexOf(":");
@@ -158,8 +110,6 @@ final class JdbcUrlParser {
     }
 
     private static HostAndPort parseOracleDescriptionUrl(String url) {
-        // Ищем HOST=... и PORT=...
-        // jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(HOST=myhost)(PORT=1523))(CONNECT_DATA=(SID=mysid)))
         String upper = url.toUpperCase();
 
         int hostIdx = upper.indexOf("HOST=");
@@ -169,12 +119,10 @@ final class JdbcUrlParser {
             throw new IllegalArgumentException("Invalid DESCRIPTION Oracle URL: " + url);
         }
 
-        // HOST=value
         int hostStart = hostIdx + "HOST=".length();
         int hostEnd = upper.indexOf(")", hostStart);
         String host = url.substring(hostStart, hostEnd);
 
-        // PORT=value
         int portStart = portIdx + "PORT=".length();
         int portEnd = upper.indexOf(")", portStart);
         int port = Integer.parseInt(url.substring(portStart, portEnd));
@@ -195,9 +143,6 @@ final class JdbcUrlParser {
             return replaceInOracleSid(jdbcUrl, oldHp, newHp);
         }
 
-        // -------------------------
-        // НЕ-ORACLE: PostgreSQL/MySQL
-        // -------------------------
         return replaceStandard(jdbcUrl, oldHp, newHp);
     }
 
@@ -205,42 +150,58 @@ final class JdbcUrlParser {
         int from = jdbcUrl.indexOf("//");
         if (from < 0)
             return jdbcUrl;
+
         from += 2;
-
-        int to = jdbcUrl.indexOf("/", from);
-        if (to < 0)
-            to = jdbcUrl.length();
-
-        String hostPort = jdbcUrl.substring(from, to);
-
-        // IPv6
-        if (hostPort.startsWith("[")) {
-            int closing = hostPort.indexOf("]");
-            String foundHost = hostPort.substring(1, closing);
-            int foundPort = Integer.parseInt(hostPort.substring(closing + 2));
-
-            if (foundHost.equals(oldHp.host()) && foundPort == oldHp.port()) {
-                return jdbcUrl.substring(0, from)
-                        + "[" + newHp.host() + "]:" + newHp.port()
-                        + jdbcUrl.substring(to);
-            }
+        int to = findHostPortEnd(jdbcUrl, from);
+        HostAndPort found;
+        try {
+            found = parseHostPort(jdbcUrl, from, to);
+        } catch (IllegalArgumentException e) {
             return jdbcUrl;
         }
 
-        // IPv4 / hostname
-        String[] hp = hostPort.split(":", 2);
-        if (hp.length != 2)
+        if (!found.equals(oldHp))
             return jdbcUrl;
 
-        String foundHost = hp[0];
-        int foundPort = Integer.parseInt(hp[1]);
+        String replacement = newHp.host().contains(":")
+                ? "[" + newHp.host() + "]:" + newHp.port()
+                : newHp.host() + ":" + newHp.port();
 
-        if (!foundHost.equals(oldHp.host()) || foundPort != oldHp.port())
-            return jdbcUrl;
+        return jdbcUrl.substring(0, from) + replacement + jdbcUrl.substring(to);
+    }
 
-        return jdbcUrl.substring(0, from)
-                + newHp.host() + ":" + newHp.port()
-                + jdbcUrl.substring(to);
+    private static int findHostPortEnd(String jdbcUrl, int from) {
+        int end = jdbcUrl.length();
+        for (char delimiter : new char[] { '/', '?', ';' }) {
+            int idx = jdbcUrl.indexOf(delimiter, from);
+            if (idx >= 0 && idx < end) {
+                end = idx;
+            }
+        }
+
+        return end;
+    }
+
+    private static HostAndPort parseHostPort(String jdbcUrl, int from, int to) {
+        String hostPortPart = jdbcUrl.substring(from, to);
+
+        if (hostPortPart.startsWith("[")) {
+            int closing = hostPortPart.indexOf("]");
+            if (closing < 0 || closing + 2 > hostPortPart.length() || hostPortPart.charAt(closing + 1) != ':') {
+                throw new IllegalArgumentException("Invalid IPv6 host/port in URL: " + jdbcUrl);
+            }
+
+            String host = hostPortPart.substring(1, closing);
+            int port = Integer.parseInt(hostPortPart.substring(closing + 2));
+            return new HostAndPort(host, port);
+        }
+
+        String[] hp = hostPortPart.split(":", 2);
+        if (hp.length != 2) {
+            throw new IllegalArgumentException("Port is missing in URL: " + jdbcUrl);
+        }
+
+        return new HostAndPort(hp[0], Integer.parseInt(hp[1]));
     }
 
     private static String replaceInOracleServiceName(String jdbcUrl, HostAndPort oldHp, HostAndPort newHp) {
@@ -275,7 +236,7 @@ final class JdbcUrlParser {
         if (idx < 0)
             return jdbcUrl;
 
-        String after = jdbcUrl.substring(idx + 1); // host:port:SID
+        String after = jdbcUrl.substring(idx + 1);
 
         String[] parts = after.split(":", 3);
         if (parts.length < 3)
