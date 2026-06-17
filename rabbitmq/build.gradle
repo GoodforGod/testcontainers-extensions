@@ -1,0 +1,13 @@
+dependencies {
+    compileOnly libs.driver.rabbitmq
+
+    api project(":common")
+    api libs.testcontainers.rabbitmq
+    api libs.json
+
+    implementation libs.slf4j.api
+    implementation libs.junit.launcher
+    implementation libs.junit.api
+
+    testImplementation libs.driver.rabbitmq
+}

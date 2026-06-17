@@ -21,6 +21,8 @@ Makes testing & asserts with Testcontainers even easier.
 - [Cockroachdb](cockroachdb)
 - [Cassandra](cassandra)
 - [Redis](redis)
+- [Valkey](valkey)
+- [RabbitMQ](rabbitmq)
 - [MockServer](mockserver)
 - [Minio](minio)
 - [Clickhouse](clickhouse)
