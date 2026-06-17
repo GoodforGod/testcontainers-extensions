@@ -394,7 +394,9 @@ class RabbitMQConnectionImpl implements RabbitMQConnection {
 
                 final AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
                         .messageId(UUID.randomUUID().toString())
-                        .headers(headers.isEmpty() ? null : headers)
+                        .headers(headers.isEmpty()
+                                ? null
+                                : headers)
                         .build();
 
                 logger.trace("RabbitMQ publishing event: {}", event);

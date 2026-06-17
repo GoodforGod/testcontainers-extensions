@@ -11,4 +11,3 @@ final class ValkeyMetadata extends AbstractContainerMetadata {
         super(network, alias, image, runMode);
     }
 }
-

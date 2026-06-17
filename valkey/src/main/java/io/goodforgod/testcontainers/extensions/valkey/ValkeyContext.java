@@ -84,4 +84,3 @@ final class ValkeyContext implements ContainerContext<ValkeyConnection> {
         return container.getDockerImageName();
     }
 }
-

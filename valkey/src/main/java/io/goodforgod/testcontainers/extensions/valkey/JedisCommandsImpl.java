@@ -12,4 +12,3 @@ final class JedisCommandsImpl extends Jedis implements JedisConnection {
         super(hostPort, config);
     }
 }
-

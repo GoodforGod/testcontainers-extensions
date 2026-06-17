@@ -6,4 +6,3 @@ public final class ValkeyConnectionException extends RuntimeException {
         super(cause);
     }
 }
-

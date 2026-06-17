@@ -10,8 +10,12 @@ final class RabbitMQMetadata extends AbstractContainerMetadata {
     private final RabbitMQConnection.TopologySpec topology;
     private final Topology.Mode reset;
 
-    RabbitMQMetadata(boolean network, String alias, String image, ContainerMode runMode,
-                     RabbitMQConnection.TopologySpec topology, Topology.Mode reset) {
+    RabbitMQMetadata(boolean network,
+                     String alias,
+                     String image,
+                     ContainerMode runMode,
+                     RabbitMQConnection.TopologySpec topology,
+                     Topology.Mode reset) {
         super(network, alias, image, runMode);
         this.topology = topology;
         this.reset = reset;

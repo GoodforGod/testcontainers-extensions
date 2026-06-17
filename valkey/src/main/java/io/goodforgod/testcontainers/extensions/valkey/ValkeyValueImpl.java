@@ -57,4 +57,3 @@ final class ValkeyValueImpl implements ValkeyValue {
         return asString();
     }
 }
-

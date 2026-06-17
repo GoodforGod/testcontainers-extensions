@@ -86,12 +86,12 @@ class ValkeyConnectionImpl implements ValkeyConnection {
     }
 
     static ValkeyConnection forContainer(String host,
-                                        int port,
-                                        String hostInNetwork,
-                                        Integer portInNetwork,
-                                        int database,
-                                        String username,
-                                        String password) {
+                                         int port,
+                                         String hostInNetwork,
+                                         Integer portInNetwork,
+                                         int database,
+                                         String username,
+                                         String password) {
         var params = new ParamsImpl(host, port, username, password, database);
         final Params network;
         if (hostInNetwork == null) {
@@ -104,10 +104,10 @@ class ValkeyConnectionImpl implements ValkeyConnection {
     }
 
     static ValkeyConnection forExternal(String host,
-                                       int port,
-                                       int database,
-                                       String username,
-                                       String password) {
+                                        int port,
+                                        int database,
+                                        String username,
+                                        String password) {
         var params = new ValkeyConnectionImpl.ParamsImpl(host, port, username, password, database);
         return new ValkeyConnectionImpl(params, null);
     }
@@ -338,5 +338,3 @@ class ValkeyConnectionImpl implements ValkeyConnection {
         }
     }
 }
-
-

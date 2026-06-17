@@ -5,8 +5,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Assertions;
-import org.opentest4j.AssertionFailedError;
 import org.testcontainers.containers.RabbitMQContainer;
 
 /**
@@ -37,7 +35,10 @@ public interface RabbitMQConnection extends AutoCloseable {
         Properties properties();
     }
 
-    record QueueSpec(@NotNull String name, boolean durable, boolean exclusive, boolean autoDelete,
+    record QueueSpec(@NotNull String name,
+                     boolean durable,
+                     boolean exclusive,
+                     boolean autoDelete,
                      @NotNull Map<String, Object> arguments) {
 
         public QueueSpec {
@@ -45,15 +46,21 @@ public interface RabbitMQConnection extends AutoCloseable {
         }
     }
 
-    record ExchangeSpec(@NotNull String name, @NotNull String type, boolean durable, boolean autoDelete,
-                        boolean internal, @NotNull Map<String, Object> arguments) {
+    record ExchangeSpec(@NotNull String name,
+                        @NotNull String type,
+                        boolean durable,
+                        boolean autoDelete,
+                        boolean internal,
+                        @NotNull Map<String, Object> arguments) {
 
         public ExchangeSpec {
             arguments = Map.copyOf(arguments);
         }
     }
 
-    record BindingSpec(@NotNull String queue, @NotNull String exchange, @NotNull String routingKey,
+    record BindingSpec(@NotNull String queue,
+                       @NotNull String exchange,
+                       @NotNull String routingKey,
                        @NotNull Map<String, Object> arguments) {
 
         public BindingSpec {
@@ -61,7 +68,8 @@ public interface RabbitMQConnection extends AutoCloseable {
         }
     }
 
-    record TopologySpec(@NotNull Set<QueueSpec> queues, @NotNull Set<ExchangeSpec> exchanges,
+    record TopologySpec(@NotNull Set<QueueSpec> queues,
+                        @NotNull Set<ExchangeSpec> exchanges,
                         @NotNull Set<BindingSpec> bindings) {
 
         public TopologySpec {
@@ -203,7 +211,8 @@ public interface RabbitMQConnection extends AutoCloseable {
         final Properties properties = new Properties();
         properties.put(RabbitMQConnectionImpl.PROP_URI, container.getAmqpUrl());
         properties.put(RabbitMQConnectionImpl.PROP_HOST, container.getHost());
-        properties.put(RabbitMQConnectionImpl.PROP_PORT, String.valueOf(container.getMappedPort(RabbitMQConnectionImpl.RABBITMQ_PORT)));
+        properties.put(RabbitMQConnectionImpl.PROP_PORT,
+                String.valueOf(container.getMappedPort(RabbitMQConnectionImpl.RABBITMQ_PORT)));
         properties.put(RabbitMQConnectionImpl.PROP_USERNAME, "guest");
         properties.put(RabbitMQConnectionImpl.PROP_PASSWORD, "guest");
         properties.put(RabbitMQConnectionImpl.PROP_VIRTUAL_HOST, "/");

@@ -45,4 +45,3 @@ final class ValkeyKeyImpl implements ValkeyKey {
         return asString();
     }
 }
-

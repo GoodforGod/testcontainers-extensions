@@ -84,7 +84,8 @@ public interface ValkeyConnection extends AutoCloseable {
         var params = new ValkeyConnectionImpl.ParamsImpl(container.getHost(), container.getPort(), container.getUser(),
                 container.getPassword(), container.getDatabase());
         final String alias = container.getNetworkAliases().get(container.getNetworkAliases().size() - 1);
-        var network = new ValkeyConnectionImpl.ParamsImpl(alias, ValkeyContainer.PORT, container.getUser(), container.getPassword(),
+        var network = new ValkeyConnectionImpl.ParamsImpl(alias, ValkeyContainer.PORT, container.getUser(),
+                container.getPassword(),
                 container.getDatabase());
         return new ValkeyConnectionClosableImpl(params, network);
     }

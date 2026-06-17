@@ -18,4 +18,3 @@ public interface JedisConnection extends
         SentinelCommands {
 
 }
-

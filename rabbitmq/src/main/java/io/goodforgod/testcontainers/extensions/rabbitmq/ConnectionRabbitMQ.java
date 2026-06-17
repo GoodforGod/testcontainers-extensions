@@ -3,7 +3,8 @@ package io.goodforgod.testcontainers.extensions.rabbitmq;
 import java.lang.annotation.*;
 
 /**
- * Indicates that annotated field or parameter should be injected with {@link RabbitMQConnection} value
+ * Indicates that annotated field or parameter should be injected with {@link RabbitMQConnection}
+ * value
  * of current active container
  */
 @Documented

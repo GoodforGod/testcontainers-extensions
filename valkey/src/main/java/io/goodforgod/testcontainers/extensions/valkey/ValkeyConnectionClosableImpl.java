@@ -14,4 +14,3 @@ final class ValkeyConnectionClosableImpl extends ValkeyConnectionImpl {
         super.stop();
     }
 }
-

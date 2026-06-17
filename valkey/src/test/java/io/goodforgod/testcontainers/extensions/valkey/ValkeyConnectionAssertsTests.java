@@ -121,5 +121,3 @@ class ValkeyConnectionAssertsTests {
         assertThrows(AssertionFailedError.class, () -> connection.assertCountsEquals(1, ValkeyKey.of("1")));
     }
 }
-
-

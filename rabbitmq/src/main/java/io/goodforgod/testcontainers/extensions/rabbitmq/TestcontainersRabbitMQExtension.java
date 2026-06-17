@@ -27,7 +27,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -68,7 +67,8 @@ final class TestcontainersRabbitMQExtension extends
                 .asCompatibleSubstituteFor(DockerImageName.parse("rabbitmq"));
 
         var container = new RabbitMQContainer(image);
-        final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "rabbitmq-" + System.currentTimeMillis());
+        final String alias = Optional.ofNullable(metadata.networkAlias())
+                .orElseGet(() -> "rabbitmq-" + System.currentTimeMillis());
 
         container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(RabbitMQContainer.class), true)
                 .withMdc("image", image.asCanonicalNameString())
@@ -91,7 +91,8 @@ final class TestcontainersRabbitMQExtension extends
     }
 
     @Override
-    protected void injectContextIntoField(ContainerContext<RabbitMQConnection> containerContext, Field field,
+    protected void injectContextIntoField(ContainerContext<RabbitMQConnection> containerContext,
+                                          Field field,
                                           Object testClassInstance) {
         try {
             final ConnectionRabbitMQ annotation = field.getAnnotation(ConnectionRabbitMQ.class);
