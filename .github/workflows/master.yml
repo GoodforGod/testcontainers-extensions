@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [ "17" ]
-        group: [ "Core", "Database", "Messaging", "Services" ]
+        group: [ "Core", "Jdbc", "Databases", "Messaging", "Other" ]
     name: Master Java ${{ matrix.java }} for ${{ matrix.group }}
     env:
       GRADLE_TASK_SUFFIX: ${{ matrix.group }}

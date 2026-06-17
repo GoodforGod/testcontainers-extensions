@@ -35,6 +35,8 @@ dependencies {
     jacocoAggregation project(":kafka")
     jacocoAggregation project(":cassandra")
     jacocoAggregation project(":redis")
+    jacocoAggregation project(":valkey")
+    jacocoAggregation project(":rabbitmq")
     jacocoAggregation project(":mockserver")
     jacocoAggregation project(":minio")
     jacocoAggregation project(":clickhouse")

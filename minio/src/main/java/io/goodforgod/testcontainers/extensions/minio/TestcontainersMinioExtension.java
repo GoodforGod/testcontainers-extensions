@@ -137,6 +137,7 @@ class TestcontainersMinioExtension extends
 
                     connection.client().removeBucket(RemoveBucketArgs.builder()
                             .bucket(bucket)
+                            .skipValidation(true)
                             .build());
                 }
             } catch (Exception e) {

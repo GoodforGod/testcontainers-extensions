@@ -18,13 +18,13 @@ jobs:
           distribution: 'adopt'
 
       - name: Build
-        run: './gradlew classes'
+        run: './gradlew classes --no-daemon --no-parallel --stacktrace'
 
       - name: Test
-        run: './gradlew test jacocoTestReport testCodeCoverageReport'
+        run: './gradlew test jacocoTestReport testCodeCoverageReport --no-daemon --no-parallel --stacktrace'
 
       - name: SonarQube
-        run: './gradlew sonar'
+        run: './gradlew sonar --no-daemon --no-parallel --stacktrace'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

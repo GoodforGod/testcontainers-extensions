@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.13.2"
+testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.14.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-mariadb:0.13.2"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-mariadb</artifactId>
-    <version>0.13.2</version>
+    <version>0.14.0</version>
     <scope>test</scope>
 </dependency>
 ```
