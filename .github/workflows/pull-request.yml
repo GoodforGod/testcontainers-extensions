@@ -12,9 +12,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  code-style:
+  build:
     runs-on: ubuntu-latest
-    name: Pull Request Code Style
+    name: Pull Request Java 17
     steps:
       - uses: actions/checkout@v4
 
@@ -33,102 +33,22 @@ jobs:
       - name: Code Style
         run: "./gradlew spotlessCheck --no-daemon --no-parallel --stacktrace"
 
-  build-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        java: [ "17" ]
-        group: [ "Core", "Jdbc", "Databases", "Messaging", "Other" ]
-    name: Pull Request Java ${{ matrix.java }} for ${{ matrix.group }}
-    env:
-      GRADLE_TASK_SUFFIX: ${{ matrix.group }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ matrix.java }}
-          distribution: "adopt"
-
-      - name: Gradle setup
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
-          gradle-home-cache-cleanup: ${{ github.ref == 'refs/heads/master' }}
-
       - name: Gradle build classes
-        run: "./gradlew classes${{ env.GRADLE_TASK_SUFFIX }} --no-daemon --no-parallel --scan --stacktrace"
+        run: "./gradlew classes --no-daemon --no-parallel --scan --stacktrace"
 
-      - name: Gradle build test classes
-        run: "./gradlew testClasses${{ env.GRADLE_TASK_SUFFIX }} --no-daemon --no-parallel --scan --stacktrace"
+      - name: Gradle run tests and coverage
+        run: "./gradlew test jacocoTestReport testCodeCoverageReport --no-daemon --no-parallel --scan --stacktrace"
 
-      - name: Gradle run tests
-        run: "./gradlew test${{ env.GRADLE_TASK_SUFFIX }} --no-daemon --no-parallel --scan --stacktrace"
-
-      - name: Gradle generate Jacoco reports
-        run: "./gradlew jacocoTestReport${{ env.GRADLE_TASK_SUFFIX }} --no-daemon --no-parallel --scan --stacktrace"
-
-      - name: Upload Jacoco reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-${{ matrix.group }}
-          path: |
-            **/build/reports/jacoco/test/jacocoTestReport.xml
-          if-no-files-found: error
+      - name: SonarQube
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        run: "./gradlew sonar --no-daemon --no-parallel --stacktrace"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Test Report
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          check_name: Test Report ${{ matrix.group }}
           files: |
             **/test-results/**/*.xml
-
-  sonarqube:
-    needs:
-      - code-style
-      - build-tests
-    if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    name: Pull Request SonarQube
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "adopt"
-
-      - name: Gradle setup
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
-          gradle-home-cache-cleanup: ${{ github.ref == 'refs/heads/master' }}
-
-      - name: Download Jacoco reports
-        uses: actions/download-artifact@v4
-        with:
-          pattern: jacoco-*
-          path: .
-          merge-multiple: true
-
-      - name: Collect Jacoco report paths
-        shell: bash
-        run: |
-          shopt -s globstar nullglob
-          reports=(**/build/reports/jacoco/test/jacocoTestReport.xml)
-          if [ ${#reports[@]} -eq 0 ]; then
-            echo "No Jacoco XML reports found"
-            exit 1
-          fi
-          reports="$(IFS=,; echo "${reports[*]}")"
-          echo "SONAR_JACOCO_REPORTS=$reports" >> "$GITHUB_ENV"
-
-      - name: SonarQube
-        run: "./gradlew testCodeCoverageReport sonar --no-daemon --no-parallel --stacktrace -Dsonar.coverage.jacoco.xmlReportPaths=\"${SONAR_JACOCO_REPORTS}\""
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
