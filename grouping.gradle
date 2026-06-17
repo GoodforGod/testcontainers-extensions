@@ -1,0 +1,59 @@
+def moduleGroups = [
+        core     : ["common", "jdbc"],
+        database : ["postgres", "mariadb", "mysql", "oracle", "cockroachdb", "cassandra", "scylla", "clickhouse"],
+        messaging: ["kafka", "redpanda", "nats"],
+        services : ["redis", "mockserver", "minio"],
+]
+
+def addDependency = { TaskProvider taskProvider, String dependency ->
+    taskProvider.configure { Task task -> task.dependsOn(dependency) }
+}
+
+def addDependencyByModuleGroup = { TaskProvider taskProvider, String groupName, String taskName ->
+    def moduleNames = moduleGroups[groupName]
+    rootProject.subprojects.forEach { Project pj ->
+        if (!moduleNames.contains(pj.name)) {
+            return
+        }
+
+        addDependency(taskProvider, "${pj.path}:${taskName}")
+    }
+}
+
+def groupModules = { String groupName ->
+    def capitalizedGroup = groupName.capitalize()
+
+    def testByGroup = tasks.register("test${capitalizedGroup}") {
+        group("verification")
+        description("Run tests for ${groupName} modules")
+    }
+    addDependencyByModuleGroup(testByGroup, groupName, "test")
+
+    def classesByGroup = tasks.register("classes${capitalizedGroup}") {
+        group("build")
+        description("Build classes for ${groupName} modules")
+    }
+    addDependencyByModuleGroup(classesByGroup, groupName, "classes")
+
+    def testClassesByGroup = tasks.register("testClasses${capitalizedGroup}") {
+        group("build")
+        description("Build test classes for ${groupName} modules")
+    }
+    addDependencyByModuleGroup(testClassesByGroup, groupName, "testClasses")
+
+    def buildByGroup = tasks.register("build${capitalizedGroup}") {
+        group("build")
+        description("Build ${groupName} modules")
+    }
+    addDependencyByModuleGroup(buildByGroup, groupName, "build")
+
+    def checkByGroup = tasks.register("check${capitalizedGroup}") {
+        group("verification")
+        description("Run checks for ${groupName} modules")
+    }
+    addDependencyByModuleGroup(checkByGroup, groupName, "check")
+}
+
+moduleGroups.keySet().forEach { groupName ->
+    groupModules(groupName)
+}
