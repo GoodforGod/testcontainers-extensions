@@ -52,6 +52,12 @@ def groupModules = { String groupName ->
         description("Run checks for ${groupName} modules")
     }
     addDependencyByModuleGroup(checkByGroup, groupName, "check")
+
+    def jacocoTestReportByGroup = tasks.register("jacocoTestReport${capitalizedGroup}") {
+        group("verification")
+        description("Generate Jacoco test reports for ${groupName} modules")
+    }
+    addDependencyByModuleGroup(jacocoTestReportByGroup, groupName, "jacocoTestReport")
 }
 
 moduleGroups.keySet().forEach { groupName ->
