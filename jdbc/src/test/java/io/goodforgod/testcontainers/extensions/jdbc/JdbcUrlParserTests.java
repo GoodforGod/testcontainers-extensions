@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.goodforgod.testcontainers.extensions.jdbc.JdbcUrlParser.HostAndPort;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Anton Kurako (GoodforGod)
@@ -22,6 +24,13 @@ class JdbcUrlParserTests {
     }
 
     @Test
+    void testStandardPostgresParse() {
+        String url = "jdbc:postgresql://oldhost:5432/mydb";
+
+        assertEquals(new HostAndPort("oldhost", 5432), JdbcUrlParser.parseJdbc(url));
+    }
+
+    @Test
     void testStandardMySQLReplace() {
         String url = "jdbc:mysql://192.168.0.1:3306/schema";
         String out = replaceHostPort(url, new HostAndPort("192.168.0.1", 3306), new HostAndPort("10.0.0.5", 3307));
@@ -35,6 +44,104 @@ class JdbcUrlParserTests {
         String out = replaceHostPort(url, new HostAndPort("2001:db8::1", 5432), new HostAndPort("2001:db8::2", 5433));
 
         assertEquals("jdbc:postgresql://[2001:db8::2]:5433/db", out);
+    }
+
+    @Test
+    void testSqlServerReplace() {
+        String url = "jdbc:sqlserver://oldhost:1433;databaseName=mydb;encrypt=false";
+        String out = replaceHostPort(url, new HostAndPort("oldhost", 1433), new HostAndPort("newhost", 11433));
+
+        assertEquals("jdbc:sqlserver://newhost:11433;databaseName=mydb;encrypt=false", out);
+    }
+
+    @Test
+    void testSqlServerReplaceWithSlashPath() {
+        String url = "jdbc:sqlserver://oldhost:1433/mydb;encrypt=false";
+        String out = replaceHostPort(url, new HostAndPort("oldhost", 1433), new HostAndPort("newhost", 11433));
+
+        assertEquals("jdbc:sqlserver://newhost:11433/mydb;encrypt=false", out);
+    }
+
+    @Test
+    void testSqlServerReplaceWithIpV6() {
+        String url = "jdbc:sqlserver://[2001:db8::1]:1433;databaseName=mydb";
+        String out = replaceHostPort(url, new HostAndPort("2001:db8::1", 1433), new HostAndPort("2001:db8::2", 11433));
+
+        assertEquals("jdbc:sqlserver://[2001:db8::2]:11433;databaseName=mydb", out);
+    }
+
+    @Test
+    void testSqlServerParse() {
+        String url = "jdbc:sqlserver://oldhost:1433;databaseName=mydb;encrypt=false";
+
+        assertEquals(new HostAndPort("oldhost", 1433),
+                JdbcUrlParser.parseJdbc("com.microsoft.sqlserver.jdbc.SQLServerDriver", url));
+    }
+
+    @Test
+    void testSqlServerParseWithoutDriverClassName() {
+        String url = "jdbc:sqlserver://oldhost:1433;databaseName=mydb;encrypt=false";
+
+        assertEquals(new HostAndPort("oldhost", 1433), JdbcUrlParser.parseJdbc(url));
+    }
+
+    @Test
+    void testSqlServerNoReplaceIfNotMatched() {
+        String url = "jdbc:sqlserver://oldhost:1433;databaseName=mydb;encrypt=false";
+        String out = replaceHostPort(url, new HostAndPort("otherhost", 1433), new HostAndPort("newhost", 11433));
+
+        assertEquals(url, out);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "jdbc:postgresql://oldhost:5432/mydb?ssl=false,jdbc:postgresql://newhost:15432/mydb?ssl=false,oldhost,5432,newhost,15432",
+            "jdbc:cockroachdb://oldhost:26257/defaultdb?sslmode=disable,jdbc:cockroachdb://newhost:26258/defaultdb?sslmode=disable,oldhost,26257,newhost,26258",
+            "jdbc:mysql://oldhost:3306/schema?useSSL=false&serverTimezone=UTC,jdbc:mysql://newhost:3307/schema?useSSL=false&serverTimezone=UTC,oldhost,3306,newhost,3307",
+            "jdbc:mariadb://oldhost:3306/schema?allowPublicKeyRetrieval=true,jdbc:mariadb://newhost:3307/schema?allowPublicKeyRetrieval=true,oldhost,3306,newhost,3307",
+            "jdbc:clickhouse://oldhost:8123/default?compress=0,jdbc:clickhouse://newhost:18123/default?compress=0,oldhost,8123,newhost,18123",
+            "jdbc:db2://oldhost:50000/sample:user=db2inst1;,jdbc:db2://newhost:50001/sample:user=db2inst1;,oldhost,50000,newhost,50001",
+            "jdbc:firebirdsql://oldhost:3050/var/db/example.fdb,jdbc:firebirdsql://newhost:3051/var/db/example.fdb,oldhost,3050,newhost,3051"
+    })
+    void testCommonJdbcUrlsReplace(String url,
+                                   String expected,
+                                   String oldHost,
+                                   int oldPort,
+                                   String newHost,
+                                   int newPort) {
+        String out = replaceHostPort(url, new HostAndPort(oldHost, oldPort), new HostAndPort(newHost, newPort));
+
+        assertEquals(expected, out);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "jdbc:postgresql://oldhost:5432/mydb?ssl=false,oldhost,5432",
+            "jdbc:cockroachdb://oldhost:26257/defaultdb?sslmode=disable,oldhost,26257",
+            "jdbc:mysql://oldhost:3306/schema?useSSL=false&serverTimezone=UTC,oldhost,3306",
+            "jdbc:mariadb://oldhost:3306/schema?allowPublicKeyRetrieval=true,oldhost,3306",
+            "jdbc:clickhouse://oldhost:8123/default?compress=0,oldhost,8123",
+            "jdbc:db2://oldhost:50000/sample:user=db2inst1;,oldhost,50000",
+            "jdbc:firebirdsql://oldhost:3050/var/db/example.fdb,oldhost,3050"
+    })
+    void testCommonJdbcUrlsParse(String url, String host, int port) {
+        assertEquals(new HostAndPort(host, port), JdbcUrlParser.parseJdbc(url));
+    }
+
+    @Test
+    void testStandardReplaceHostNameWithIpV6() {
+        String url = "jdbc:postgresql://oldhost:5432/db";
+        String out = replaceHostPort(url, new HostAndPort("oldhost", 5432), new HostAndPort("2001:db8::2", 5433));
+
+        assertEquals("jdbc:postgresql://[2001:db8::2]:5433/db", out);
+    }
+
+    @Test
+    void testStandardReplaceIpV6WithHostName() {
+        String url = "jdbc:postgresql://[2001:db8::1]:5432/db";
+        String out = replaceHostPort(url, new HostAndPort("2001:db8::1", 5432), new HostAndPort("newhost", 5433));
+
+        assertEquals("jdbc:postgresql://newhost:5433/db", out);
     }
 
     @Test

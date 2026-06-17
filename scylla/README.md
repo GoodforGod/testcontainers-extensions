@@ -21,7 +21,7 @@ It achieves low latency and high throughput by using a highly optimized, shard-p
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.13.0"
+testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.13.2"
 ```
 
 **Maven**
@@ -29,7 +29,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.13.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-scylla</artifactId>
-    <version>0.13.0</version>
+    <version>0.13.2</version>
     <scope>test</scope>
 </dependency>
 ```
