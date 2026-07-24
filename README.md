@@ -22,6 +22,7 @@ Makes testing & asserts with Testcontainers even easier.
 - [Cassandra](cassandra)
 - [Redis](redis)
 - [Valkey](valkey)
+- [ArangoDB](arangodb)
 - [RabbitMQ](rabbitmq)
 - [MockServer](mockserver)
 - [Minio](minio)
