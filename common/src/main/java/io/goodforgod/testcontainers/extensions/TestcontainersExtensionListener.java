@@ -20,5 +20,7 @@ public final class TestcontainersExtensionListener implements TestExecutionListe
                 logger.info("Stopped in mode '{}' container: {}", ContainerMode.PER_RUN, imageToContainer.getValue());
             }
         }
+
+        TestcontainersOrchestratorExtension.stopPerRun();
     }
 }

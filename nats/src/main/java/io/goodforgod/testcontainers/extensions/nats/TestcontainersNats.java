@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.nats;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
 import io.goodforgod.testcontainers.extensions.Network;
+import io.goodforgod.testcontainers.extensions.TestcontainersOrchestratorExtension;
 import io.testcontainers.nats.NatsContainer;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * schema migration support between test executions
  */
 @Order(Order.DEFAULT - 100) // Run before other extensions
-@ExtendWith(TestcontainersNatsExtension.class)
+@ExtendWith(TestcontainersOrchestratorExtension.class)
 @Documented
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)

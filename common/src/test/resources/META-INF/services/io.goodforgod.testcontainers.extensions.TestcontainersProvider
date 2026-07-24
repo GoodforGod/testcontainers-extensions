@@ -1,0 +1,4 @@
+io.goodforgod.testcontainers.extensions.orchestrator.redis.RedisTestcontainersProvider
+io.goodforgod.testcontainers.extensions.orchestrator.minio.MinioTestcontainersProvider
+io.goodforgod.testcontainers.extensions.redis.RedisTestcontainersProvider
+io.goodforgod.testcontainers.extensions.arangodb.ArangoTestcontainersProvider

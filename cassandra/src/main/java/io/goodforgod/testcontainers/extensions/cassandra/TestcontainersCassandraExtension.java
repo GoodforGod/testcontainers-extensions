@@ -27,7 +27,6 @@ class TestcontainersCassandraExtension extends
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create(TestcontainersCassandraExtension.class);
 
-    @SuppressWarnings("unchecked")
     protected Class<CassandraContainer> getContainerType() {
         return CassandraContainer.class;
     }

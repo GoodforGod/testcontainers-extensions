@@ -12,4 +12,6 @@ dependencies {
     implementation libs.junit.api
 
     testImplementation libs.driver.cassandra
+    testImplementation libs.driver.arangodb
+    testImplementation project(":arangodb")
 }

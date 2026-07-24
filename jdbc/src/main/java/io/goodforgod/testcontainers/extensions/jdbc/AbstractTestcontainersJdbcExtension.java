@@ -33,6 +33,14 @@ abstract class AbstractTestcontainersJdbcExtension<Container extends JdbcDatabas
 
     protected abstract ContainerContext<JdbcConnection> createContainerContext(Container container);
 
+    final Container createContainerFromProvider(Metadata metadata) {
+        return createContainerDefault(metadata);
+    }
+
+    final ContainerContext<JdbcConnection> createContextFromProvider(Container container) {
+        return createContainerContext(container);
+    }
+
     @Override
     protected ContainerContext<JdbcConnection> getContainerContext(ExtensionContext context) {
         Metadata metadata = getMetadata(context);

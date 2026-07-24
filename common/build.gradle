@@ -6,6 +6,10 @@ dependencies {
     implementation libs.slf4j.api
 
     testImplementation libs.driver.redis
+    testImplementation libs.driver.arangodb
+    testImplementation libs.json
+    testImplementation libs.testcontainers.arangodb
+    testCompileOnly "org.jetbrains:annotations:24.0.1"
 }
 
 publishing {
