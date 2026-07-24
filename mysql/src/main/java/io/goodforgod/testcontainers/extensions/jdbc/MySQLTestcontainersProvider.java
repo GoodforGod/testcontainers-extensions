@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.Isolation;
 import java.lang.annotation.Annotation;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -39,5 +40,10 @@ public final class MySQLTestcontainersProvider extends
     @Override
     protected Migration migration(@NotNull TestcontainersMySQL annotation) {
         return annotation.migration();
+    }
+
+    @Override
+    protected Isolation isolationAnnotation(@NotNull TestcontainersMySQL annotation) {
+        return annotation.isolation();
     }
 }

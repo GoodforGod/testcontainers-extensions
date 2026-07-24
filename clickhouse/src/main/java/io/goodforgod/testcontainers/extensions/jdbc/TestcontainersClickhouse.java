@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.Isolation;
 import io.goodforgod.testcontainers.extensions.Network;
 import io.goodforgod.testcontainers.extensions.TestcontainersOrchestratorExtension;
 import java.lang.annotation.*;
@@ -39,6 +40,12 @@ public @interface TestcontainersClickhouse {
      * @return container network details
      */
     Network network() default @Network(shared = false);
+
+    /**
+     * @return logical connection isolation mode. Disabled by default and preserves regular connection
+     *             behavior.
+     */
+    Isolation isolation() default @Isolation;
 
     Migration migration() default @Migration(engine = Migration.Engines.FLYWAY,
             apply = Migration.Mode.NONE,

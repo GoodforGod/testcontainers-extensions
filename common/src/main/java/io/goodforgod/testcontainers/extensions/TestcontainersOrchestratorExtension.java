@@ -1,13 +1,18 @@
 package io.goodforgod.testcontainers.extensions;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.util.ReflectionUtils;
@@ -28,6 +33,8 @@ public final class TestcontainersOrchestratorExtension
 
     private record ActiveProvider<A extends Annotation, C> (TestcontainersProvider<A, C> provider, A annotation) {}
 
+    private record IsolationKey(Class<?> provider, String uniqueId) {}
+
     private static final class ActiveContext<C> {
 
         private final TestcontainersProvider<?, C> provider;
@@ -44,6 +51,26 @@ public final class TestcontainersOrchestratorExtension
             this.mode = mode;
             this.context = context;
         }
+    }
+
+    private static final class ConnectionOnlyContext<C> implements ContainerContext<C> {
+
+        private final C connection;
+
+        private ConnectionOnlyContext(C connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public @NotNull C connection() {
+            return connection;
+        }
+
+        @Override
+        public void start() {}
+
+        @Override
+        public void stop() {}
     }
 
     private static final class OrchestrationState {
@@ -70,16 +97,18 @@ public final class TestcontainersOrchestratorExtension
 
     @Override
     public void beforeAll(ExtensionContext context) {
+        validateIsolationLifecycle(context);
         start(context, ContainerMode.PER_RUN, ContainerMode.PER_CLASS);
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
+        validateIsolationLifecycle(context);
         start(context, ContainerMode.PER_RUN, ContainerMode.PER_CLASS);
         start(context, ContainerMode.PER_METHOD);
         OrchestrationState state = state(context);
         if (state.beforeEachHooked.add(context.getUniqueId())) {
-            runContextHooks(context, new ArrayList<>(state.contexts.values()), false,
+            runContextHooks(context, effectiveContexts(context, new ArrayList<>(state.contexts.values())), false,
                     TestcontainersOrchestratorExtension::beforeEachUnchecked);
         }
         injectAll(context);
@@ -89,8 +118,10 @@ public final class TestcontainersOrchestratorExtension
     public void afterEach(ExtensionContext context) {
         OrchestrationState state = state(context);
         if (state.afterEachHooked.add(context.getUniqueId())) {
-            runContextHooks(context, new ArrayList<>(state.contexts.values()), true,
+            List<ActiveContext<?>> contexts = effectiveContexts(context, new ArrayList<>(state.contexts.values()));
+            runContextHooks(context, contexts, true,
                     TestcontainersOrchestratorExtension::afterEachUnchecked);
+            closeIsolatedContexts(context, contexts);
         }
         stop(context, ContainerMode.PER_METHOD);
     }
@@ -127,12 +158,14 @@ public final class TestcontainersOrchestratorExtension
                 .orElseThrow(() -> new ParameterResolutionException(
                         "Provider annotation not found for " + provider.connectionAnnotationType().getSimpleName()));
 
+        validateIsolationParameter(activeProvider, parameterContext);
         ContainerMode mode = mode(activeProvider);
         if (mode == ContainerMode.PER_METHOD) {
             start(extensionContext, ContainerMode.PER_METHOD);
             OrchestrationState state = state(extensionContext);
             if (state.beforeEachHooked.add(extensionContext.getUniqueId())) {
-                state.contexts.values().forEach(active -> beforeEachUnchecked(active, extensionContext));
+                effectiveContexts(extensionContext, new ArrayList<>(state.contexts.values()))
+                        .forEach(active -> beforeEachUnchecked(active, extensionContext));
             }
         } else {
             start(extensionContext, ContainerMode.PER_RUN, ContainerMode.PER_CLASS);
@@ -143,7 +176,7 @@ public final class TestcontainersOrchestratorExtension
             throw new ParameterResolutionException("Container context not started for " + provider.annotationType().getName());
         }
 
-        return resolveUnchecked(active, parameterContext);
+        return resolveUnchecked(effectiveContext(extensionContext, active), parameterContext);
     }
 
     static void stopPerRun() {
@@ -230,9 +263,10 @@ public final class TestcontainersOrchestratorExtension
 
     private void injectAll(ExtensionContext context) {
         context.getTestInstance().ifPresent(instance -> {
-            state(context).contexts.values().forEach(active -> injectIntoInstance(active, instance));
+            effectiveContexts(context, new ArrayList<>(state(context).contexts.values()))
+                    .forEach(active -> injectIntoInstance(active, instance));
             findParentTestClassIfNested(context)
-                    .ifPresent(parent -> state(context).contexts.values()
+                    .ifPresent(parent -> effectiveContexts(context, new ArrayList<>(state(context).contexts.values()))
                             .forEach(active -> injectIntoInstance(active, parent)));
         });
     }
@@ -479,6 +513,87 @@ public final class TestcontainersOrchestratorExtension
         return getStore(context).getOrComputeIfAbsent(OrchestrationState.class);
     }
 
+    private List<ActiveContext<?>> effectiveContexts(ExtensionContext context, List<ActiveContext<?>> activeContexts) {
+        List<ActiveContext<?>> effective = new ArrayList<>(activeContexts.size());
+        for (ActiveContext<?> active : activeContexts) {
+            effective.add(effectiveContext(context, active));
+        }
+
+        return effective;
+    }
+
+    private <C> ActiveContext<C> effectiveContext(ExtensionContext context, ActiveContext<C> active) {
+        if (isolation(active) == Isolation.Mode.DISABLED) {
+            return active;
+        }
+
+        IsolationKey key = new IsolationKey(active.provider.getClass(), context.getUniqueId());
+        return context.getStore(NAMESPACE)
+                .getOrComputeIfAbsent(key, ignored -> createIsolatedContext(context, active), ActiveContext.class);
+    }
+
+    private <A extends Annotation, C> ActiveContext<C> createIsolatedContext(ExtensionContext context,
+                                                                             ActiveContext<C> active) {
+        TestcontainersProvider<A, C> provider = (TestcontainersProvider<A, C>) active.provider;
+        A annotation = (A) active.annotation;
+        String namespace = namespace(provider.isolationPrefix(annotation));
+        C connection = provider.createIsolatedConnection(annotation, active.context, context, namespace);
+        return new ActiveContext<>(provider, annotation, active.mode, new ConnectionOnlyContext<>(connection));
+    }
+
+    private void closeIsolatedContexts(ExtensionContext context, List<ActiveContext<?>> contexts) {
+        for (ActiveContext<?> active : contexts) {
+            if (isolation(active) != Isolation.Mode.DISABLED) {
+                closeIsolatedUnchecked(active, context);
+            }
+        }
+    }
+
+    private static String namespace(String prefix) {
+        String safePrefix = (prefix == null || prefix.isBlank())
+                ? "testcontainers"
+                : prefix.replaceAll("[^A-Za-z0-9_]", "_").toLowerCase(Locale.ROOT);
+        if (safePrefix.length() > 20) {
+            safePrefix = safePrefix.substring(0, 20);
+        }
+        String suffix = UUID.randomUUID().toString().replace("-", "");
+        return safePrefix + "_" + suffix;
+    }
+
+    private void validateIsolationLifecycle(ExtensionContext context) {
+        TestInstance.Lifecycle lifecycle = context.getTestClass()
+                .flatMap(testClass -> AnnotationSupport.findAnnotation(testClass, TestInstance.class)
+                        .map(TestInstance::value))
+                .or(() -> context.getTestInstanceLifecycle())
+                .orElse(TestInstance.Lifecycle.PER_METHOD);
+        if (lifecycle != TestInstance.Lifecycle.PER_CLASS) {
+            return;
+        }
+
+        for (TestcontainersProvider<?, ?> provider : providers) {
+            Optional<? extends ActiveProvider<?, ?>> activeProvider = findActiveProvider(provider.annotationType(), context);
+            if (activeProvider.isPresent() && isolation(activeProvider.get()) == Isolation.Mode.PER_METHOD) {
+                throw new ExtensionConfigurationException("@%s with Isolation.Mode.PER_METHOD can't be used with %s"
+                        .formatted(provider.annotationType().getSimpleName(), TestInstance.Lifecycle.PER_CLASS));
+            }
+        }
+    }
+
+    private static void validateIsolationParameter(ActiveProvider<?, ?> activeProvider,
+                                                   ParameterContext parameterContext) {
+        if (isolation(activeProvider) == Isolation.Mode.DISABLED) {
+            return;
+        }
+
+        if (parameterContext.getDeclaringExecutable() instanceof Constructor<?>) {
+            throw new ParameterResolutionException("Constructor injection is not supported with Isolation.Mode.PER_METHOD");
+        }
+
+        if (parameterContext.getDeclaringExecutable()instanceof Method method && method.isAnnotationPresent(BeforeAll.class)) {
+            throw new ParameterResolutionException("@BeforeAll injection is not supported with Isolation.Mode.PER_METHOD");
+        }
+    }
+
     private ExtensionContext.Store getStore(ExtensionContext context) {
         if (context.getParent().isPresent() && context.getParent().get().getParent().isPresent()) {
             return context.getParent().get().getStore(NAMESPACE);
@@ -493,6 +608,22 @@ public final class TestcontainersOrchestratorExtension
 
     private static <A extends Annotation> ContainerMode modeUnchecked(ActiveProvider<A, ?> provider) {
         return provider.provider().mode(provider.annotation());
+    }
+
+    private static Isolation.Mode isolation(ActiveProvider<?, ?> provider) {
+        return isolationUnchecked(provider);
+    }
+
+    private static <A extends Annotation> Isolation.Mode isolationUnchecked(ActiveProvider<A, ?> provider) {
+        return provider.provider().isolation(provider.annotation());
+    }
+
+    private static Isolation.Mode isolation(ActiveContext<?> active) {
+        return isolationUnchecked(active);
+    }
+
+    private static <A extends Annotation> Isolation.Mode isolationUnchecked(ActiveContext<?> active) {
+        return ((TestcontainersProvider<A, ?>) active.provider).isolation((A) active.annotation);
     }
 
     private List<ActiveContext<?>> startAll(ExtensionContext context,
@@ -642,6 +773,11 @@ public final class TestcontainersOrchestratorExtension
 
     private static <A extends Annotation, C> void afterEachUnchecked(ActiveContext<C> active, ExtensionContext extension) {
         ((TestcontainersProvider<A, C>) active.provider).afterEach((A) active.annotation, active.context, extension);
+    }
+
+    private static <A extends Annotation, C> void closeIsolatedUnchecked(ActiveContext<C> active, ExtensionContext extension) {
+        ((TestcontainersProvider<A, C>) active.provider)
+                .closeIsolatedConnection((A) active.annotation, active.context.connection(), extension);
     }
 
     private static void stopUnchecked(ActiveContext<?> active) {

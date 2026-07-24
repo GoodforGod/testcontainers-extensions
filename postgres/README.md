@@ -57,8 +57,10 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
+  - [Isolation](#isolation)
   - [External Connection](#external-connection)
   - [Migration](#annotation-migration)
+  - [Migration Strategy](#migration-strategy)
 
 ## Usage
 
@@ -254,6 +256,40 @@ class ExampleTests {
 }
 ```
 
+### Isolation
+
+`Isolation` controls logical connection isolation inside a started container.
+
+Default value is `@Isolation(Isolation.Mode.DISABLED)`. Disabled isolation preserves regular behavior: injected connection points to the container database and migrations run directly against that database according to `Migration.Mode`.
+
+`Isolation.Mode.PER_METHOD` reuses the same physical container but creates a separate generated database for every test method. Field and method argument injection receive a `JdbcConnection` configured for that generated database.
+
+`Isolation.Mode.PER_METHOD` has lifecycle restrictions:
+- Field injection requires JUnit default `TestInstance.Lifecycle.PER_METHOD`.
+- `TestInstance.Lifecycle.PER_CLASS` is rejected.
+- Constructor injection is rejected.
+- `@BeforeAll` parameter injection is rejected.
+
+```java
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
+        isolation = @Isolation(Isolation.Mode.PER_METHOD),
+        migration = @Migration(
+                engine = Migration.Engines.FLYWAY,
+                apply = Migration.Mode.PER_METHOD,
+                drop = Migration.Mode.NONE))
+class ExampleTests {
+
+    @ConnectionPostgreSQL
+    private JdbcConnection connection;
+
+    @Test
+    void test(@ConnectionPostgreSQL JdbcConnection parameter) {
+        assertSame(connection, parameter);
+        connection.execute("INSERT INTO users VALUES(1);");
+    }
+}
+```
+
 ### External Connection
 
 In case you want to use some external Postgres instance that is running in CI or other place for tests (due to docker limitations or other), 
@@ -281,6 +317,7 @@ Annotation parameters:
 - `apply` - parameter configures migration mode.
 - `drop` - configures when to reset/drop/clear database.
 - `locations` - configures locations where migrations are placed.
+- `strategy` - configures how migrations are applied to isolated databases.
 
 Available migration engines:
 - [Flyway](https://documentation.red-gate.com/fd/postgresql-184127604.html)
@@ -311,6 +348,34 @@ class ExampleTests {
     }
 }
 ```
+
+### Migration Strategy
+
+`Migration.Strategy.DEFAULT` runs Flyway or Liquibase directly against the active connection. This is the default and keeps existing migration behavior.
+
+`Migration.Strategy.TEMPLATE_CLONE` is supported by Postgres for `Isolation.Mode.PER_METHOD`. The extension creates a `migration_template_<hash>` database, applies migrations to it once, closes the template connection, and then creates every test method database using `CREATE DATABASE <generated> TEMPLATE <template>`.
+
+This is useful when migrations are expensive and tests need isolated databases:
+
+```java
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
+        isolation = @Isolation(Isolation.Mode.PER_METHOD),
+        migration = @Migration(
+                engine = Migration.Engines.FLYWAY,
+                apply = Migration.Mode.PER_CLASS,
+                drop = Migration.Mode.NONE,
+                strategy = Migration.Strategy.TEMPLATE_CLONE))
+class ExampleTests {
+
+    @Test
+    void test(@ConnectionPostgreSQL JdbcConnection connection) {
+        connection.execute("INSERT INTO users VALUES(1);");
+        connection.assertCountsEquals(1, "users");
+    }
+}
+```
+
+`TEMPLATE_CLONE` requires `Isolation.Mode.PER_METHOD`. Using it with default disabled isolation fails fast because it would change historical migration behavior.
 
 ## License
 

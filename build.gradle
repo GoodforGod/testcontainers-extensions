@@ -103,14 +103,15 @@ subprojects {
         ])
     }
 
-    spotless {
-        java {
-            encoding("UTF-8")
-            importOrder()
-            removeUnusedImports()
-            eclipse("4.21").configFile("${rootDir}/config/codestyle.xml")
+        spotless {
+            java {
+                encoding("UTF-8")
+                importOrder()
+                removeUnusedImports()
+                toggleOffOn("@formatter:off", "@formatter:on")
+                eclipse("4.21").configFile("${rootDir}/config/codestyle.xml")
+            }
         }
-    }
 
     tasks.withType(JavaCompile) {
         options.encoding("UTF-8")

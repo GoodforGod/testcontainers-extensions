@@ -269,6 +269,36 @@ class ExampleTests {
 }
 ```
 
+### Isolation
+
+`Isolation` controls logical connection isolation inside a started container.
+
+Default value is `@Isolation(Isolation.Mode.DISABLED)`. Disabled isolation preserves regular behavior: injected connection points to the default keyspace and migrations run directly against that keyspace according to `Migration.Mode`.
+
+`Isolation.Mode.PER_METHOD` reuses the same physical Scylla container but creates a separate generated keyspace for every test method. Field and method argument injection receive a `ScyllaConnection` configured for that generated keyspace.
+
+`Isolation.Mode.PER_METHOD` has lifecycle restrictions:
+- Field injection requires JUnit default `TestInstance.Lifecycle.PER_METHOD`.
+- `TestInstance.Lifecycle.PER_CLASS` is rejected.
+- Constructor injection is rejected.
+- `@BeforeAll` parameter injection is rejected.
+
+```java
+@TestcontainersScylla(mode = ContainerMode.PER_RUN,
+        isolation = @Isolation(Isolation.Mode.PER_METHOD),
+        migration = @Migration(
+                engine = Migration.Engines.SCRIPTS,
+                apply = Migration.Mode.PER_METHOD,
+                drop = Migration.Mode.NONE))
+class ExampleTests {
+
+    @Test
+    void test(@ConnectionScylla ScyllaConnection connection) {
+        assertNotNull(connection);
+    }
+}
+```
+
 ### Annotation Migration
 
 `@Migrations` allow easily migrate database between test executions and drop after tests.

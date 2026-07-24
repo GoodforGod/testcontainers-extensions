@@ -1,6 +1,7 @@
 package io.goodforgod.testcontainers.extensions.redpanda;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.Isolation;
 import io.goodforgod.testcontainers.extensions.Network;
 import io.goodforgod.testcontainers.extensions.TestcontainersOrchestratorExtension;
 import java.lang.annotation.*;
@@ -38,6 +39,12 @@ public @interface TestcontainersRedpanda {
      * @return container network details
      */
     Network network() default @Network(shared = false);
+
+    /**
+     * @return logical connection isolation mode. Disabled by default and preserves regular connection
+     *             behavior.
+     */
+    Isolation isolation() default @Isolation;
 
     /**
      * @return topics to set up right after container started

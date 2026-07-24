@@ -28,7 +28,8 @@ public final class FakeContainerContext implements ContainerContext<FakeConnecti
                 image,
                 List.copyOf(container.getNetworkAliases()),
                 container.getNetwork() != null,
-                System.identityHashCode(container.getNetwork()));
+                System.identityHashCode(container.getNetwork()),
+                service);
     }
 
     @Override

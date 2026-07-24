@@ -1,5 +1,6 @@
 package io.goodforgod.testcontainers.extensions.jdbc;
 
+import io.goodforgod.testcontainers.extensions.Isolation;
 import java.lang.annotation.Annotation;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
@@ -39,5 +40,21 @@ public final class PostgreSQLTestcontainersProvider extends
     @Override
     protected Migration migration(@NotNull TestcontainersPostgreSQL annotation) {
         return annotation.migration();
+    }
+
+    @Override
+    protected Isolation isolationAnnotation(@NotNull TestcontainersPostgreSQL annotation) {
+        return annotation.isolation();
+    }
+
+    @Override
+    protected boolean isTemplateCloneSupported(TestcontainersPostgreSQL annotation) {
+        return true;
+    }
+
+    @Override
+    protected boolean databaseExists(JdbcConnection connection, String database) {
+        return connection.queryOne("SELECT 1 FROM pg_database WHERE datname = '" + database + "';",
+                rs -> rs.getInt(1)).isPresent();
     }
 }

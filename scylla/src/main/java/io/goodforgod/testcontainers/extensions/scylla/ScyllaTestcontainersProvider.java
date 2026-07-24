@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.scylla;
 
 import io.goodforgod.testcontainers.extensions.ContainerContext;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.Isolation;
 import io.goodforgod.testcontainers.extensions.TestcontainersProvider;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -71,9 +72,44 @@ public final class ScyllaTestcontainersProvider implements TestcontainersProvide
     }
 
     @Override
+    public String isolationPrefix(@NotNull TestcontainersScylla annotation) {
+        return "scylla";
+    }
+
+    @Override
+    public @NotNull ScyllaConnection createIsolatedConnection(@NotNull TestcontainersScylla annotation,
+                                                              @NotNull ContainerContext<ScyllaConnection> context,
+                                                              @NotNull ExtensionContext extension,
+                                                              @NotNull String namespace) {
+        ScyllaConnection connection = context.connection();
+        ScyllaConnection.Params params = connection.params();
+        ScyllaConnection.Params network = connection.paramsInNetwork().orElse(null);
+        return new ScyllaConnectionClosableImpl(
+                new ScyllaConnectionImpl.ParamsImpl(params.host(), params.port(), params.datacenter(), namespace,
+                        params.username(), params.password()),
+                (network == null)
+                        ? null
+                        : new ScyllaConnectionImpl.ParamsImpl(network.host(), network.port(), network.datacenter(), namespace,
+                                network.username(), network.password()));
+    }
+
+    @Override
+    public void closeIsolatedConnection(@NotNull TestcontainersScylla annotation,
+                                        @NotNull ScyllaConnection connection,
+                                        @NotNull ExtensionContext extension) {
+        if (connection instanceof ScyllaConnectionImpl scyllaConnection) {
+            scyllaConnection.stop();
+        }
+    }
+
+    @Override
     public void afterStart(@NotNull TestcontainersScylla annotation,
                            @NotNull ContainerContext<ScyllaConnection> context,
                            @NotNull ExtensionContext extension) {
+        if (isolation(annotation) != Isolation.Mode.DISABLED) {
+            return;
+        }
+
         if (annotation.migration().apply() == Migration.Mode.PER_CLASS) {
             migrate(annotation, context.connection());
         }
@@ -83,7 +119,9 @@ public final class ScyllaTestcontainersProvider implements TestcontainersProvide
     public void beforeEach(@NotNull TestcontainersScylla annotation,
                            @NotNull ContainerContext<ScyllaConnection> context,
                            @NotNull ExtensionContext extension) {
-        if (annotation.migration().apply() == Migration.Mode.PER_METHOD) {
+        if (isolation(annotation) != Isolation.Mode.DISABLED && annotation.migration().apply() != Migration.Mode.NONE) {
+            migrate(annotation, context.connection());
+        } else if (annotation.migration().apply() == Migration.Mode.PER_METHOD) {
             migrate(annotation, context.connection());
         }
     }

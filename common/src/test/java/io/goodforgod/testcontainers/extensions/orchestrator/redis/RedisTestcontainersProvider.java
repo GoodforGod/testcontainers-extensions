@@ -52,6 +52,16 @@ public final class RedisTestcontainersProvider implements TestcontainersProvider
     }
 
     @Override
+    public Isolation.Mode isolation(@NotNull TestcontainersRedis annotation) {
+        return annotation.isolation().value();
+    }
+
+    @Override
+    public String isolationPrefix(@NotNull TestcontainersRedis annotation) {
+        return "redis";
+    }
+
+    @Override
     public @NotNull GenericContainer<?> createContainer(@NotNull TestcontainersRedis annotation) {
         return new FakeGenericContainer(annotation.image());
     }
@@ -59,6 +69,20 @@ public final class RedisTestcontainersProvider implements TestcontainersProvider
     @Override
     public @NotNull ContainerContext<FakeConnection> createContext(@NotNull GenericContainer<?> container) {
         return new FakeContainerContext("redis", container.getDockerImageName(), container);
+    }
+
+    @Override
+    public @NotNull FakeConnection createIsolatedConnection(@NotNull TestcontainersRedis annotation,
+                                                            @NotNull ContainerContext<FakeConnection> context,
+                                                            @NotNull org.junit.jupiter.api.extension.ExtensionContext extension,
+                                                            @NotNull String namespace) {
+        FakeConnection base = context.connection();
+        return new FakeConnection(base.service(),
+                base.image(),
+                base.aliases(),
+                base.sharedNetwork(),
+                base.networkIdentity(),
+                namespace);
     }
 
     @Override

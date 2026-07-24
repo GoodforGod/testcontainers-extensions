@@ -74,6 +74,28 @@ class ExampleTests {
 }
 ```
 
+Postgres also supports method-level logical isolation with migration template cloning. One container is reused for the whole run, migrations are applied once to a template database, and every test method receives a connection to a newly cloned database:
+
+```java
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
+        isolation = @Isolation(Isolation.Mode.PER_METHOD),
+        migration = @Migration(
+                engine = Migration.Engines.FLYWAY,
+                apply = Migration.Mode.PER_CLASS,
+                drop = Migration.Mode.NONE,
+                strategy = Migration.Strategy.TEMPLATE_CLONE))
+class ExampleTests {
+
+    @ConnectionPostgreSQL
+    private JdbcConnection postgresConnection;
+
+    @Test
+    void test() {
+        postgresConnection.execute("INSERT INTO users VALUES(1);");
+    }
+}
+```
+
 ## Testcontainers compatibility
 
 - Version 0.13+ - build on top of Testcontainers [1.21.3](https://mvnrepository.com/artifact/org.testcontainers/testcontainers/1.21.3)

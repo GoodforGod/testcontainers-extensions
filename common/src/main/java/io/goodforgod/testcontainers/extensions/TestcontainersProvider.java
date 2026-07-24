@@ -2,7 +2,9 @@ package io.goodforgod.testcontainers.extensions;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -43,11 +45,49 @@ public interface TestcontainersProvider<A extends Annotation, C> {
         return Collections.emptySet();
     }
 
+    default Isolation.Mode isolation(@NotNull A annotation) {
+        try {
+            Method isolation = annotation.annotationType().getMethod("isolation");
+            Object value = isolation.invoke(annotation);
+            return (value instanceof Isolation configured)
+                    ? configured.value()
+                    : Isolation.Mode.DISABLED;
+        } catch (NoSuchMethodException e) {
+            return Isolation.Mode.DISABLED;
+        } catch (Exception e) {
+            throw new IllegalStateException("@%s isolation() can't read".formatted(annotationType().getSimpleName()), e);
+        }
+    }
+
+    default String isolationPrefix(@NotNull A annotation) {
+        return annotationType().getSimpleName().toLowerCase(Locale.ROOT);
+    }
+
     @NotNull
     GenericContainer<?> createContainer(@NotNull A annotation);
 
     @NotNull
     ContainerContext<C> createContext(@NotNull GenericContainer<?> container);
+
+    default @NotNull C createIsolatedConnection(@NotNull A annotation,
+                                                @NotNull ContainerContext<C> context,
+                                                @NotNull ExtensionContext extension,
+                                                @NotNull String namespace) {
+        throw new UnsupportedOperationException("@%s doesn't support Isolation.Mode.PER_METHOD"
+                .formatted(annotationType().getSimpleName()));
+    }
+
+    default void closeIsolatedConnection(@NotNull A annotation,
+                                         @NotNull C connection,
+                                         @NotNull ExtensionContext extension) {
+        if (connection instanceof AutoCloseable closeable) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                throw new IllegalStateException("Isolated connection can't close", e);
+            }
+        }
+    }
 
     default void afterStart(@NotNull A annotation, @NotNull ContainerContext<C> context, @NotNull ExtensionContext extension) {}
 

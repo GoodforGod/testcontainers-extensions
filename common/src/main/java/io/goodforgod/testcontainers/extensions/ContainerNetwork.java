@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions;
 
 import java.lang.annotation.*;
 
+// @formatter:off
 /**
  * Marks a test class field of type {@link org.testcontainers.containers.Network} that should be
  * used by containers started by the shared orchestrator.
@@ -14,8 +15,8 @@ import java.lang.annotation.*;
  * @TestcontainersMinio
  * class StorageTests {
  *
- *    @ContainerNetwork
- *    private static final org.testcontainers.containers.Network NETWORK = Network.SHARED;
+ *     @ContainerNetwork
+ *     private static final org.testcontainers.containers.Network NETWORK = Network.SHARED;
  * }
  * }
  * </pre>
@@ -23,8 +24,8 @@ import java.lang.annotation.*;
  * A {@code @ContainerNetwork} field has priority over {@link Network#shared()}. Network aliases are
  * still taken from each service annotation.
  */
+// @formatter:on
 @Documented
-@Target({ElementType.FIELD})
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ContainerNetwork {
-}
+public @interface ContainerNetwork {}

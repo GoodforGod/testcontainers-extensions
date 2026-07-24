@@ -2,6 +2,7 @@ package io.goodforgod.testcontainers.extensions.cassandra;
 
 import io.goodforgod.testcontainers.extensions.ContainerContext;
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.Isolation;
 import io.goodforgod.testcontainers.extensions.TestcontainersProvider;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -73,10 +74,43 @@ public final class CassandraTestcontainersProvider
     }
 
     @Override
+    public String isolationPrefix(@NotNull TestcontainersCassandra annotation) {
+        return "cassandra";
+    }
+
+    @Override
+    public @NotNull CassandraConnection createIsolatedConnection(@NotNull TestcontainersCassandra annotation,
+                                                                 @NotNull ContainerContext<CassandraConnection> context,
+                                                                 @NotNull ExtensionContext extension,
+                                                                 @NotNull String namespace) {
+        CassandraConnection connection = context.connection();
+        CassandraConnection.Params params = connection.params();
+        CassandraConnection.Params network = connection.paramsInNetwork().orElse(null);
+        return new CassandraConnectionClosableImpl(
+                new CassandraConnectionImpl.ParamsImpl(params.host(), params.port(), params.datacenter(), namespace,
+                        params.username(), params.password()),
+                (network == null)
+                        ? null
+                        : new CassandraConnectionImpl.ParamsImpl(network.host(), network.port(), network.datacenter(), namespace,
+                                network.username(), network.password()));
+    }
+
+    @Override
+    public void closeIsolatedConnection(@NotNull TestcontainersCassandra annotation,
+                                        @NotNull CassandraConnection connection,
+                                        @NotNull ExtensionContext extension) {
+        if (connection instanceof CassandraConnectionImpl cassandraConnection) {
+            cassandraConnection.stop();
+        }
+    }
+
+    @Override
     public void beforeEach(@NotNull TestcontainersCassandra annotation,
                            @NotNull ContainerContext<CassandraConnection> context,
                            @NotNull ExtensionContext extension) {
-        if (annotation.migration().apply() == Migration.Mode.PER_METHOD) {
+        if (isolation(annotation) != Isolation.Mode.DISABLED && annotation.migration().apply() != Migration.Mode.NONE) {
+            migrate(annotation, context.connection());
+        } else if (annotation.migration().apply() == Migration.Mode.PER_METHOD) {
             migrate(annotation, context.connection());
         }
     }
@@ -85,6 +119,10 @@ public final class CassandraTestcontainersProvider
     public void afterStart(@NotNull TestcontainersCassandra annotation,
                            @NotNull ContainerContext<CassandraConnection> context,
                            @NotNull ExtensionContext extension) {
+        if (isolation(annotation) != Isolation.Mode.DISABLED) {
+            return;
+        }
+
         if (annotation.migration().apply() == Migration.Mode.PER_CLASS) {
             migrate(annotation, context.connection());
         }
