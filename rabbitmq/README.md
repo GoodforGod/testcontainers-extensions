@@ -15,7 +15,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-rabbitmq:0.14.0"
+testImplementation "io.goodforgod:testcontainers-extensions-rabbitmq:0.15.0"
 ```
 
 **Maven**
@@ -23,7 +23,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-rabbitmq:0.14.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-rabbitmq</artifactId>
-    <version>0.14.0</version>
+    <version>0.15.0</version>
     <scope>test</scope>
 </dependency>
 ```
