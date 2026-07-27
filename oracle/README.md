@@ -60,8 +60,10 @@ Extension tested against image `gvenzl/oracle-xe:18.4.0-slim-faststart` and driv
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
+  - [Isolation](#isolation)
   - [External Connection](#external-connection)
   - [Migration](#annotation-migration)
+  - [Migration Strategy](#migration-strategy)
 
 ## Usage
 
@@ -255,6 +257,14 @@ class ExampleTests {
 }
 ```
 
+### Isolation
+
+`Isolation` controls logical connection isolation inside a started container.
+
+Default value is `@Isolation(Isolation.Mode.DISABLED)`. Disabled isolation preserves regular behavior: injected connection points to the container database and migrations run directly against that database according to `Migration.Mode`.
+
+`Isolation.Mode.PER_METHOD` is not supported for Oracle yet and fails fast if selected.
+
 ### External Connection
 
 In case you want to use some external Oracle instance that is running in CI or other place for tests (due to docker limitations or other), 
@@ -312,6 +322,12 @@ class ExampleTests {
     }
 }
 ```
+
+### Migration Strategy
+
+`Migration.Strategy.DEFAULT` runs Flyway or Liquibase directly against the active connection. This is the default and keeps existing migration behavior.
+
+`Migration.Strategy.TEMPLATE_CLONE` requires `Isolation.Mode.PER_METHOD` and a provider that supports database template cloning. This module currently uses `DEFAULT`; selecting `TEMPLATE_CLONE` fails fast unless support is added by the provider.
 
 ## License
 

@@ -40,6 +40,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("testcontainers-mockserver", "org.testcontainers", "mockserver").versionRef("testcontainers")
             library("testcontainers-minio", "org.testcontainers", "minio").versionRef("testcontainers")
             library("testcontainers-clickhouse", "org.testcontainers", "clickhouse").versionRef("testcontainers")
+            library("testcontainers-arangodb", "com.github.goodforgod", "arangodb-testcontainer").version("6.0.0")
 
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-mysql", "org.flywaydb", "flyway-mysql").versionRef("flyway")
@@ -59,6 +60,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("driver-nats", "io.nats", "jnats").version("2.22.0")
             library("driver-rabbitmq", "com.rabbitmq", "amqp-client").version("5.21.0")
             library("driver-redis", "redis.clients", "jedis").version("5.2.0")
+            library("driver-arangodb", "com.arangodb", "arangodb-java-driver").version("7.19.0")
             library("driver-mockserver", "org.mock-server", "mockserver-client-java").version("5.15.0")
             library("driver-minio", "io.minio", "minio").version("8.5.12")
             library("driver-clickhouse", "com.clickhouse", "clickhouse-jdbc").versionRef("clickhouse")

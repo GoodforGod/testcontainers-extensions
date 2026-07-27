@@ -1,13 +1,13 @@
 package io.goodforgod.testcontainers.extensions;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * Describes container network details
+ * Describes container network details for {@code @Testcontainers...} annotations.
+ *
+ * @see ContainerNetwork
  */
+@Deprecated
 @Documented
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)

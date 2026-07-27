@@ -1,7 +1,9 @@
 package io.goodforgod.testcontainers.extensions.scylla;
 
 import io.goodforgod.testcontainers.extensions.ContainerMode;
+import io.goodforgod.testcontainers.extensions.Isolation;
 import io.goodforgod.testcontainers.extensions.Network;
+import io.goodforgod.testcontainers.extensions.TestcontainersOrchestratorExtension;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,7 +15,7 @@ import org.testcontainers.scylladb.ScyllaDBContainer;
  * schema migration support between test executions
  */
 @Order(Order.DEFAULT - 100) // Run before other extensions
-@ExtendWith(TestcontainersScyllaExtension.class)
+@ExtendWith(TestcontainersOrchestratorExtension.class)
 @Documented
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -39,6 +41,12 @@ public @interface TestcontainersScylla {
      * @return container network details
      */
     Network network() default @Network(shared = false);
+
+    /**
+     * @return logical connection isolation mode. Disabled by default and preserves regular connection
+     *             behavior.
+     */
+    Isolation isolation() default @Isolation;
 
     Migration migration() default @Migration(engine = Migration.Engines.SCRIPTS,
             apply = Migration.Mode.NONE,

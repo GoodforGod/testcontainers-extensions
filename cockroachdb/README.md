@@ -57,8 +57,10 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
 - [Annotation](#annotation)
   - [Manual Container](#manual-container)
   - [Connection](#annotation-connection)
+  - [Isolation](#isolation)
   - [External Connection](#external-connection)
   - [Migration](#annotation-migration)
+  - [Migration Strategy](#migration-strategy)
 
 ## Usage
 
@@ -251,6 +253,37 @@ class ExampleTests {
 }
 ```
 
+### Isolation
+
+`Isolation` controls logical connection isolation inside a started container.
+
+Default value is `@Isolation(Isolation.Mode.DISABLED)`. Disabled isolation preserves regular behavior: injected connection points to the container database and migrations run directly against that database according to `Migration.Mode`.
+
+`Isolation.Mode.PER_METHOD` reuses the same physical container but creates a separate generated database for every test method. Field and method argument injection receive a `JdbcConnection` configured for that generated database.
+
+`Isolation.Mode.PER_METHOD` has lifecycle restrictions:
+- Field injection requires JUnit default `TestInstance.Lifecycle.PER_METHOD`.
+- `TestInstance.Lifecycle.PER_CLASS` is rejected.
+- Constructor injection is rejected.
+- `@BeforeAll` parameter injection is rejected.
+
+```java
+@TestcontainersCockroach(mode = ContainerMode.PER_RUN,
+        isolation = @Isolation(Isolation.Mode.PER_METHOD),
+        migration = @Migration(
+                engine = Migration.Engines.FLYWAY,
+                apply = Migration.Mode.PER_METHOD,
+                drop = Migration.Mode.NONE))
+class ExampleTests {
+
+    @Test
+    void test(@ConnectionCockroach JdbcConnection connection) {
+        connection.execute("INSERT INTO users VALUES(1);");
+    }
+}
+```
+
+
 ### External Connection
 
 In case you want to use some external Cockroachdb instance that is running in CI or other place for tests (due to docker limitations or other), 
@@ -308,6 +341,12 @@ class ExampleTests {
     }
 }
 ```
+
+### Migration Strategy
+
+`Migration.Strategy.DEFAULT` runs Flyway or Liquibase directly against the active connection. This is the default and keeps existing migration behavior.
+
+`Migration.Strategy.TEMPLATE_CLONE` requires `Isolation.Mode.PER_METHOD` and a provider that supports database template cloning. This module currently uses `DEFAULT`; selecting `TEMPLATE_CLONE` fails fast unless support is added by the provider.
 
 ## License
 
