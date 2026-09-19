@@ -39,6 +39,8 @@ dependencies {
     jacocoAggregation project(":arangodb")
     jacocoAggregation project(":rabbitmq")
     jacocoAggregation project(":mockserver")
+    jacocoAggregation project(":wiremock")
+    jacocoAggregation project(":microcks")
     jacocoAggregation project(":minio")
     jacocoAggregation project(":rustfs")
     jacocoAggregation project(":clickhouse")

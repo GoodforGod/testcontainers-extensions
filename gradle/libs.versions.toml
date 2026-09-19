@@ -3,6 +3,9 @@ slf4j = "2.0.16"
 junit-api = "5.11.4"
 junit-platform = "1.11.4"
 testcontainers = "1.21.4"
+wiremock = "1.0-alpha-15"
+wiremock-client = "3.13.2"
+microcks = "0.5.0"
 flyway = "10.20.0"
 
 [libraries]
@@ -35,6 +38,8 @@ testcontainers-minio = { module = "org.testcontainers:minio", version.ref = "tes
 testcontainers-clickhouse = { module = "org.testcontainers:clickhouse", version.ref = "testcontainers" }
 testcontainers-arangodb = { module = "com.github.goodforgod:arangodb-testcontainer", version = "5.0.0" }
 testcontainers-nats = { module = "io.goodforgod:nats-testcontainers", version = "0.1.0" }
+testcontainers-wiremock = { module = "org.wiremock.integrations.testcontainers:wiremock-testcontainers-module", version.ref = "wiremock" }
+testcontainers-microcks = { module = "io.github.microcks:microcks-testcontainers", version.ref = "microcks" }
 
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-mysql = { module = "org.flywaydb:flyway-mysql", version.ref = "flyway" }
@@ -57,4 +62,5 @@ driver-redis = { module = "redis.clients:jedis", version = "5.2.0" }
 driver-arangodb = { module = "com.arangodb:arangodb-java-driver", version = "7.19.0" }
 driver-mockserver = { module = "org.mock-server:mockserver-client-java", version = "5.15.0" }
 driver-minio = { module = "io.minio:minio", version = "8.5.12" }
+driver-wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock-client" }
 driver-clickhouse = { module = "com.clickhouse:clickhouse-jdbc", version = "0.9.2" }
