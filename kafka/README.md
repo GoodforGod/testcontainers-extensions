@@ -137,7 +137,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersKafka(image = "${MY_IMAGE_ENV|apache/kafka-native:4.1.0}")
+@TestcontainersKafka(image = "${MY_IMAGE_ENV|apache/kafka-native:4.3.1}")
 class ExampleTests {
 
     @Test
@@ -149,9 +149,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `apache/kafka-native:4.1.0`
+- Image can have static value: `apache/kafka-native:4.3.1`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|apache/kafka-native:4.1.0}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|apache/kafka-native:4.3.1}`
 
 ### Manual Container
 
@@ -164,7 +164,7 @@ Example:
 class ExampleTests {
 
     @ContainerKafka
-    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.0"));
+    private static final KafkaContainer container = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.3.1"));
 
     @Test
     void checkParams(@ConnectionKafka KafkaConnection connection) {
@@ -243,7 +243,7 @@ class ExampleTests {
 It is possible to provide custom properties to `@KafkaConnection` that will be applied to Produces and Consumers that are created during tests.
 
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.1.0")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.3.1")
 class ExampleTests {
 
     @ConnectionKafka(properties = {"enable.auto.commit", "true"})
@@ -269,7 +269,7 @@ You can easily send events to any topic (if topic not exist before sending, it w
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.1.0")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.3.1")
 class ExampleTests {
 
     @ConnectionKafka
@@ -288,7 +288,7 @@ You can easily subscribe and consume events from any topic (if topic not exist b
 
 Example:
 ```java
-@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.1.0")
+@TestcontainersKafka(mode = ContainerMode.PER_CLASS, image = "apache/kafka-native:4.3.1")
 class ExampleTests {
 
     @ConnectionKafka

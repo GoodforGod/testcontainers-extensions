@@ -16,7 +16,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 
 @Execution(ExecutionMode.CONCURRENT)
 @TestcontainersPostgreSQL(mode = ContainerMode.PER_RUN,
-        image = "postgres:17.6-alpine",
+        image = "postgres:18.6-alpine",
         isolation = @Isolation(Isolation.Mode.PER_METHOD),
         migration = @Migration(
                 engine = Migration.Engines.FLYWAY,

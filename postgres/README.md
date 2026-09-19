@@ -157,7 +157,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:17.6-alpine}")
+@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:18.6-alpine}")
 class ExampleTests {
 
     @Test
@@ -169,9 +169,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `postgres:17.6-alpine`
+- Image can have static value: `postgres:18.6-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:17.6-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:18.6-alpine}`
 
 ### Manual Container
 
@@ -240,7 +240,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:17.6-alpine")
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:18.6-alpine")
 class ExampleTests {
 
     @ConnectionPostgreSQL

@@ -16,7 +16,9 @@ testcontainers = "minor"
 # JUnit stays on its current major line (allow minor + patch bumps).
 junit-api = "minor"
 junit-platform = "minor"
-# ArangoDB and NATS testcontainers stay on their current major line.
-# These are inline versions in libs.versions.toml, so keyed by 1-based line number.
-"inline:36" = "minor" # com.github.goodforgod:arangodb-testcontainer
-"inline:37" = "minor" # io.goodforgod:nats-testcontainers
+# These stay on their current major line (allow minor + patch bumps).
+flyway = "minor"
+liquibase = "minor"
+oracle = "minor"
+testcontainers-arangodb = "minor"
+testcontainers-nats = "minor"

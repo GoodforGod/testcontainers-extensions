@@ -25,14 +25,14 @@ public @interface TestcontainersMinio {
      * @return MinIOContainer image
      *             <p>
      *             1) Image can have static value:
-     *             "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z"
+     *             "quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z}"
+     *             "${MY_IMAGE_ENV|quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z}"
      *             <p>
      *             MinIO no longer publishes images to Docker Hub, images are now available at quay.io
      */
-    String image() default "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z";
+    String image() default "quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z";
 
     /**
      * @return when to start container

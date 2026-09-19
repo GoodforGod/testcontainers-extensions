@@ -24,12 +24,12 @@ public @interface TestcontainersClickhouse {
     /**
      * @return Clickhouse image
      *             <p>
-     *             1) Image can have static value: "clickhouse/clickhouse-server:25.8-alpine"
+     *             1) Image can have static value: "clickhouse/clickhouse-server:26.8-alpine"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|clickhouse/clickhouse-server:25.8-alpine}"
+     *             "${MY_IMAGE_ENV|clickhouse/clickhouse-server:26.8-alpine}"
      */
-    String image() default "clickhouse/clickhouse-server:25.8-alpine";
+    String image() default "clickhouse/clickhouse-server:26.8-alpine";
 
     /**
      * @return when to start container

@@ -116,7 +116,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMinio(image = "${MY_IMAGE_ENV|quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z}")
+@TestcontainersMinio(image = "${MY_IMAGE_ENV|quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z}")
 class ExampleTests {
 
     @Test
@@ -128,9 +128,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z`
+- Image can have static value: `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z}`
 
 ### Manual Container
 
@@ -196,7 +196,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMinio(mode = ContainerMode.PER_CLASS, image = "quay.io/minio/minio:RELEASE.2025-07-23T15-54-02Z")
+@TestcontainersMinio(mode = ContainerMode.PER_CLASS, image = "quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z")
 class ExampleTests {
 
     @ConnectionMinio

@@ -155,7 +155,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMariaDB(image = "${MY_IMAGE_ENV|mariadb:11.8}")
+@TestcontainersMariaDB(image = "${MY_IMAGE_ENV|mariadb:12.3}")
 class ExampleTests {
 
     @Test
@@ -167,9 +167,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `mariadb:11.8`
+- Image can have static value: `mariadb:12.3`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mariadb:11.8}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mariadb:12.3}`
 
 ### Manual Container
 
@@ -240,7 +240,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMariaDB(mode = ContainerMode.PER_CLASS, image = "mariadb:11.8")
+@TestcontainersMariaDB(mode = ContainerMode.PER_CLASS, image = "mariadb:12.3")
 class ExampleTests {
 
     @ConnectionMariaDB

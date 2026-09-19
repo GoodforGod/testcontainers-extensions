@@ -175,8 +175,7 @@ Use `-PupdateReportFile=...` to write it somewhere else:
 ./gradlew -I gradle/update-libs-versions.gradle updateLibsVersions -PreportUpdates=true -PupdateLevel=minor -PupdateReportFile=build/reports/dependency-updates.md
 ```
 
-The report includes `gradle/libs.versions.toml` updates and
-`buildSrc/build.gradle` synchronization changes.
+The report includes `gradle/libs.versions.toml` updates.
 
 ## PR Comments In CI
 
@@ -212,38 +211,6 @@ Because the markers are stable, repeated CI runs update the previous report
 comments instead of creating new comments each time.
 
 The update report uses `patch` level in CI.
-
-## `buildSrc/build.gradle` Synchronization
-
-`buildSrc` is a separate Gradle build, so it does not automatically share the
-main build's version catalog accessors. The updater therefore also scans
-`buildSrc/build.gradle` for literal Maven coordinates:
-
-```groovy
-implementation 'com.squareup.okhttp3:okhttp:5.3.2'
-```
-
-If the same `group:artifact` exists in `libs.versions.toml`, the updater reports
-and, with `-PwriteVersions=true`, rewrites `buildSrc/build.gradle` to the
-effective catalog version.
-
-Example dry-run output:
-
-```text
-buildSrc/build.gradle sync:
-  line 6: com.squareup.okhttp3:okhttp (okhttp) 5.3.2 -> 5.4.0
-```
-
-If a `buildSrc` dependency has no matching `group:artifact` in the catalog, the
-task prints it explicitly and leaves it unchanged:
-
-```text
-buildSrc/build.gradle: no libs.versions.toml entry for com.fasterxml.jackson.core:jackson-databind:2.19.2
-```
-
-This is intentional: the updater only synchronizes exact coordinates. It does
-not silently migrate to a different Maven group/artifact because that can
-require source-code changes.
 
 ## Inline Versions
 

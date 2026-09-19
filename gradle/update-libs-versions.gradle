@@ -2,76 +2,6 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.xml.XmlSlurper
 
-def syncBuildSrcDependencies = { File buildSrcFile, List libraryEntries, def writeChanges ->
-    if (!buildSrcFile.isFile()) {
-        return [count: 0, changes: [], missing: []]
-    }
-
-    def catalogByModule = [:]
-    libraryEntries.each { entry ->
-        def key = "${entry.group}:${entry.artifact}"
-        if (!catalogByModule.containsKey(key)) {
-            catalogByModule[key] = entry
-        }
-    }
-
-    def lines = buildSrcFile.readLines("UTF-8")
-    def changes = []
-    def missing = []
-    def updatedLines = []
-    lines.eachWithIndex { line, index ->
-        def matcher = line =~ /(['"])([A-Za-z0-9_.-]+):([A-Za-z0-9_.-]+):([^'"]+)\1/
-        if (!matcher.find()) {
-            updatedLines += line
-            return
-        }
-
-        def quote = matcher.group(1)
-        def group = matcher.group(2)
-        def artifact = matcher.group(3)
-        def current = matcher.group(4)
-        def key = "${group}:${artifact}"
-        def catalogEntry = catalogByModule[key]
-        if (!catalogEntry) {
-            println "buildSrc/build.gradle: no libs.versions.toml entry for ${key}:${current}"
-            missing += [line: index + 1, group: group, artifact: artifact, current: current]
-            updatedLines += line
-            return
-        }
-
-        def target = catalogEntry.version
-        if (current == target) {
-            updatedLines += line
-            return
-        }
-
-        changes += [
-            line: index + 1,
-            group: group,
-            artifact: artifact,
-            current: current,
-            target: target,
-            alias: catalogEntry.alias
-        ]
-        updatedLines += line.replace("${quote}${key}:${current}${quote}", "${quote}${key}:${target}${quote}")
-    }
-
-    if (!changes.isEmpty()) {
-        println ""
-        println "buildSrc/build.gradle sync:"
-        changes.each {
-            println "  line ${it.line}: ${it.group}:${it.artifact} (${it.alias}) ${it.current} -> ${it.target}"
-        }
-
-        if (writeChanges) {
-            buildSrcFile.write(updatedLines.join(System.lineSeparator()) + System.lineSeparator(), "UTF-8")
-            println "Updated ${buildSrcFile}"
-        }
-    }
-
-    return [count: changes.size(), changes: changes, missing: missing]
-}
-
 gradle.projectsLoaded {
     gradle.rootProject {
         tasks.register("updateLibsVersions") {
@@ -122,7 +52,7 @@ gradle.projectsLoaded {
                 def libraryEntries = []
 
                 catalog.eachWithIndex { line, index ->
-                    def sectionMatcher = line =~ /^\s*\["([^"]+)"\]\s*$/
+                    def sectionMatcher = line =~ /^\s*\[([A-Za-z0-9_.-]+)\]\s*$/
                     if (sectionMatcher.matches()) {
                         section = sectionMatcher[0][1]
                         return
@@ -230,18 +160,11 @@ gradle.projectsLoaded {
                     }
                 }
 
-                def updateByLine = updates.collectEntries { [(it.line): it.latest] }
-                def effectiveLibraryEntries = libraryEntries.collect {
-                    updateByLine.containsKey(it.versionLine) ? it + [version: updateByLine[it.versionLine]] : it
-                }
-                def buildSrcResult = syncBuildSrcDependencies(rootProject.file("buildSrc/build.gradle"), effectiveLibraryEntries, writeChanges)
-                def buildSrcChanges = buildSrcResult.count
-
                 if (reportUpdatesEnabled) {
-                    reportUpdates(updates, buildSrcResult, updateLevel, updateReportFile)
+                    reportUpdates(updates, updateLevel, updateReportFile)
                 }
 
-                if (updates.isEmpty() && buildSrcChanges == 0) {
+                if (updates.isEmpty()) {
                     println "No version updates found."
                     return
                 }
@@ -549,10 +472,8 @@ int qualifierRank(String version) {
     return 3
 }
 
-void reportUpdates(List updates, Map buildSrcResult, String updateLevel, File reportFile) {
+void reportUpdates(List updates, String updateLevel, File reportFile) {
     def updateCount = updates.size()
-    def buildSrcCount = (buildSrcResult.count ?: 0) as int
-    def totalCount = updateCount + buildSrcCount
 
     def markdown = []
     markdown << "<!-- kora-dependency-update-report -->"
@@ -561,34 +482,15 @@ void reportUpdates(List updates, Map buildSrcResult, String updateLevel, File re
     markdown << "Update level: `${updateLevel}`"
     markdown << ""
 
-    if (totalCount == 0) {
+    if (updateCount == 0) {
         markdown << "No dependency updates found."
     } else {
-        markdown << "**Found `${totalCount}` dependency updates.**"
+        markdown << "**Found `${updateCount}` dependency updates.**"
         markdown << ""
-        if (updateCount > 0) {
-            markdown << "### `gradle/libs.versions.toml`"
-            markdown << ""
-            updates.sort { [it.line, it.name] }.each {
-                markdown << "- `${it.name}`: `${it.current}` -> `${it.latest}`"
-            }
-            markdown << ""
-        }
-        if (buildSrcCount > 0) {
-            markdown << "### `buildSrc/build.gradle`"
-            markdown << ""
-            buildSrcResult.changes.each {
-                markdown << "- line `${it.line}`: `${it.group}:${it.artifact}` (`${it.alias}`) `${it.current}` -> `${it.target}`"
-            }
-            markdown << ""
-        }
-    }
-
-    if (buildSrcResult.missing) {
-        markdown << "### `buildSrc/build.gradle` dependencies not in catalog"
+        markdown << "### `gradle/libs.versions.toml`"
         markdown << ""
-        buildSrcResult.missing.each {
-            markdown << "- line `${it.line}`: `${it.group}:${it.artifact}:${it.current}`"
+        updates.sort { [it.line, it.name] }.each {
+            markdown << "- `${it.name}`: `${it.current}` -> `${it.latest}`"
         }
         markdown << ""
     }

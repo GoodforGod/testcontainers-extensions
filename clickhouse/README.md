@@ -171,7 +171,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersClickhouse(image = "${MY_IMAGE_ENV|clickhouse/clickhouse-server:25.8-alpine}")
+@TestcontainersClickhouse(image = "${MY_IMAGE_ENV|clickhouse/clickhouse-server:26.8-alpine}")
 class ExampleTests {
 
     @Test
@@ -183,9 +183,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `clickhouse/clickhouse-server:25.8-alpine`
+- Image can have static value: `clickhouse/clickhouse-server:26.8-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|clickhouse/clickhouse-server:25.8-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|clickhouse/clickhouse-server:26.8-alpine}`
 
 ### Manual Container
 
@@ -251,7 +251,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersClickhouse(mode = ContainerMode.PER_CLASS, image = "clickhouse/clickhouse-server:25.8-alpine")
+@TestcontainersClickhouse(mode = ContainerMode.PER_CLASS, image = "clickhouse/clickhouse-server:26.8-alpine")
 class ExampleTests {
 
     @ConnectionClickhouse

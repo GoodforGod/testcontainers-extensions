@@ -138,7 +138,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersRedpanda(image = "${MY_IMAGE_ENV|redpandadata/redpanda:v25.1.11}")
+@TestcontainersRedpanda(image = "${MY_IMAGE_ENV|redpandadata/redpanda:v26.2.3}")
 class ExampleTests {
 
     @Test
@@ -150,9 +150,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `redpandadata/redpanda:v25.1.11`
+- Image can have static value: `redpandadata/redpanda:v26.2.3`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redpandadata/redpanda:v25.1.11}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|redpandadata/redpanda:v26.2.3}`
 
 ### Manual Container
 
@@ -165,7 +165,7 @@ Example:
 class ExampleTests {
 
     @ContainerRedpanda
-    private static final RedpandaContainer container = new RedpandaContainer(DockerImageName.parse("redpandadata/redpanda:v25.1.11"));
+    private static final RedpandaContainer container = new RedpandaContainer(DockerImageName.parse("redpandadata/redpanda:v26.2.3"));
 
     @Test
     void checkParams(@ConnectionRedpanda RedpandaConnection connection) {
@@ -244,7 +244,7 @@ class ExampleTests {
 It is possible to provide custom properties to `@RedpandaConnection` that will be applied to Produces and Consumers that are created during tests.
 
 ```java
-@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v25.1.11")
+@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v26.2.3")
 class ExampleTests {
 
     @ConnectionRedpanda(properties = {"enable.auto.commit", "true"})
@@ -270,7 +270,7 @@ You can easily send events to any topic (if topic not exist before sending, it w
 
 Example:
 ```java
-@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v25.1.11")
+@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v26.2.3")
 class ExampleTests {
 
     @ConnectionRedpanda
@@ -289,7 +289,7 @@ You can easily subscribe and consume events from any topic (if topic not exist b
 
 Example:
 ```java
-@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v25.1.11")
+@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v26.2.3")
 class ExampleTests {
 
     @ConnectionRedpanda

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersCockroach(mode = ContainerMode.PER_CLASS,
-        image = "cockroachdb/cockroach:latest-v23.2",
+        image = "cockroachdb/cockroach:latest-v26.3",
         migration = @Migration(
                 engine = Migration.Engines.LIQUIBASE,
                 apply = Migration.Mode.PER_METHOD,
