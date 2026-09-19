@@ -26,6 +26,7 @@ Makes testing & asserts with Testcontainers even easier.
 - [RabbitMQ](rabbitmq)
 - [MockServer](mockserver)
 - [Minio](minio)
+- [RustFS](rustfs)
 - [Clickhouse](clickhouse)
 - [Redpanda](redpanda)
 - [Scylla](scylla)
