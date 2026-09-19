@@ -1,0 +1,22 @@
+# Per-version update limits for gradle/update-libs-versions.gradle.
+#
+# Keys are names from the [versions] section in libs.versions.toml.
+# Inline versions can be limited with "inline:<lineNumber>" where lineNumber is 1-based
+# in libs.versions.toml, but prefer moving shared versions into [versions] first.
+#
+# Levels:
+# - any: allow any newer stable version
+# - major: allow major version changes
+# - minor: keep the current major version
+# - patch: keep the current major and minor version
+
+[version-levels]
+# Testcontainers stays on its current major line (allow minor + patch bumps).
+testcontainers = "minor"
+# JUnit stays on its current major line (allow minor + patch bumps).
+junit-api = "minor"
+junit-platform = "minor"
+# ArangoDB and NATS testcontainers stay on their current major line.
+# These are inline versions in libs.versions.toml, so keyed by 1-based line number.
+"inline:36" = "minor" # com.github.goodforgod:arangodb-testcontainer
+"inline:37" = "minor" # io.goodforgod:nats-testcontainers
