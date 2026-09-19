@@ -40,6 +40,7 @@ dependencies {
     jacocoAggregation project(":rabbitmq")
     jacocoAggregation project(":mockserver")
     jacocoAggregation project(":minio")
+    jacocoAggregation project(":rustfs")
     jacocoAggregation project(":clickhouse")
 }
 
