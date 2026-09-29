@@ -53,7 +53,7 @@ flyway-clickhouse = { module = "org.flywaydb:flyway-database-clickhouse", versio
 flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
-liquibase-clickhouse = { module = "io.goodforgod:liquibase-clickhouse", version = "0.9.1" }
+liquibase-clickhouse = { module = "io.goodforgod:liquibase-clickhouse", version = "0.10.0" }
 
 driver-postgres = { module = "org.postgresql:postgresql", version = "42.7.13" }
 driver-mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.5.10" }
