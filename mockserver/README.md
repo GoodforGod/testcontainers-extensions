@@ -112,7 +112,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersMockServer(image = "${MY_IMAGE_ENV|mockserver/mockserver:5.15.0}")
+@TestcontainersMockServer(image = "${MY_IMAGE_ENV|mockserver/mockserver:8.0.0}")
 class ExampleTests {
 
     @Test
@@ -124,9 +124,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `mockserver/mockserver:5.15.0`
+- Image can have static value: `mockserver/mockserver:8.0.0`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mockserver/mockserver:5.15.0}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|mockserver/mockserver:8.0.0}`
 
 ### Manual Container
 
@@ -192,7 +192,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersMockServer(mode = ContainerMode.PER_CLASS, image = "mockserver/mockserver:5.15.0")
+@TestcontainersMockServer(mode = ContainerMode.PER_CLASS, image = "mockserver/mockserver:8.0.0")
 class ExampleTests {
 
     @ConnectionMockServer
