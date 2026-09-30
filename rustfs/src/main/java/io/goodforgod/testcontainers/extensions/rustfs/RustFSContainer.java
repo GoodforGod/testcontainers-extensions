@@ -33,7 +33,10 @@ public class RustFSContainer extends GenericContainer<RustFSContainer> {
         super(dockerImageName);
         dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
         withExposedPorts(RUSTFS_S3_PORT, RUSTFS_CONSOLE_PORT);
-        setWaitStrategy(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
+        setWaitStrategy(Wait.forHttp("/health/ready")
+                .forPort(RUSTFS_S3_PORT)
+                .forStatusCode(200)
+                .withStartupTimeout(Duration.ofMinutes(2)));
     }
 
     public RustFSContainer withAccessKey(String accessKey) {
