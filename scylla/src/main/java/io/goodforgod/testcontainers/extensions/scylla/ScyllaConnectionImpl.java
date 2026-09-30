@@ -159,7 +159,7 @@ class ScyllaConnectionImpl implements ScyllaConnection {
     private CqlSession sessionWithKeyspace(@NotNull String keyspaceName, CqlSessionBuilder sessionBuilder) {
         try (var session = sessionBuilder.build()) {
             String cql = "CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
-                    + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};";
+                    + " WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': 1};";
             var boundStatement = session.prepare(cql).bind().setTimeout(TIMEOUT);
             session.execute(boundStatement).wasApplied();
             return sessionBuilder.withKeyspace(keyspaceName).build();
@@ -171,7 +171,7 @@ class ScyllaConnectionImpl implements ScyllaConnection {
     private void createKeyspace(@NotNull String keyspaceName, CqlSession session) {
         try {
             String cql = "CREATE KEYSPACE IF NOT EXISTS " + keyspaceName
-                    + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};";
+                    + " WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': 1};";
             var boundStatement = session.prepare(cql).bind().setTimeout(TIMEOUT);
             session.execute(boundStatement).wasApplied();
         } catch (Exception e) {
