@@ -535,7 +535,7 @@ class RabbitMQConnectionImpl implements RabbitMQConnection {
         try {
             channel.queueDeclarePassive(queue);
         } catch (Exception e) {
-            channel.queueDeclare(queue, false, false, false, Collections.emptyMap());
+            channel.queueDeclare(queue, true, false, false, Collections.emptyMap());
         }
     }
 
