@@ -58,6 +58,19 @@ final class CockroachContext implements ContainerContext<JdbcConnection> {
         final Optional<JdbcConnection> connectionExternal = getConnectionExternal();
         if (connectionExternal.isEmpty()) {
             container.start();
+            allowUnsafeInternals();
+        }
+    }
+
+    /**
+     * CockroachDB v26+ restricts access to crdb_internal, which Flyway uses to determine the version
+     */
+    private void allowUnsafeInternals() {
+        try {
+            container.execInContainer("./cockroach", "sql", "--insecure",
+                    "-e", "SET CLUSTER SETTING sql.override.allow_unsafe_internals.enabled = true");
+        } catch (Exception e) {
+            // older versions don't have this setting
         }
     }
 
