@@ -9,8 +9,7 @@ import org.testcontainers.utility.DockerImageName;
  * Testcontainers container for <a href="https://hub.docker.com/r/rustfs/rustfs">RustFS</a>, a
  * high-performance S3 compatible object storage.
  * <p>
- * RustFS has no dedicated Testcontainers module, so this container mirrors the behavior of
- * {@link org.testcontainers.containers.MinIOContainer}.
+ * RustFS has no dedicated Testcontainers module, so this container mirrors the behavior MinioContainer
  */
 public class RustFSContainer extends GenericContainer<RustFSContainer> {
 

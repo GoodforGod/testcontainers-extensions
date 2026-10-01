@@ -36,6 +36,9 @@ jobs:
       - name: Gradle build classes
         run: "./gradlew classes --no-daemon --no-parallel --scan --stacktrace"
 
+      - name: Gradle build javadoc
+        run: "./gradlew javadoc --no-daemon --no-parallel --scan --stacktrace"
+
       - name: Gradle run tests and coverage
         run: "./gradlew test jacocoTestReport testCodeCoverageReport --no-daemon --no-parallel --scan --stacktrace"
 
