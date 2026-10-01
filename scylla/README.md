@@ -21,7 +21,7 @@ It achieves low latency and high throughput by using a highly optimized, shard-p
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.15.0"
+testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.16.0"
 ```
 
 **Maven**
@@ -29,7 +29,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-scylla:0.15.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-scylla</artifactId>
-    <version>0.15.0</version>
+    <version>0.16.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -171,7 +171,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersScylla(image = "${MY_IMAGE_ENV|scylladb/scylla:2025.3}")
+@TestcontainersScylla(image = "${MY_IMAGE_ENV|scylladb/scylla:2026.3}")
 class ExampleTests {
 
     @Test
@@ -183,9 +183,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `scylladb/scylla:2025.3`
+- Image can have static value: `scylladb/scylla:2026.3`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|scylladb/scylla:2025.3}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|scylladb/scylla:2026.3}`
 
 ### Manual Container
 
@@ -253,7 +253,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersScylla(mode = ContainerMode.PER_CLASS, image = "scylladb/scylla:2025.3")
+@TestcontainersScylla(mode = ContainerMode.PER_CLASS, image = "scylladb/scylla:2026.3")
 class ExampleTests {
 
     @ConnectionScylla

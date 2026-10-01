@@ -24,12 +24,12 @@ public @interface TestcontainersPostgreSQL {
     /**
      * @return Postgres image
      *             <p>
-     *             1) Image can have static value: "postgres:17.6-alpine"
+     *             1) Image can have static value: "postgres:18.6-alpine"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|postgres:17.6-alpine}"
+     *             "${MY_IMAGE_ENV|postgres:18.6-alpine}"
      */
-    String image() default "postgres:17.6-alpine";
+    String image() default "postgres:18.6-alpine";
 
     /**
      * @return when to start container

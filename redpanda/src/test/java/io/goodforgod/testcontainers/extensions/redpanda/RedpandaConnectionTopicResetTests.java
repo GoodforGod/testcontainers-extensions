@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestcontainersRedpanda(mode = ContainerMode.PER_CLASS,
-        image = "redpandadata/redpanda:v25.1.11",
+        image = "redpandadata/redpanda:v26.2.3",
         topics = @Topics(value = "my-topic", reset = Topics.Mode.PER_METHOD))
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RedpandaConnectionTopicResetTests {

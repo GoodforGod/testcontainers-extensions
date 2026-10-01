@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-nats:0.15.0"
+testImplementation "io.goodforgod:testcontainers-extensions-nats:0.16.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-nats:0.15.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-nats</artifactId>
-    <version>0.15.0</version>
+    <version>0.16.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -135,7 +135,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersNats(image = "${MY_IMAGE_ENV|nats:2.11-alpine}")
+@TestcontainersNats(image = "${MY_IMAGE_ENV|nats:2.15-alpine}")
 class ExampleTests {
 
     @Test
@@ -147,9 +147,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `nats:2.11-alpine`
+- Image can have static value: `nats:2.15-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|nats:2.11-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|nats:2.15-alpine}`
 
 ### Manual Container
 
@@ -162,7 +162,7 @@ Example:
 class ExampleTests {
 
     @ContainerNats
-    private static final NatsContainer container = new NatsContainer(DockerImageName.parse("nats:2.11-alpine"));
+    private static final NatsContainer container = new NatsContainer(DockerImageName.parse("nats:2.15-alpine"));
 
     @Test
     void checkParams(@ConnectionNats NatsConnection connection) {
@@ -241,7 +241,7 @@ class ExampleTests {
 It is possible to provide custom properties to `@NatsConnection` that will be applied to Produces and Consumers that are created during tests.
 
 ```java
-@TestcontainersNats(mode = ContainerMode.PER_CLASS, image = "nats:2.11-alpine")
+@TestcontainersNats(mode = ContainerMode.PER_CLASS, image = "nats:2.15-alpine")
 class ExampleTests {
 
     @ConnectionNats(properties = {"enable.auto.commit", "true"})
@@ -266,7 +266,7 @@ You can easily send events to any topic (if topic not exist before sending, it w
 
 Example:
 ```java
-@TestcontainersNats(mode = ContainerMode.PER_CLASS, image = "nats:2.11-alpine")
+@TestcontainersNats(mode = ContainerMode.PER_CLASS, image = "nats:2.15-alpine")
 class ExampleTests {
 
     @ConnectionNats
@@ -285,7 +285,7 @@ You can easily subscribe and consume events from any topic (if topic not exist b
 
 Example:
 ```java
-@TestcontainersNats(mode = ContainerMode.PER_CLASS, image = "nats:2.11-alpine")
+@TestcontainersNats(mode = ContainerMode.PER_CLASS, image = "nats:2.15-alpine")
 class ExampleTests {
 
     @ConnectionNats

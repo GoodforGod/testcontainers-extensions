@@ -23,12 +23,12 @@ public @interface TestcontainersRedpanda {
     /**
      * @return Redpanda image
      *             <p>
-     *             1) Image can have static value: "redpandadata/redpanda:v25.1.11"
+     *             1) Image can have static value: "redpandadata/redpanda:v26.2.3"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|redpandadata/redpanda:v25.1.11}"
+     *             "${MY_IMAGE_ENV|redpandadata/redpanda:v26.2.3}"
      */
-    String image() default "redpandadata/redpanda:v25.1.11";
+    String image() default "redpandadata/redpanda:v26.2.3";
 
     /**
      * @return when to start container

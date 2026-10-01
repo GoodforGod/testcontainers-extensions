@@ -638,6 +638,15 @@ class KafkaConnectionImpl implements KafkaConnection {
                 var deleteTopicsResult = admin.deleteTopics(topics);
                 var deleteFutures = deleteTopicsResult.topicNameValues().values().toArray(KafkaFuture[]::new);
                 KafkaFuture.allOf(deleteFutures).get(1, TimeUnit.MINUTES);
+
+                // deletion is acknowledged by controller before broker metadata is updated
+                final long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
+                while (admin.listTopics().names().get(1, TimeUnit.MINUTES).stream().anyMatch(topicsToDrop::contains)) {
+                    if (System.nanoTime() > deadline) {
+                        throw new IllegalStateException("Topics " + topicsToDrop + " still exist after deletion");
+                    }
+                    Thread.sleep(25);
+                }
                 logger.info("Required topics {} dropped", topicsToDrop);
             } else {
                 logger.debug("Required topics already dropped: {}", topics);

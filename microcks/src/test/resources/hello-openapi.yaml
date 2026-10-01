@@ -1,0 +1,18 @@
+openapi: 3.0.2
+info:
+  title: HelloAPI
+  version: 1.0.0
+  description: Sample API used to verify Microcks mocking
+paths:
+  /hello:
+    get:
+      operationId: getHello
+      responses:
+        '200':
+          description: hello response
+          content:
+            application/json:
+              examples:
+                sample:
+                  value:
+                    message: hello

@@ -18,7 +18,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.15.0"
+testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.16.0"
 ```
 
 **Maven**
@@ -26,7 +26,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-postgres:0.15.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-postgres</artifactId>
-    <version>0.15.0</version>
+    <version>0.16.0</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -60,6 +60,8 @@ testRuntimeOnly "org.postgresql:postgresql:42.6.0"
   - [Isolation](#isolation)
   - [External Connection](#external-connection)
   - [Migration](#annotation-migration)
+  - [Migration Strategy](#migration-strategy)
+  - [Parallel Tests & Template Cloning](#parallel-tests--template-cloning-deep-dive)
   - [Migration Strategy](#migration-strategy)
 
 ## Usage
@@ -155,7 +157,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:17.6-alpine}")
+@TestcontainersPostgreSQL(image = "${MY_IMAGE_ENV|postgres:18.6-alpine}")
 class ExampleTests {
 
     @Test
@@ -167,9 +169,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `postgres:17.6-alpine`
+- Image can have static value: `postgres:18.6-alpine`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:17.6-alpine}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|postgres:18.6-alpine}`
 
 ### Manual Container
 
@@ -238,7 +240,7 @@ Image syntax:
 `JdbcConnection` provides connection parameters, useful asserts, checks, etc. for easier testing.
 
 ```java
-@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:17.6-alpine")
+@TestcontainersPostgreSQL(mode = ContainerMode.PER_CLASS, image = "postgres:18.6-alpine")
 class ExampleTests {
 
     @ConnectionPostgreSQL
@@ -376,6 +378,68 @@ class ExampleTests {
 ```
 
 `TEMPLATE_CLONE` requires `Isolation.Mode.PER_METHOD`. Using it with default disabled isolation fails fast because it would change historical migration behavior.
+
+### Parallel Tests & Template Cloning (Deep Dive)
+
+This section explains **why** this machinery exists, **what** each moving part is responsible for, and **how** they work together to make isolated, migrated databases cheap enough to run tests in parallel.
+
+#### Why: the problem being solved
+
+Integration tests that touch a database usually fight over two things:
+
+1. **Shared state** — when every test writes to the same database, tests leak data into each other. This forces you to either clean up manually between tests or run everything sequentially, both of which are slow and fragile.
+2. **Migration cost** — giving every test its own fresh database is the clean solution, but re-running Flyway/Liquibase for hundreds of test methods is expensive (each run replays the entire migration history against an empty database).
+
+The goal is to have the isolation of "one database per test" **without** paying the migration cost "one full migration run per test", so that tests can safely run **in parallel** against a single container.
+
+#### What: the moving parts
+
+| Piece | Responsibility |
+|-------|----------------|
+| `ContainerMode.PER_RUN` | Start **one** physical Postgres container and reuse it for the whole test run. All isolated databases live inside this single container. |
+| `Isolation.Mode.PER_METHOD` | Give **every test method its own logical database** inside that shared container, instead of sharing the container's default database. |
+| `Migration.Strategy.TEMPLATE_CLONE` | Migrate a **template database once**, then create each per-method database as a fast physical copy of that template rather than re-running migrations. |
+| Generated namespace | The unique, per-method database name (`<image-prefix>_<uuid>`) that keeps methods from colliding. |
+
+#### How: step by step
+
+**1. Container starts once.** With `mode = ContainerMode.PER_RUN` a single container is started and kept alive for the entire run. Every isolated database is a database inside this one server, so there is no per-test container startup cost.
+
+**2. A migrated template is built exactly once.** The first time an isolated connection is requested, the extension computes a template key from `(provider, image, engine, migration locations)` and, under a lock, creates a database named `migration_template_<hash>`, runs the configured engine (Flyway/Liquibase) against it a single time, and closes the template connection. The result is cached, so all subsequent tests reuse the same already-migrated template. The `<hash>` is derived from the template key, so different images or migration locations get their own templates and never clash.
+
+**3. Each test method gets its own database cloned from the template.** Before a test method runs, the extension generates a unique namespace — `<image-prefix>_<uuid>` (prefix taken from the image name, lowercased and truncated) — and issues:
+
+```sql
+CREATE DATABASE <generated_namespace> TEMPLATE migration_template_<hash>;
+```
+
+Postgres copies the template's files at the storage level. This is dramatically cheaper than replaying migrations, because the schema (and any seed data baked into the template) already exists — the database is born fully migrated.
+
+**4. The injected connection is re-pointed to that database.** The `JdbcConnection` handed to the test (via `@ConnectionPostgreSQL` field or parameter) has its JDBC URL rewritten to target the generated database — both for the direct connection and, when a shared network is used, for the in-network params. From the test's point of view it simply gets a clean, migrated database; it never sees the template or other methods' databases.
+
+**5. Cleanup.** The per-method connection is closed after the method finishes. Because each method used a distinct database, nothing needs to be rolled back or truncated between methods.
+
+#### How this enables parallel execution
+
+Because the databases are physically distinct, two test methods can run at the same time without touching each other's data. To actually run them concurrently, enable JUnit's parallel execution (this library does not force it on). For example, in `src/test/resources/junit-platform.properties`:
+
+```properties
+junit.jupiter.execution.parallel.enabled=true
+junit.jupiter.execution.parallel.mode.default=concurrent
+```
+
+Keep the JUnit default `TestInstance.Lifecycle.PER_METHOD` — `PER_METHOD` isolation deliberately rejects `PER_CLASS` lifecycle, constructor injection, and `@BeforeAll` parameter injection, because those phases run once for many methods and could otherwise expose one method's database to another.
+
+#### Guardrails (fail-fast validation)
+
+- `TEMPLATE_CLONE` **requires** `Isolation.Mode.PER_METHOD`; combining it with disabled isolation fails fast, since it would silently change historical migration behavior.
+- `TEMPLATE_CLONE` is only honored by providers that support it (Postgres does, via `CREATE DATABASE ... TEMPLATE ...`); unsupported providers reject it rather than degrade silently.
+- `Isolation.Mode.PER_METHOD` with an incompatible test lifecycle (`PER_CLASS`, constructor injection, `@BeforeAll` injection) is rejected up front.
+
+#### When to use which strategy
+
+- Use `Migration.Strategy.DEFAULT` (the default) when you don't need per-method isolation, or when migrations are cheap and applied per class/run against a single database.
+- Use `Migration.Strategy.TEMPLATE_CLONE` with `Isolation.Mode.PER_METHOD` + `ContainerMode.PER_RUN` when you want isolated, migrated databases per test and migrations are expensive enough that cloning a template beats re-running them — this is the configuration that unlocks fast parallel tests.
 
 ## License
 

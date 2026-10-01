@@ -4,7 +4,6 @@ pluginManagement {
         mavenCentral()
     }
 }
-apply from: "dependencies.gradle"
 
 rootProject.name = artifactRootId
 
@@ -23,7 +22,10 @@ include "redis"
 include "valkey"
 include "arangodb"
 include "mockserver"
+include "wiremock"
+include "microcks"
 include "minio"
+include "rustfs"
 include "clickhouse"
 include "nats"
 include "rabbitmq"

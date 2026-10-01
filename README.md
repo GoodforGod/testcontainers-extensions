@@ -13,23 +13,37 @@ Makes testing & asserts with Testcontainers even easier.
 
 ## Featured extensions
 
+### SQL Databases
 - [Postgres](postgres)
-- [Kafka](kafka)
-- [Oracle](oracle)
-- [MariaDB](mariadb)
 - [MySQL](mysql)
-- [Cockroachdb](cockroachdb)
+- [MariaDB](mariadb)
+- [Oracle](oracle)
+- [CockroachDB](cockroachdb)
+- [Clickhouse](clickhouse)
+
+### NoSQL Databases
 - [Cassandra](cassandra)
+- [Scylla](scylla)
+- [ArangoDB](arangodb)
+
+### Key-Value & Cache
 - [Redis](redis)
 - [Valkey](valkey)
-- [ArangoDB](arangodb)
-- [RabbitMQ](rabbitmq)
-- [MockServer](mockserver)
-- [Minio](minio)
-- [Clickhouse](clickhouse)
+
+### Message Brokers
+- [Kafka](kafka)
 - [Redpanda](redpanda)
-- [Scylla](scylla)
+- [RabbitMQ](rabbitmq)
 - [NATS](nats)
+
+### Object Storage (S3)
+- [Minio](minio)
+- [RustFS](rustfs)
+
+### Mocking
+- [MockServer](mockserver)
+- [WireMock](wiremock)
+- [Microcks](microcks)
 
 ## Usage
 

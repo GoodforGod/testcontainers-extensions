@@ -23,12 +23,12 @@ public @interface TestcontainersRabbitMQ {
     /**
      * @return RabbitMQ image
      *             <p>
-     *             1) Image can have static value: "rabbitmq:3.13-management-alpine"
+     *             1) Image can have static value: "rabbitmq:4.3-management-alpine"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
-     *             "${MY_IMAGE_ENV|rabbitmq:3.13-management-alpine}"
+     *             "${MY_IMAGE_ENV|rabbitmq:4.3-management-alpine}"
      */
-    String image() default "rabbitmq:3.13-management-alpine";
+    String image() default "rabbitmq:4.3-management-alpine";
 
     ContainerMode mode() default ContainerMode.PER_METHOD;
 

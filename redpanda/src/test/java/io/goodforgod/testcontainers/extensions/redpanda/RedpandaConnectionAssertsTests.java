@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v25.1.11")
+@TestcontainersRedpanda(mode = ContainerMode.PER_CLASS, image = "redpandadata/redpanda:v26.2.3")
 class RedpandaConnectionAssertsTests {
 
     @ConnectionRedpanda

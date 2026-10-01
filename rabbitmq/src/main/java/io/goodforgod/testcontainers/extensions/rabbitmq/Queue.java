@@ -9,7 +9,7 @@ public @interface Queue {
 
     String name();
 
-    boolean durable() default false;
+    boolean durable() default true;
 
     boolean exclusive() default false;
 

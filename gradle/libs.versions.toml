@@ -1,0 +1,71 @@
+[versions]
+slf4j = "2.0.19"
+junit-api = "5.14.4"
+junit-platform = "1.14.4"
+testcontainers = "1.21.4"
+wiremock = "1.0-alpha-15"
+wiremock-client = "3.13.2"
+microcks = "0.5.0"
+flyway = "10.22.0"
+liquibase = "4.33.0"
+oracle = "21.23.0.0"
+driver-minio = "8.6.0"
+testcontainers-arangodb = "5.0.0"
+testcontainers-nats = "0.1.0"
+
+[libraries]
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
+
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-api" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-api" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-api" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+
+json = { module = "org.json:json", version = "20260814" }
+hikari = { module = "com.zaxxer:HikariCP", version = "7.1.0" }
+
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
+testcontainers-postgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-mariadb = { module = "org.testcontainers:mariadb", version.ref = "testcontainers" }
+testcontainers-mysql = { module = "org.testcontainers:mysql", version.ref = "testcontainers" }
+testcontainers-oracle = { module = "org.testcontainers:oracle-xe", version.ref = "testcontainers" }
+testcontainers-cockroach = { module = "org.testcontainers:cockroachdb", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+testcontainers-redpanda = { module = "org.testcontainers:redpanda", version.ref = "testcontainers" }
+testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
+testcontainers-cassandra = { module = "org.testcontainers:cassandra", version.ref = "testcontainers" }
+testcontainers-scylladb = { module = "org.testcontainers:scylladb", version.ref = "testcontainers" }
+testcontainers-mockserver = { module = "org.testcontainers:mockserver", version.ref = "testcontainers" }
+testcontainers-minio = { module = "org.testcontainers:minio", version.ref = "testcontainers" }
+testcontainers-clickhouse = { module = "org.testcontainers:clickhouse", version.ref = "testcontainers" }
+testcontainers-arangodb = { module = "com.github.goodforgod:arangodb-testcontainer", version.ref = "testcontainers-arangodb" }
+testcontainers-nats = { module = "io.goodforgod:nats-testcontainers", version.ref = "testcontainers-nats" }
+testcontainers-wiremock = { module = "org.wiremock.integrations.testcontainers:wiremock-testcontainers-module", version.ref = "wiremock" }
+testcontainers-microcks = { module = "io.github.microcks:microcks-testcontainers", version.ref = "microcks" }
+
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-mysql = { module = "org.flywaydb:flyway-mysql", version.ref = "flyway" }
+flyway-oracle = { module = "org.flywaydb:flyway-database-oracle", version.ref = "flyway" }
+flyway-clickhouse = { module = "org.flywaydb:flyway-database-clickhouse", version = "10.26.0" }
+flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
+liquibase-clickhouse = { module = "io.goodforgod:liquibase-clickhouse", version = "0.10.0" }
+
+driver-postgres = { module = "org.postgresql:postgresql", version = "42.7.13" }
+driver-mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.5.10" }
+driver-mysql = { module = "com.mysql:mysql-connector-j", version = "26.7.0" }
+driver-oracle = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
+driver-cassandra = { module = "org.apache.cassandra:java-driver-core", version = "4.19.3" }
+driver-kafka = { module = "org.apache.kafka:kafka-clients", version = "4.3.1" }
+driver-nats = { module = "io.nats:jnats", version = "2.26.3" }
+driver-rabbitmq = { module = "com.rabbitmq:amqp-client", version = "5.36.0" }
+driver-redis = { module = "redis.clients:jedis", version = "8.0.1" }
+driver-arangodb = { module = "com.arangodb:arangodb-java-driver", version = "7.28.0" }
+driver-mockserver = { module = "org.mock-server:mockserver-client-java", version = "8.0.0" }
+driver-minio = { module = "io.minio:minio", version.ref = "driver-minio" }
+driver-wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock-client" }
+driver-clickhouse = { module = "com.clickhouse:clickhouse-jdbc", version = "0.10.0" }
