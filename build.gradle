@@ -32,18 +32,18 @@ dependencies {
     jacocoAggregation project(":mysql")
     jacocoAggregation project(":mariadb")
     jacocoAggregation project(":cockroachdb")
-    jacocoAggregation project(":kafka")
     jacocoAggregation project(":cassandra")
+    jacocoAggregation project(":clickhouse")
+    jacocoAggregation project(":kafka")
+    jacocoAggregation project(":rabbitmq")
+    jacocoAggregation project(":arangodb")
     jacocoAggregation project(":redis")
     jacocoAggregation project(":valkey")
-    jacocoAggregation project(":arangodb")
-    jacocoAggregation project(":rabbitmq")
     jacocoAggregation project(":mockserver")
     jacocoAggregation project(":wiremock")
     jacocoAggregation project(":microcks")
     jacocoAggregation project(":minio")
     jacocoAggregation project(":rustfs")
-    jacocoAggregation project(":clickhouse")
 }
 
 reporting {
