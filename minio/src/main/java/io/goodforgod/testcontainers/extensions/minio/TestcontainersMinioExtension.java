@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 @Internal
@@ -61,7 +62,10 @@ class TestcontainersMinioExtension extends
         container.withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger(MinIOContainer.class))
                 .withMdc("image", image.asCanonicalNameString())
                 .withMdc("alias", alias));
-        container.withStartupTimeout(Duration.ofMinutes(2));
+        container.waitingFor(Wait.forHttp("/minio/health/cluster")
+                .forPort(9000)
+                .forStatusCode(200)
+                .withStartupTimeout(Duration.ofMinutes(2)));
         container.setNetworkAliases(new ArrayList<>(List.of(alias)));
         if (metadata.networkShared()) {
             container.withNetwork(Network.SHARED);
