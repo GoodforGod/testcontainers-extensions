@@ -19,7 +19,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-wiremock:0.16.0"
+testImplementation "io.goodforgod:testcontainers-extensions-wiremock:0.16.1"
 ```
 
 **Maven**
@@ -27,7 +27,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-wiremock:0.16.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-wiremock</artifactId>
-    <version>0.16.0</version>
+    <version>0.16.1</version>
     <scope>test</scope>
 </dependency>
 ```
