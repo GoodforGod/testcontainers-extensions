@@ -66,7 +66,7 @@ final class TestcontainersKafkaExtension extends
 
         var container = (image.asCanonicalNameString().contains("confluentinc"))
                 ? new org.testcontainers.containers.KafkaContainer(image).waitingFor(Wait.forListeningPort())
-                : new KafkaContainer(image).waitingFor(Wait.forLogMessage(".*Startup complete.*", 1));
+                : new KafkaContainer(image).waitingFor(new KafkaBrokerWaitStrategy());
         final String alias = Optional.ofNullable(metadata.networkAlias()).orElseGet(() -> "kafka-" + System.currentTimeMillis());
 
         var loggerClass = (container instanceof org.testcontainers.containers.KafkaContainer okc)

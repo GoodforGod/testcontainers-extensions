@@ -23,14 +23,14 @@ public @interface TestcontainersMinio {
 
     /**
      * @return MinIOContainer image
-     *             <p>
      *             1) Image can have static value:
      *             "pgsty/minio:RELEASE.2026-08-04T00-00-00Z"
      *             2) Image can be provided via environment variable using syntax: "${MY_IMAGE_ENV}"
      *             3) Image environment variable can have default value if empty using syntax:
      *             "${MY_IMAGE_ENV|pgsty/minio:RELEASE.2026-08-04T00-00-00Z}"
      *             <p>
-     *             MinIO no longer publishes images to Docker Hub, images are now available at quay.io
+     *             Defaults to PGSTY MinIO, a community-maintained MinIO fork. MinIO Community Edition
+     *             no longer publishes official container images.
      */
     String image() default "pgsty/minio:RELEASE.2026-08-04T00-00-00Z";
 

@@ -21,7 +21,7 @@ Features:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-microcks:0.16.0"
+testImplementation "io.goodforgod:testcontainers-extensions-microcks:0.16.1"
 ```
 
 **Maven**
@@ -29,7 +29,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-microcks:0.16.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-microcks</artifactId>
-    <version>0.16.0</version>
+    <version>0.16.1</version>
     <scope>test</scope>
 </dependency>
 ```

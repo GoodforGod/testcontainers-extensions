@@ -13,11 +13,25 @@ Features:
 - Container easy run *per method*, *per class*, *per execution*.
 - Container easy connection injection with asserts.
 
+## Container Image
+
+The default image is [`pgsty/minio:RELEASE.2026-08-04T00-00-00Z`](https://hub.docker.com/r/pgsty/minio), an **unofficial, community-maintained MinIO fork** published by PGSTY.
+It is not affiliated with, endorsed by, or sponsored by MinIO, Inc.
+The extension also supports its successor, [PGSTY Silo](https://hub.docker.com/r/pgsty/silo), through `MinIOContainer` image compatibility.
+Silo preserves the S3 API, `MINIO_*` environment variables, and `/minio/*` health endpoints.
+
+MinIO Community Edition switched to [source-only distribution](https://github.com/minio/minio#source-only-distribution) in October 2025, ending publication of prebuilt community binaries and container images.
+The official `minio/minio` repository was subsequently removed from Docker Hub, as [reported by Apache Doris in September 2026](https://github.com/apache/doris/commit/c73c8e2f2caf2afa7cc38aca09e2d37a5cf38fb1).
+The source-only policy explains why new official community images are no longer published.
+
+To use another compatible image, set `@TestcontainersMinio(image = "your-registry/your-image:tag")`.
+To use Silo, set `@TestcontainersMinio(image = "pgsty/silo:RELEASE.2026-10-18T00-00-00Z")`.
+
 ## Dependency :rocket:
 
 **Gradle**
 ```groovy
-testImplementation "io.goodforgod:testcontainers-extensions-minio:0.16.0"
+testImplementation "io.goodforgod:testcontainers-extensions-minio:0.16.1"
 ```
 
 **Maven**
@@ -25,7 +39,7 @@ testImplementation "io.goodforgod:testcontainers-extensions-minio:0.16.0"
 <dependency>
     <groupId>io.goodforgod</groupId>
     <artifactId>testcontainers-extensions-minio</artifactId>
-    <version>0.16.0</version>
+    <version>0.16.1</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -143,7 +157,10 @@ Example:
 class ExampleTests {
 
     @ContainerMinio
-    private static final MinIOContainer container = new MinIOContainer().withNetworkAliases("myMinio");
+    private static final MinIOContainer container = new MinIOContainer(
+            DockerImageName.parse("pgsty/minio:RELEASE.2026-08-04T00-00-00Z")
+                    .asCompatibleSubstituteFor("minio/minio"))
+            .withNetworkAliases("myMinio");
     
     @Test
     void test(@ConnectionMinio MinioConnection connection) {
