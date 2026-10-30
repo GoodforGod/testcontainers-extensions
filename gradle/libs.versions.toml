@@ -4,12 +4,15 @@ junit-api = "5.14.4"
 junit-platform = "1.14.4"
 testcontainers = "1.21.4"
 wiremock = "1.0-alpha-15"
-wiremock-client = "3.13.2"
+wiremock-client = "3.13.1" # Fixed at 3.13.1; 3.13.2 -> Jackson BOM 2.20.1 -> consumer jackson-module-kotlin -> Kotlin 2.0.21.
 microcks = "0.5.0"
 flyway = "10.22.0"
 liquibase = "4.33.0"
 oracle = "21.23.0.0"
-driver-minio = "8.6.0"
+driver-minio = "8.5.17"
+driver-mockserver = "7.4.0"
+driver-arangodb = "7.22.0" # Fixed at 7.22.0; 7.22.1 -> core -> Jackson BOM 2.20.0 -> consumer jackson-module-kotlin -> Kotlin 2.0.21.
+driver-cassandra = "4.19.2" # Fixed at 4.19.2; 4.19.3 -> Jackson BOM 2.20.1 -> consumer jackson-module-kotlin -> Kotlin 2.0.21.
 testcontainers-arangodb = "5.0.0"
 testcontainers-nats = "0.1.0"
 
@@ -59,13 +62,13 @@ driver-postgres = { module = "org.postgresql:postgresql", version = "42.7.13" }
 driver-mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version = "3.5.10" }
 driver-mysql = { module = "com.mysql:mysql-connector-j", version = "26.7.0" }
 driver-oracle = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
-driver-cassandra = { module = "org.apache.cassandra:java-driver-core", version = "4.19.3" }
+driver-cassandra = { module = "org.apache.cassandra:java-driver-core", version.ref = "driver-cassandra" }
 driver-kafka = { module = "org.apache.kafka:kafka-clients", version = "4.3.1" }
 driver-nats = { module = "io.nats:jnats", version = "2.26.3" }
 driver-rabbitmq = { module = "com.rabbitmq:amqp-client", version = "5.36.0" }
 driver-redis = { module = "redis.clients:jedis", version = "8.0.1" }
-driver-arangodb = { module = "com.arangodb:arangodb-java-driver", version = "7.28.0" }
-driver-mockserver = { module = "org.mock-server:mockserver-client-java", version = "8.0.0" }
+driver-arangodb = { module = "com.arangodb:arangodb-java-driver", version.ref = "driver-arangodb" }
+driver-mockserver = { module = "org.mock-server:mockserver-client-java", version.ref = "driver-mockserver" }
 driver-minio = { module = "io.minio:minio", version.ref = "driver-minio" }
 driver-wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock-client" }
 driver-clickhouse = { module = "com.clickhouse:clickhouse-jdbc", version = "0.10.0" }

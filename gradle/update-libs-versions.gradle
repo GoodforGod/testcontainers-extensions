@@ -26,8 +26,8 @@ gradle.projectsLoaded {
                 def policyFile = rootProject.file(providers.gradleProperty("versionPolicy")
                     .getOrElse("gradle/libs-version-policy.toml"))
 
-                if (!(updateLevel in ["any", "major", "minor", "patch"])) {
-                    throw new GradleException("Unsupported updateLevel '${updateLevel}'. Use one of: any, major, minor, patch.")
+                if (!(updateLevel in ["any", "major", "minor", "patch", "fixed"])) {
+                    throw new GradleException("Unsupported updateLevel '${updateLevel}'. Use one of: any, major, minor, patch, fixed.")
                 }
 
                 if (!catalogFile.isFile()) {
@@ -199,6 +199,9 @@ String metadataUrl(String group, String artifact, String repository) {
 }
 
 String latestVersion(String group, String artifact, String currentVersion, String repository, boolean includePreRelease, String updateLevel) {
+    if (updateLevel == "fixed") {
+        return currentVersion
+    }
     def url = metadataUrl(group, artifact, repository)
     try {
         def connection = new URL(url).openConnection()
@@ -245,6 +248,9 @@ boolean isTimestampLikeVersion(String version) {
 }
 
 boolean isAllowedUpdate(String currentVersion, String candidateVersion, String updateLevel) {
+    if (updateLevel == "fixed") {
+        return candidateVersion == currentVersion
+    }
     if (updateLevel == "any") {
         return true
     }
@@ -558,7 +564,7 @@ Map<String, String> readVersionPolicy(File policyFile) {
         if (section != "version-levels") {
             return
         }
-        def matcher = line =~ /^"?([A-Za-z0-9_.:-]+)"?\s*=\s*"(any|major|minor|patch)"$/
+        def matcher = line =~ /^"?([A-Za-z0-9_.:-]+)"?\s*=\s*"(any|major|minor|patch|fixed)"$/
         if (!matcher.matches()) {
             throw new GradleException("Invalid version policy line in ${policyFile}: ${rawLine}")
         }
@@ -571,7 +577,7 @@ String effectiveUpdateLevel(String requestedLevel, String policyLevel) {
     if (!policyLevel) {
         return requestedLevel
     }
-    def order = ["patch", "minor", "major", "any"]
+    def order = ["fixed", "patch", "minor", "major", "any"]
     return order[Math.min(order.indexOf(requestedLevel), order.indexOf(policyLevel))]
 }
 

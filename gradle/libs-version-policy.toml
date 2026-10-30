@@ -9,17 +9,19 @@
 # - major: allow major version changes
 # - minor: keep the current major version
 # - patch: keep the current major and minor version
+# - fixed: keep the exact current version; do not check for updates
 
 [version-levels]
-# Testcontainers stays on its current major line (allow minor + patch bumps).
 testcontainers = "minor"
-# JUnit stays on its current major line (allow minor + patch bumps).
 junit-api = "minor"
 junit-platform = "minor"
-# These stay on their current major line (allow minor + patch bumps).
 flyway = "minor"
 liquibase = "minor"
 oracle = "minor"
 testcontainers-arangodb = "minor"
 testcontainers-nats = "minor"
-driver-minio = "minor"
+driver-minio = "patch" # 8.6.0 -> OkHttp 5.1.0 / Okio 3.15.0 -> Kotlin 2.x (resolved 2.2.0); also affects rustfs.
+driver-mockserver = "patch" # 7.5.0 -> mockserver-core -> Jackson BOM 2.22.1 -> consumer jackson-module-kotlin -> Kotlin 2.1.21.
+driver-arangodb = "fixed" # Fixed at 7.22.0; 7.22.1 -> core -> Jackson BOM 2.20.0 -> consumer jackson-module-kotlin -> Kotlin 2.0.21.
+driver-cassandra = "fixed" # Fixed at 4.19.2; 4.19.3 -> Jackson BOM 2.20.1 -> consumer jackson-module-kotlin -> Kotlin 2.0.21.
+wiremock-client = "fixed" # Fixed at 3.13.1; 3.13.2 -> Jackson BOM 2.20.1 -> consumer jackson-module-kotlin -> Kotlin 2.0.21.

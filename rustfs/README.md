@@ -119,7 +119,7 @@ It is possible to customize image with annotation `image` parameter.
 
 Image also can be provided from environment variable:
 ```java
-@TestcontainersRustFS(image = "${MY_IMAGE_ENV|rustfs/rustfs:1.0.0}")
+@TestcontainersRustFS(image = "${MY_IMAGE_ENV|rustfs/rustfs:1.0.4}")
 class ExampleTests {
 
     @Test
@@ -131,9 +131,9 @@ class ExampleTests {
 
 Image syntax:
 
-- Image can have static value: `rustfs/rustfs:1.0.0`
+- Image can have static value: `rustfs/rustfs:1.0.4`
 - Image can be provided via environment variable using syntax: `${MY_IMAGE_ENV}`
-- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|rustfs/rustfs:1.0.0}`
+- Image environment variable can have default value if empty using syntax: `${MY_IMAGE_ENV|rustfs/rustfs:1.0.4}`
 
 ### Manual Container
 
@@ -146,7 +146,7 @@ Example:
 class ExampleTests {
 
     @ContainerRustFS
-    private static final RustFSContainer container = new RustFSContainer("rustfs/rustfs:1.0.0").withNetworkAliases("myRustFS");
+    private static final RustFSContainer container = new RustFSContainer("rustfs/rustfs:1.0.4").withNetworkAliases("myRustFS");
     
     @Test
     void test(@ConnectionRustFS RustFSConnection connection) {
@@ -199,7 +199,7 @@ Image syntax:
 
 Example:
 ```java
-@TestcontainersRustFS(mode = ContainerMode.PER_CLASS, image = "rustfs/rustfs:1.0.0")
+@TestcontainersRustFS(mode = ContainerMode.PER_CLASS, image = "rustfs/rustfs:1.0.4")
 class ExampleTests {
 
     @ConnectionRustFS
